@@ -1,27 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#121315"
+    android:orientation="vertical"
+    android:paddingHorizontal="25dp"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/ivlogo"
+        android:layout_width="170dp"
+        android:layout_height="101dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        app:srcCompat="@drawable/logo" />
+
+    <TextView
+        android:id="@+id/tvSignIn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="52dp"
-        tools:srcCompat="@tools:sample/backgrounds/scenic" />
+        android:layout_below="@id/ivlogo"
+        android:fontFamily="@font/manrope_medium"
+        android:text="Sign in"
+        android:textColor="#FD8504"
+        android:textSize="24sp"
+        android:layout_marginTop="20dp"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <EditText
+        android:id="@+id/edUsername"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/custom_input"
+        android:drawableStart="@drawable/outline_account_circle_24"
+        android:drawablePadding="10dp"
+        android:fontFamily="@font/manrope_medium"
+        android:hint="Username"
+        android:paddingHorizontal="12dp"
+        android:textColorHint="#B6B6B6"
+        android:textSize="15sp" />
+
+    <EditText
+        android:id="@+id/edPassword"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/custom_input"
+        android:drawableStart="@drawable/baseline_lock_24"
+        android:drawablePadding="10dp"
+        android:fontFamily="@font/manrope_medium"
+        android:hint="Password"
+        android:inputType="textPassword"
+        android:paddingHorizontal="12dp"
+        android:textColorHint="#B6B6B6"
+        android:textSize="15sp" />
+
+    <Button
+        android:layout_width="271dp"
+        android:layout_height="58dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="25dp"
+        android:backgroundTint="#FD8504"
+        android:drawableEnd="@drawable/custom_arrow"
+        android:fontFamily="@font/manrope_medium"
+        android:text="SIGN IN"
+        app:cornerRadius="10dp" />
+</LinearLayout>

@@ -1,0 +1,16 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Circle background -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#CED708" />
+            <size android:width="30dp" android:height="30dp" />
+        </shape>
+    </item>
+
+    <!-- Vector icon on top of the circle -->
+    <item
+        android:drawable="@drawable/baseline_arrow_forward_24"
+        android:width="24dp"
+        android:height="24dp"
+        android:gravity="center" />
+</layer-list>
