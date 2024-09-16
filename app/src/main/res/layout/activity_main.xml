@@ -64,7 +64,8 @@
         android:layout_gravity="center"
         android:layout_marginTop="25dp"
         android:backgroundTint="#FD8504"
-        android:drawableEnd="@drawable/custom_arrow"
+        android:paddingLeft="55dp"
+        android:drawableRight="@drawable/custom_arrow"
         android:fontFamily="@font/manrope_medium"
         android:text="SIGN IN"
         app:cornerRadius="10dp" />
