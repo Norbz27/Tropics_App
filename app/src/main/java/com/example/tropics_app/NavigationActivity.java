@@ -2,9 +2,11 @@ package com.example.tropics_app;
 
 import android.content.Intent;
 
+import android.os.Build;
 import android.os.Bundle;
 
 import android.view.MenuItem;
+import android.view.Window;
 
 
 import androidx.annotation.NonNull;
@@ -12,6 +14,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -20,13 +23,15 @@ import com.google.android.material.navigation.NavigationView;
 
 public class NavigationActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private DrawerLayout drawerLayout;
-    Intent intent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation);
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Window window = getWindow();
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.darkgray));
+        }
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -64,10 +69,6 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         } else if (id == R.id.nav_inventory) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new InventoryFragment()).commit();
         } else if (id == R.id.nav_sign_out) {
-            // SharedPreferences.Editor editor = sharedPreferences.edit();
-            // editor.clear();
-            // editor.commit();
-            // editor.apply();
             Intent intent = new Intent(this, SignInActivity.class);
             startActivity(intent);
             finish();
