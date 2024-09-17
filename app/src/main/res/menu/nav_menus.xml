@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn = "navigation_view"
+    >
+
+    <group
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_home"
+            android:fontFamily="@font/manrope"
+            android:icon="@drawable/outline_home_24"
+            android:title="Home" />
+
+        <item
+            android:id="@+id/nav_apt"
+            android:icon="@drawable/baseline_edit_calendar_24"
+            android:fontFamily="@font/manrope"
+            android:title="Appoinment"/>
+
+        <item
+            android:id="@+id/nav_calendar"
+            android:icon="@drawable/baseline_calendar_month_24"
+            android:fontFamily="@font/manrope"
+            android:title="Calendar"/>
+
+        <item
+            android:id="@+id/nav_sales"
+            android:icon="@drawable/baseline_auto_graph_24"
+            android:fontFamily="@font/manrope"
+            android:title="Sales"/>
+
+        <item
+            android:id="@+id/nav_customer_report"
+            android:icon="@drawable/outline_assignment_24"
+            android:fontFamily="@font/manrope"
+            android:title="Customer Report"/>
+
+        <item
+            android:id="@+id/nav_salary"
+            android:icon="@drawable/outline_speaker_group_24"
+            android:fontFamily="@font/manrope"
+            android:title="Salary Computation"/>
+
+        <item
+            android:id="@+id/nav_inventory"
+            android:icon="@drawable/outline_inventory_2_24"
+            android:fontFamily="@font/manrope"
+            android:title="Inventory"/>
+
+        <item
+            android:id="@+id/nav_sign_out"
+            android:icon="@drawable/baseline_logout_24"
+            android:fontFamily="@font/manrope"
+            android:title="Sign out"/>
+    </group>
+</menu>
