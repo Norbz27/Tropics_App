@@ -55,7 +55,9 @@ public class SignInActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Window window = getWindow();
             window.setStatusBarColor(ContextCompat.getColor(this, R.color.darkgray));
+            window.setNavigationBarColor(ContextCompat.getColor(this, R.color.darkgray));
         }
+
 
         btnSignin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -74,7 +76,7 @@ public class SignInActivity extends AppCompatActivity {
             username.setError("Enter Username");
             username.requestFocus();
             return;
-    }
+        }
         if(password.isEmpty()){
             password1.setError("Enter Password");
             password1.requestFocus();
@@ -82,20 +84,21 @@ public class SignInActivity extends AppCompatActivity {
         }
 
         mAuth.signInWithEmailAndPassword(email,password)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()){
-                            SharedPreferences.Editor editor = sharedPreferences.edit();
-                            editor.putBoolean(KEY_IS_LOGGED_IN, true);
-                            editor.apply();
-                            startActivity(intent);
-                        }
-                        else{
-                            Toast.makeText(SignInActivity.this, "Failed", Toast.LENGTH_SHORT).show();
-                        }
+            .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                @Override
+                public void onComplete(@NonNull Task<AuthResult> task) {
+                    if (task.isSuccessful()){
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putBoolean(KEY_IS_LOGGED_IN, true);
+                        editor.apply();
+                        startActivity(intent);
                     }
-                });
-
+                    else{
+                        Toast.makeText(SignInActivity.this, "Invalid Username or Password", Toast.LENGTH_SHORT).show();
+                        username.setText("");
+                        password1.setText("");
+                    }
+                }
+            });
     }
 }

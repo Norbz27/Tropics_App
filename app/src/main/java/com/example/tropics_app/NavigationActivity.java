@@ -39,6 +39,7 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Window window = getWindow();
             window.setStatusBarColor(ContextCompat.getColor(this, R.color.darkgray));
+            window.setNavigationBarColor(ContextCompat.getColor(this, R.color.darkgray));
         }
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
