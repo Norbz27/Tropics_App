@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#121315"
     tools:context=".InventoryFragment">
 
@@ -16,7 +17,6 @@
             android:id="@+id/searchView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:queryHint="Search Here...."
             android:background="@drawable/custom_background"
             android:clickable="true"
             android:focusable="true"
@@ -28,4 +28,14 @@
             android:layout_height="match_parent"
             android:layout_marginTop="10dp"/>
     </LinearLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="30dp"
+        app:srcCompat="@android:drawable/ic_input_add"
+        android:backgroundTint="@color/orange"
+        android:tint="@color/darkgray"
+        app:fabSize="normal" />
 </FrameLayout>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#121315"
@@ -12,11 +13,11 @@
         android:layout_marginTop="10dp"
         android:orientation="vertical"
         android:layout_marginHorizontal="20dp">
+
         <SearchView
             android:id="@+id/searchView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:queryHint="Search Here...."
             android:background="@drawable/custom_background"
             android:clickable="true"
             android:focusable="true"
@@ -26,6 +27,18 @@
             android:id="@+id/rvInventory"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="10dp"/>
+            android:layout_marginTop="10dp" />
+
     </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    android:id="@+id/fabAdd"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom|end"
+    android:layout_margin="30dp"
+    app:srcCompat="@android:drawable/ic_input_add"
+    android:backgroundTint="@color/orange"
+    android:tint="@color/darkgray"
+    app:fabSize="normal" />
 </FrameLayout>
