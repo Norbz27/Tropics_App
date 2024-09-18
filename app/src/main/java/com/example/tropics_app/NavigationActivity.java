@@ -2,6 +2,7 @@ package com.example.tropics_app;
 
 import android.content.Intent;
 
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -17,16 +18,23 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
-
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.android.material.navigation.NavigationView;
 
 
 public class NavigationActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private DrawerLayout drawerLayout;
-
+    private FirebaseAuth mAuth;
+    private SharedPreferences sharedPreferences;
+    private static final String Preference = "userpreferences";
+    private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mAuth = FirebaseAuth.getInstance();
+        sharedPreferences = getSharedPreferences(Preference, MODE_PRIVATE);
         setContentView(R.layout.activity_navigation);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Window window = getWindow();
@@ -69,7 +77,11 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         } else if (id == R.id.nav_inventory) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new InventoryFragment()).commit();
         } else if (id == R.id.nav_sign_out) {
-            Intent intent = new Intent(this, SignInActivity.class);
+            mAuth.signOut();
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean(KEY_IS_LOGGED_IN, false);
+            editor.apply();
+            Intent intent = new Intent(this, SignInActivity.class); // Create intent for SignInActivity
             startActivity(intent);
             finish();
         }
@@ -78,6 +90,9 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         return true;
     }
 
+    private void logoutUser(){
+
+    }
 
     @Override
     public void onBackPressed(){

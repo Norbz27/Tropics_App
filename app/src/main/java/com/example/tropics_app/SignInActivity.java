@@ -1,6 +1,7 @@
 package com.example.tropics_app;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -29,6 +30,9 @@ public class SignInActivity extends AppCompatActivity {
     private EditText username, password1;
     private Button btnSignin;
     private FirebaseAuth mAuth;
+    private SharedPreferences sharedPreferences;
+    private static final String Preference = "userpreferences";
+    private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,6 +43,14 @@ public class SignInActivity extends AppCompatActivity {
         password1 = findViewById(R.id.edPassword);
         btnSignin = findViewById(R.id.btnSignIn);
         intent = new Intent(this, NavigationActivity.class);
+
+        sharedPreferences = getSharedPreferences(Preference, MODE_PRIVATE);
+        boolean isLoggedIn = sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false);
+
+        if(isLoggedIn){
+            startActivity(new Intent(SignInActivity.this, NavigationActivity.class));
+            finish();
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Window window = getWindow();
@@ -59,12 +71,12 @@ public class SignInActivity extends AppCompatActivity {
     private void signInUser(String email, String password){
 
         if(email.isEmpty()){
-            username.setError("Butangi Username");
+            username.setError("Enter Username");
             username.requestFocus();
             return;
     }
         if(password.isEmpty()){
-            password1.setError("Butangi Password");
+            password1.setError("Enter Password");
             password1.requestFocus();
             return;
         }
@@ -74,6 +86,9 @@ public class SignInActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()){
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putBoolean(KEY_IS_LOGGED_IN, true);
+                            editor.apply();
                             startActivity(intent);
                         }
                         else{
