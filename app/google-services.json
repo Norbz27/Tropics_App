@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "124891206958",
+    "project_id": "tropico-16e1e",
+    "storage_bucket": "tropico-16e1e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:124891206958:android:2de99d9843ba9d821416bf",
+        "android_client_info": {
+          "package_name": "com.example.tropics_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChSDFlffjZUQmP4Hpf5ULRf518CRyB6FA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
