@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SearchView;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -59,6 +60,20 @@ public class CustomerFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_customer, container, false);
+        View view = inflater.inflate(R.layout.fragment_customer, container, false);
+
+        // Use view to find the SearchView in the layout
+        SearchView searchView = view.findViewById(R.id.searchView);
+
+        // Set an OnClickListener to make the search bar focusable when clicked
+        searchView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Request focus for the SearchView when the body is clicked
+                searchView.setIconified(false); // This opens the search input
+            }
+        });
+
+        return view;
     }
 }
