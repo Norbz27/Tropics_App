@@ -41,8 +41,8 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.play.services.tasks)
     implementation("com.applandeo:material-calendar-view:1.9.0-rc03")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }
-

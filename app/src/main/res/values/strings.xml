@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name"></string>
+    <string name="app_name">Tropic</string>
     <string name="open_nav">Open navigation Drawer</string>
     <string name="close_nav">Close navigation Drawer</string>
     <!-- TODO: Remove or change this placeholder text -->

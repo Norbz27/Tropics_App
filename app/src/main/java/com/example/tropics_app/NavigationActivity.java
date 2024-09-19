@@ -55,6 +55,7 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new HomeFragment()).commit();
             navigationView.setCheckedItem(R.id.nav_home);
+            getSupportActionBar().setTitle("Home");
         }
 
     }
@@ -65,18 +66,25 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
 
         if (id == R.id.nav_home) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new HomeFragment()).commit();
+            getSupportActionBar().setTitle("Home");
         } else if (id == R.id.nav_apt) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new AppointmentFragment()).commit();
+            getSupportActionBar().setTitle("Appointment");
         } else if (id == R.id.nav_calendar) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new CalendarFragment()).commit();
+            getSupportActionBar().setTitle("Calendar");
         } else if (id == R.id.nav_sales) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new SalesFragment()).commit();
+            getSupportActionBar().setTitle("Sales");
         } else if (id == R.id.nav_customer_report) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new CustomerFragment()).commit();
+            getSupportActionBar().setTitle("Customer Report");
         } else if (id == R.id.nav_salary) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new SalaryFragment()).commit();
+            getSupportActionBar().setTitle("Salary Computation");
         } else if (id == R.id.nav_inventory) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new InventoryFragment()).commit();
+            getSupportActionBar().setTitle("Inventory");
         } else if (id == R.id.nav_sign_out) {
             mAuth.signOut();
             SharedPreferences.Editor editor = sharedPreferences.edit();
