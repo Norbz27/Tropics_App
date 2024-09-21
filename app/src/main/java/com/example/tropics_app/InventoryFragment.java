@@ -1,5 +1,6 @@
 package com.example.tropics_app;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
@@ -41,23 +42,24 @@ import java.util.Map;
 import java.util.UUID;
 
 public class InventoryFragment extends Fragment {
-
     private RecyclerView rvInventory;
     private FirebaseFirestore db;
     private InventoryAdapter adapter;
     private List<Map<String, Object>> inventoryList;
+    private List<Map<String, Object>> filteredList;
     private FloatingActionButton fabAdd;
+    private SearchView searchView;
 
-    // Image selection request code
     private static final int PICK_IMAGE_REQUEST = 1;
     private Uri imageUri;
-    private ImageView imgProduct; // Declare imgProduct here
+    private ImageView imgProduct;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_inventory, container, false);
-        SearchView searchView = view.findViewById(R.id.searchView);
+
+        searchView = view.findViewById(R.id.searchView);
         searchView.setOnClickListener(v -> searchView.setIconified(false));
 
         fabAdd = view.findViewById(R.id.fabAdd);
@@ -65,24 +67,55 @@ public class InventoryFragment extends Fragment {
 
         fabAdd.setOnClickListener(v -> showAddProductDialog());
 
-        // Initialize Firestore
         db = FirebaseFirestore.getInstance();
-
-        // Initialize RecyclerView
         rvInventory.setLayoutManager(new LinearLayoutManager(getContext()));
         inventoryList = new ArrayList<>();
-        adapter = new InventoryAdapter(getContext(), inventoryList);
+        filteredList = new ArrayList<>();
+        adapter = new InventoryAdapter(getContext(), filteredList); // Use filteredList
         rvInventory.setAdapter(adapter);
 
-        // Fetch data from Firestore
-        loadInventoryData();
 
+        setupSearchView();
+        loadInventoryData();
         return view;
+    }
+
+    private void setupSearchView() {
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filterInventory(newText);
+                return true;
+            }
+        });
+    }
+    private void filterInventory(String query) {
+        filteredList.clear(); // Clear the filtered list
+
+        if (query.isEmpty() || query.equals("")) {
+            filteredList.addAll(inventoryList); // Add all items back
+        } else {
+            for (Map<String, Object> item : inventoryList) {
+                String name = (String) item.get("name");
+                if (name != null && name.toLowerCase().contains(query.toLowerCase())) {
+                    filteredList.add(item);
+                }
+            }
+        }
+
+        adapter.updateList(filteredList);
+        adapter.notifyDataSetChanged();
     }
 
     private void loadInventoryData() {
         db.collection("inventory")
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @SuppressLint("NotifyDataSetChanged")
                     @Override
                     public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
                         if (error != null) {
@@ -91,16 +124,20 @@ public class InventoryFragment extends Fragment {
                         }
 
                         if (value != null && !value.isEmpty()) {
-                            inventoryList.clear(); // Clear list to avoid duplicates
+                            inventoryList.clear();
                             for (QueryDocumentSnapshot doc : value) {
-                                inventoryList.add(doc.getData()); // Add the document data directly
+                                inventoryList.add(doc.getData());
                                 Log.d("Firestore Document", "Loaded: " + doc.getData());
                             }
+
+                            filteredList.clear();
+                            filteredList.addAll(inventoryList);
+                            adapter.updateList(filteredList);
                         } else {
                             Log.d("Inventory", "No items found in inventory.");
+                            filteredList.clear();
+                            adapter.notifyDataSetChanged();
                         }
-
-                        adapter.notifyDataSetChanged();
                     }
                 });
     }

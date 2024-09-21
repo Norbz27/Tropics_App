@@ -1,6 +1,8 @@
 package com.example.tropics_app;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +25,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
     public InventoryAdapter(Context context, List<Map<String, Object>> inventoryList) {
         this.context = context;
-        this.inventoryList = inventoryList;
+        this.inventoryList = new ArrayList<>(inventoryList);
     }
 
     @NonNull
@@ -39,13 +42,11 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         holder.tvQuantity.setText((String) item.get("quantity"));
         holder.tvDescription.setText((String) item.get("description"));
 
-        // Load the image URL into the ImageView using Glide
         String imageUrl = (String) item.get("imageUrl");
         Glide.with(context)
                 .load(imageUrl)
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(holder.imgProduct);
-
     }
 
     @Override
@@ -53,16 +54,23 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         return inventoryList.size();
     }
 
+
+    public void updateList(List<Map<String, Object>> newList) {
+        inventoryList = new ArrayList<>(newList);
+        notifyDataSetChanged();
+    }
+
     public static class InventoryViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvQuantity, tvDescription;
-        ImageView imgProduct; // Add ImageView to hold the product image
+        ImageView imgProduct;
 
         public InventoryViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvItemName);
             tvQuantity = itemView.findViewById(R.id.tvCount);
             tvDescription = itemView.findViewById(R.id.tvDescription);
-            imgProduct = itemView.findViewById(R.id.imageViewLetter); // Initialize the ImageView
+            imgProduct = itemView.findViewById(R.id.imageViewLetter);
         }
     }
 }
+

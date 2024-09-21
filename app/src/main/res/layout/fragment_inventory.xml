@@ -27,7 +27,9 @@
             android:id="@+id/rvInventory"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="10dp" />
+            android:visibility="visible"
+            android:layout_marginTop="10dp"
+            tools:listitem="@layout/custom_inventory_layout"/>
 
     </LinearLayout>
 
