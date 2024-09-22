@@ -7,44 +7,7 @@
     android:padding="16dp"
     android:background="@color/gray">
 
-    <!-- Product Image -->
-    <ImageView
-        android:id="@+id/imgProduct"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:layout_gravity="center_horizontal"
-        android:src="@drawable/ic_image_placeholder"
-        android:contentDescription="Product Image"
-        android:clickable="true"
-        android:focusable="true"
-        android:background="?attr/selectableItemBackgroundBorderless" />
 
-    <!-- Product Name -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_marginTop="10dp"
-        android:textColorHint="@android:color/darker_gray"
-        app:boxStrokeWidth="3dp"
-        app:boxStrokeWidthFocused="3dp"
-        app:hintEnabled="false">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etProductName"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/custom_input"
-            android:fontFamily="@font/manrope_medium"
-            android:hint="Product Name"
-            android:inputType="textCapSentences"
-            android:paddingHorizontal="12dp"
-            android:textColorHint="#B6B6B6"
-            android:textColor="#B6B6B6"
-            android:textSize="15sp" />
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Product Quantity -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

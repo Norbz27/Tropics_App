@@ -25,29 +25,32 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/manrope_semibold"
             android:text="Item Name"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp"
             android:textColor="@color/white"
             android:layout_toRightOf="@id/imageViewLetter"/>
 
         <TextView
-            android:id="@+id/tvDescription"
+            android:id="@+id/tvInUse"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/manrope"
             android:layout_below="@id/tvItemName"
-            android:textSize="13sp"
-            android:text="Description"
+            android:textSize="14sp"
+            android:text="In Use: 100"
             android:textColor="@color/white"
             android:layout_toRightOf="@id/imageViewLetter"/>
 
         <TextView
-            android:id="@+id/tvCount"
+            android:id="@+id/tvStocks"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/manrope"
-            android:text="100"
+            android:text="Stock: 100"
             android:textColor="@color/white"
-            android:textSize="12sp"
-            android:layout_alignParentRight="true"/>
+            android:textSize="14sp"
+            android:layout_alignParentRight="true"
+            android:layout_below="@id/tvItemName"/>
     </RelativeLayout>
     <View
         android:layout_width="match_parent"

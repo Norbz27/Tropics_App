@@ -74,6 +74,29 @@ public class InventoryFragment extends Fragment {
         adapter = new InventoryAdapter(getContext(), filteredList); // Use filteredList
         rvInventory.setAdapter(adapter);
 
+        adapter.setOnItemLongClickListener(new InventoryAdapter.OnItemLongClickListener() {
+            @Override
+            public void onAddClick(Map<String, Object> item) {
+                showAddQuantityDialog(item);
+            }
+
+            @Override
+            public void onEditClick(Map<String, Object> item) {
+                // Show the edit dialog
+                showEditProductDialog(item);
+            }
+
+            @Override
+            public void onUseClick(Map<String, Object> item) {
+                showUpdateQuantityDialog(item);
+            }
+
+            @Override
+            public void onDeleteClick(Map<String, Object> item) {
+                // Show a confirmation dialog and delete the item
+                showDeleteConfirmationDialog(item);
+            }
+        });
 
         setupSearchView();
         loadInventoryData();
@@ -126,8 +149,10 @@ public class InventoryFragment extends Fragment {
                         if (value != null && !value.isEmpty()) {
                             inventoryList.clear();
                             for (QueryDocumentSnapshot doc : value) {
-                                inventoryList.add(doc.getData());
-                                Log.d("Firestore Document", "Loaded: " + doc.getData());
+                                Map<String, Object> data = doc.getData();
+                                data.put("id", doc.getId()); // Add document ID to the item
+                                inventoryList.add(data);
+                                Log.d("Firestore Document", "Loaded: " + data);
                             }
 
                             filteredList.clear();
@@ -141,6 +166,109 @@ public class InventoryFragment extends Fragment {
                     }
                 });
     }
+    private void showAddQuantityDialog(Map<String, Object> item) {
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        EditText etProductQuantity = dialogView.findViewById(R.id.etProductQuantity);
+        Button btnAddQuantity = dialogView.findViewById(R.id.btnAddProduct);
+
+        btnAddQuantity.setOnClickListener(v -> {
+            String quantityStr = etProductQuantity.getText().toString();
+
+            if (quantityStr.isEmpty()) {
+                Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
+            } else {
+                int quantityToAdd = Integer.parseInt(quantityStr);
+                addQuantityToFirestore(item, quantityToAdd);
+                dialog.dismiss();
+            }
+        });
+    }
+    private void showUpdateQuantityDialog(Map<String, Object> item) {
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        EditText etProductQuantity = dialogView.findViewById(R.id.etProductQuantity);
+        Button btnUpdateQuantity = dialogView.findViewById(R.id.btnAddProduct);
+
+        btnUpdateQuantity.setOnClickListener(v -> {
+            String quantityStr = etProductQuantity.getText().toString();
+
+            if (quantityStr.isEmpty()) {
+                Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
+            } else {
+                int quantityToUpdate = Integer.parseInt(quantityStr);
+                // Choose action (subtract from stocks and add to in_use)
+                updateStocksAndInUse(item, quantityToUpdate);
+                dialog.dismiss();
+            }
+        });
+    }
+    private void updateStocksAndInUse(Map<String, Object> item, int quantityToUpdate) {
+        String documentId = (String) item.get("id");
+        int currentStocks = Integer.parseInt((String) item.get("stocks"));
+        int currentInUse = Integer.parseInt((String) item.get("in_use"));
+
+        if (documentId != null) {
+            if (quantityToUpdate > currentStocks) {
+                Toast.makeText(getContext(), "Not enough stock available", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Calculate the new stocks and in_use values
+            int newStocks = currentStocks - quantityToUpdate;
+            int newInUse = currentInUse + quantityToUpdate;
+
+            // Update Firestore
+            db.collection("inventory").document(documentId)
+                    .update("stocks", String.valueOf(newStocks), "in_use", String.valueOf(newInUse))
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(getContext(), "Stock updated successfully", Toast.LENGTH_SHORT).show();
+                            // Optionally refresh the inventory list
+                            loadInventoryData();
+                        } else {
+                            Toast.makeText(getContext(), "Failed to update stock: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void addQuantityToFirestore(Map<String, Object> item, int quantityToAdd) {
+        String documentId = (String) item.get("id"); // Get the document ID
+        int currentStocks = Integer.parseInt((String) item.get("stocks")); // Get the current stock
+
+        if (documentId != null) {
+            // Calculate the new stock quantity
+            int newStocks = currentStocks + quantityToAdd;
+
+            // Update the stock quantity in Firestore
+            db.collection("inventory").document(documentId)
+                    .update("stocks", String.valueOf(newStocks))
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(getContext(), "Quantity added successfully", Toast.LENGTH_SHORT).show();
+                            // Optionally refresh the inventory list
+                            loadInventoryData();
+                        } else {
+                            Toast.makeText(getContext(), "Failed to add quantity: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
+        }
+    }
 
     private void showAddProductDialog() {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_product, null);
@@ -152,9 +280,7 @@ public class InventoryFragment extends Fragment {
 
         imgProduct = dialogView.findViewById(R.id.imgProduct); // Initialize imgProduct here
         EditText etProductName = dialogView.findViewById(R.id.etProductName);
-        EditText etProductPrice = dialogView.findViewById(R.id.etProductPrice);
         EditText etProductQuantity = dialogView.findViewById(R.id.etProductQuantity);
-        EditText etProductDescription = dialogView.findViewById(R.id.etProductDescription);
         Button btnAddProduct = dialogView.findViewById(R.id.btnAddProduct);
 
         imgProduct.setOnClickListener(v -> {
@@ -167,21 +293,19 @@ public class InventoryFragment extends Fragment {
 
         btnAddProduct.setOnClickListener(v -> {
             String name = etProductName.getText().toString();
-            String price = etProductPrice.getText().toString();
             String quantity = etProductQuantity.getText().toString();
-            String description = etProductDescription.getText().toString();
 
-            if (name.isEmpty() || price.isEmpty() || quantity.isEmpty() || description.isEmpty()) {
+            if (name.isEmpty() || quantity.isEmpty()) {
                 Toast.makeText(getContext(), "Please fill out all fields", Toast.LENGTH_SHORT).show();
             } else {
                 // Upload image and then add product
-                uploadImageToFirebase(name, price, quantity, description);
+                uploadImageToFirebase(name, quantity);
                 dialog.dismiss();
             }
         });
     }
 
-    private void uploadImageToFirebase(String name, String price, String quantity, String description) {
+    private void uploadImageToFirebase(String name, String stocks) {
         if (imageUri != null) {
             StorageReference ref = FirebaseStorage.getInstance().getReference("images/" + UUID.randomUUID().toString());
             UploadTask uploadTask = ref.putFile(imageUri);
@@ -200,7 +324,7 @@ public class InventoryFragment extends Fragment {
                 public void onComplete(@NonNull Task<Uri> task) {
                     if (task.isSuccessful()) {
                         Uri downloadUri = task.getResult();
-                        addProductToInventory(name, price, quantity, description, downloadUri.toString());
+                        addProductToInventory(name, stocks, downloadUri.toString());
                         Toast.makeText(getContext(), "Uploaded", Toast.LENGTH_SHORT).show();
                     } else {
                         Toast.makeText(getContext(), "Upload failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
@@ -212,13 +336,12 @@ public class InventoryFragment extends Fragment {
         }
     }
 
-    private void addProductToInventory(String name, String price, String quantity, String description, String imageUrl) {
+    private void addProductToInventory(String name, String stocks, String imageUrl) {
         // Create a map to store product data
         Map<String, Object> product = new HashMap<>();
         product.put("name", name);
-        product.put("price", price);
-        product.put("quantity", quantity);
-        product.put("description", description);
+        product.put("stocks", stocks);
+        product.put("in_use", "0");
         product.put("imageUrl", imageUrl); // Store the image URL
 
         // Add product to Firestore
@@ -235,6 +358,85 @@ public class InventoryFragment extends Fragment {
                         }
                     }
                 });
+    }
+    // Show a dialog to edit the product
+    private void showEditProductDialog(Map<String, Object> item) {
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_name_product, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        EditText etProductName = dialogView.findViewById(R.id.etProductName);
+        Button btnUpdateName = dialogView.findViewById(R.id.btnAddProduct);
+
+        etProductName.setText(item.get("name") != null ? (String) item.get("name") : "");
+
+        btnUpdateName.setOnClickListener(v -> {
+            String newProductName = etProductName.getText().toString();
+
+            if (newProductName.isEmpty()) {
+                Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
+            } else {
+                updateProductNameInFirestore(item, newProductName);
+                dialog.dismiss();
+            }
+        });
+    }
+    private void updateProductNameInFirestore(Map<String, Object> item, String newProductName) {
+        String documentId = (String) item.get("id"); // Ensure you have the document ID
+
+        if (documentId != null) {
+            // Update the name in Firestore
+            db.collection("inventory").document(documentId)
+                    .update("name", newProductName)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(getContext(), "Product name updated successfully", Toast.LENGTH_SHORT).show();
+                            loadInventoryData(); // Refresh the inventory list if needed
+                        } else {
+                            Toast.makeText(getContext(), "Failed to update name: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    // Show a confirmation dialog to delete the product
+    private void showDeleteConfirmationDialog(Map<String, Object> item) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Delete Product")
+                .setMessage("Are you sure you want to delete " + item.get("name") + "?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    // Delete the product from Firestore
+                    deleteProductFromFirestore(item);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .create()
+                .show();
+    }
+
+    private void deleteProductFromFirestore(Map<String, Object> item) {
+        String documentId = (String) item.get("id"); // Get the document ID
+
+        if (documentId != null) {
+            db.collection("inventory").document(documentId)
+                    .delete()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(getContext(), "Deleted: " + item.get("name"), Toast.LENGTH_SHORT).show();
+                            // Optionally refresh the inventory list
+                            loadInventoryData();
+                        } else {
+                            Toast.makeText(getContext(), "Failed to delete: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
