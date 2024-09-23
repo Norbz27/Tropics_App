@@ -85,7 +85,11 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         } else if (id == R.id.nav_inventory) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new InventoryFragment()).commit();
             getSupportActionBar().setTitle("Inventory");
-        } else if (id == R.id.nav_sign_out) {
+        } else if (id == R.id.nav_service) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new ServiceFragment()).commit();
+            getSupportActionBar().setTitle("Service");
+        }
+        else if (id == R.id.nav_sign_out) {
             mAuth.signOut();
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean(KEY_IS_LOGGED_IN, false);
