@@ -1,9 +1,13 @@
 package com.example.tropics_app;
 
 import android.content.Context;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -14,12 +18,18 @@ public class SubServiceAdapter extends RecyclerView.Adapter<SubServiceAdapter.Vi
     private List<Map<String, Object>> serviceList;
     private OnItemClickListener listener;
     private boolean removeDrawable;
+    private SubServiceAdapter.OnItemLongClickListener longClickListener;
+    private Context context;
 
     public interface OnItemClickListener {
         void onItemClick(Map<String, Object> service);
     }
 
+    public void setOnItemLongClickListener(OnItemLongClickListener longClickListener) {
+        this.longClickListener = longClickListener;
+    }
     public SubServiceAdapter(Context context, List<Map<String, Object>> serviceList, OnItemClickListener listener, boolean removeDrawable) {
+        this.context = context;
         this.serviceList = serviceList;
         this.listener = listener;
         this.removeDrawable = removeDrawable;
@@ -36,6 +46,10 @@ public class SubServiceAdapter extends RecyclerView.Adapter<SubServiceAdapter.Vi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Map<String, Object> service = serviceList.get(position);
         holder.bind(service, listener);
+        holder.itemView.setOnLongClickListener(v -> {
+            showPopupMenu(v, holder.getAdapterPosition());
+            return true;
+        });
     }
 
     @Override
@@ -59,14 +73,17 @@ public class SubServiceAdapter extends RecyclerView.Adapter<SubServiceAdapter.Vi
 
         void bind(Map<String, Object> service, OnItemClickListener listener) {
             tvServiceName.setText((String) service.get("sub_service_name"));
-            double price = (double) service.get("price");
+
+            // Safely retrieve and convert the price to a string
+            Object priceObj = service.get("price");
+            String price = (priceObj != null) ? String.valueOf(priceObj) : "";
 
             if (removeDrawable) {
                 tvPrice.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
             }
 
-            if (price != 0.0) {
-                tvPrice.setText(String.valueOf(price));
+            if (!price.equals("0.0")) {
+                tvPrice.setText(price);
             } else {
                 tvPrice.setText("");
             }
@@ -74,5 +91,51 @@ public class SubServiceAdapter extends RecyclerView.Adapter<SubServiceAdapter.Vi
             itemView.setOnClickListener(v -> listener.onItemClick(service));
         }
 
+
+    }
+
+    private void showPopupMenu(View view, int position) {
+        PopupMenu popupMenu = new PopupMenu(context, view);
+
+        // Set the gravity to the right
+        popupMenu.setGravity(Gravity.END); // Use Gravity.RIGHT or Gravity.END based on your needs
+
+        MenuInflater inflater = popupMenu.getMenuInflater();
+        inflater.inflate(R.menu.inventory_item_menu, popupMenu.getMenu());
+
+        // Get the menu object and hide specific items
+        Menu menu = popupMenu.getMenu();
+
+        // Hide the 'add' and 'subtract' menu items if needed
+        menu.findItem(R.id.action_add).setVisible(false);  // To hide 'add'
+        menu.findItem(R.id.action_subtract).setVisible(false);  // To hide 'subtract'
+
+        popupMenu.setOnMenuItemClickListener(menuItem -> {
+            int id = menuItem.getItemId();
+
+            if (id == R.id.action_edit) {
+                // Call the edit action
+                if (longClickListener != null) {
+                    longClickListener.onEditClick(serviceList.get(position));
+                }
+                return true;
+            } else if (id == R.id.action_delete) {
+                // Call the delete action
+                if (longClickListener != null) {
+                    longClickListener.onDeleteClick(serviceList.get(position));
+                }
+                return true;
+            } else {
+                return false;
+            }
+        });
+
+        popupMenu.show();
+    }
+
+    // Interface for handling long-clicks with edit and delete actions
+    public interface OnItemLongClickListener {
+        void onEditClick(Map<String, Object> item);
+        void onDeleteClick(Map<String, Object> item);
     }
 }

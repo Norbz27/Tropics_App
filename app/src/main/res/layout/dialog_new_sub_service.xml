@@ -49,7 +49,7 @@
             android:background="@drawable/custom_input"
             android:fontFamily="@font/manrope_medium"
             android:hint="Price"
-            android:inputType="textCapSentences"
+            android:inputType="number"
             android:paddingHorizontal="12dp"
             android:textColorHint="#B6B6B6"
             android:textColor="#B6B6B6"

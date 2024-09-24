@@ -24,12 +24,14 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +67,19 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
         adapter = new ServiceAdapter(getContext(), filteredList, this);
         rvService.setAdapter(adapter);
 
+        adapter.setOnItemLongClickListener(new ServiceAdapter.OnItemLongClickListener() {
+            @Override
+            public void onEditClick(Map<String, Object> item) {
+                // Show the edit dialog
+                showEditServiceDialog(item);
+            }
+
+            @Override
+            public void onDeleteClick(Map<String, Object> item) {
+                // Show a confirmation dialog and delete the item
+                showDeleteConfirmationDialog(item);
+            }
+        });
         setupSearchView();
         loadServiceData();
         return view;
@@ -185,4 +200,133 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
                     }
                 });
     }
+
+    private void showDeleteConfirmationDialog(Map<String, Object> item) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Delete Product")
+                .setMessage("Are you sure you want to delete " + item.get("service_name") + "?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    deleteServiceFromFirestore(item);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .create()
+                .show();
+    }
+
+    private void showEditServiceDialog(Map<String, Object> item) {
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_new_service, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        EditText etService = dialogView.findViewById(R.id.etService);
+        Button btnUpdateName = dialogView.findViewById(R.id.btnSubmit);
+
+        etService.setText(item.get("service_name") != null ? (String) item.get("service_name") : "");
+
+        btnUpdateName.setOnClickListener(v -> {
+            String newServiceName = etService.getText().toString();
+
+            if (newServiceName.isEmpty()) {
+                Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
+            } else {
+                updateProductNameInFirestore(item, newServiceName);
+                dialog.dismiss();
+            }
+        });
+    }
+    private void updateProductNameInFirestore(Map<String, Object> item, String newServiceName) {
+        String documentId = (String) item.get("id");
+
+        if (documentId != null) {
+            // Update the name in Firestore
+            db.collection("service").document(documentId)
+                    .update("service_name", newServiceName)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
+                            loadServiceData(); // Refresh the inventory list if needed
+                        } else {
+                            Toast.makeText(getContext(), "Failed to update: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
+        }
+    }
+    private void deleteServiceFromFirestore(Map<String, Object> item) {
+        String documentId = (String) item.get("id");
+
+        if (documentId == null) {
+            Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Delete the main service document
+        db.collection("service").document(documentId)
+                .delete()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        // Successfully deleted the service, now delete sub-services
+                        deleteSubServices(documentId);
+                    } else {
+                        Toast.makeText(getContext(), "Failed to delete service: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void deleteSubServices(String documentId) {
+        db.collection("sub_services")
+                .whereEqualTo("main_service_id", documentId)
+                .get()
+                .addOnCompleteListener(subtask -> {
+                    if (subtask.isSuccessful() && subtask.getResult() != null) {
+                        for (DocumentSnapshot subServiceDoc : subtask.getResult()) {
+                            String subServiceId = subServiceDoc.getId();
+                            // Delete sub-service
+                            db.collection("sub_services").document(subServiceId)
+                                    .delete()
+                                    .addOnCompleteListener(deleteSubServiceTask -> {
+                                        if (deleteSubServiceTask.isSuccessful()) {
+                                            // Successfully deleted the sub-service, now delete sub-sub-services
+                                            deleteSubSubServices(subServiceId);
+                                        } else {
+                                            Toast.makeText(getContext(), "Failed to delete sub-service: " + deleteSubServiceTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                        }
+                        loadServiceData(); // Optionally refresh data after deletion
+                    } else {
+                        Toast.makeText(getContext(), "Failed to retrieve sub-services: " + subtask.getException(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void deleteSubSubServices(String subServiceId) {
+        db.collection("sub_sub_services")
+                .whereEqualTo("sub_service_id", subServiceId)
+                .get()
+                .addOnCompleteListener(queryTask -> {
+                    if (queryTask.isSuccessful() && queryTask.getResult() != null) {
+                        for (DocumentSnapshot subSubServiceDoc : queryTask.getResult()) {
+                            String subSubServiceId = subSubServiceDoc.getId();
+                            // Delete sub-sub-service
+                            db.collection("sub_sub_services").document(subSubServiceId)
+                                    .delete()
+                                    .addOnCompleteListener(deleteSubSubServiceTask -> {
+                                        if (deleteSubSubServiceTask.isSuccessful()) {
+                                            Toast.makeText(getContext(), "Successfully Deleted", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            Toast.makeText(getContext(), "Failed to delete sub-sub-service: " + deleteSubSubServiceTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                        }
+                    } else {
+                        Toast.makeText(getContext(), "Failed to retrieve sub-sub-services: " + queryTask.getException(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
 }

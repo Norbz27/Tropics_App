@@ -18,11 +18,14 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +68,19 @@ public class SubServiceActivity extends AppCompatActivity implements SubServiceA
 
         fabAdd.setOnClickListener(v -> showNewServiceDialog());
 
+        adapter.setOnItemLongClickListener(new SubServiceAdapter.OnItemLongClickListener() {
+            @Override
+            public void onEditClick(Map<String, Object> item) {
+                // Show the edit dialog
+                showEditServiceDialog(item);
+            }
+
+            @Override
+            public void onDeleteClick(Map<String, Object> item) {
+                // Show a confirmation dialog and delete the item
+                showDeleteConfirmationDialog(item);
+            }
+        });
         loadServiceData();
     }
 
@@ -161,10 +177,118 @@ public class SubServiceActivity extends AppCompatActivity implements SubServiceA
     @Override
     public void onItemClick(Map<String, Object> service) {
         // Handle the item click here
-        Toast.makeText(this, "Clicked: " + service.get("id"), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, (String) service.get("sub_service_name"), Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(this, SubSubServiceActivity.class); // Replace with your child activity
         intent.putExtra("service_id", (String) service.get("id"));
         intent.putExtra("service_name", (String) service.get("sub_service_name"));
         startActivity(intent);
     }
+    private void showEditServiceDialog(Map<String, Object> item) {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_new_sub_service, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        EditText etService = dialogView.findViewById(R.id.etService);
+        EditText etPrice = dialogView.findViewById(R.id.etPrice); // New field for price
+        Button btnUpdateName = dialogView.findViewById(R.id.btnSubmit);
+
+        etService.setText(item.get("sub_service_name") != null ? (String) item.get("sub_service_name") : "");
+        DecimalFormat decimalFormat = new DecimalFormat("#.##"); // Remove trailing zeros
+        Object priceObj = item.get("price");
+
+        if (priceObj != null) {
+            double price = (Double) priceObj;
+            etPrice.setText(decimalFormat.format(price));
+        } else {
+            etPrice.setText(""); // Set empty if the price is null
+        }
+
+
+        btnUpdateName.setOnClickListener(v -> {
+            String newServiceName = etService.getText().toString();
+            String newPrice = etPrice.getText().toString();
+
+            if (newServiceName.isEmpty() && newPrice.isEmpty()) {
+                Toast.makeText(this, "Please fill out the field", Toast.LENGTH_SHORT).show();
+            } else {
+                double price = Double.parseDouble(newPrice);
+                updateProductNameInFirestore(item, newServiceName, price);
+                dialog.dismiss();
+            }
+        });
+    }
+    private void updateProductNameInFirestore(Map<String, Object> item, String newServiceName, double newPrice) {
+        String documentId = (String) item.get("id"); // Ensure you have the document ID
+
+        if (documentId != null) {
+            // Update the name in Firestore
+            db.collection("sub_services").document(documentId)
+                    .update("sub_service_name", newServiceName, "price", newPrice)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(this, "Updated successfully", Toast.LENGTH_SHORT).show();
+                            loadServiceData(); // Refresh the inventory list if needed
+                        } else {
+                            Toast.makeText(this, "Failed to update: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(this, "Document ID is missing", Toast.LENGTH_SHORT).show();
+        }
+    }
+    private void showDeleteConfirmationDialog(Map<String, Object> item) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Delete Product")
+                .setMessage("Are you sure you want to delete " + item.get("sub_service_name") + "?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    deleteProductFromFirestore(item);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .create()
+                .show();
+    }
+
+    private void deleteProductFromFirestore(Map<String, Object> item) {
+        String documentId = (String) item.get("id");
+
+        if (documentId != null) {
+            db.collection("sub_services").document(documentId)
+                    .delete()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+
+                            Toast.makeText(this, "Deleted: " + item.get("sub_service_name"), Toast.LENGTH_SHORT).show();
+
+                            db.collection("sub_sub_services")
+                                    .whereEqualTo("sub_service_id", documentId)
+                                    .get()
+                                    .addOnCompleteListener(queryTask -> {
+                                        if (queryTask.isSuccessful() && queryTask.getResult() != null) {
+                                            for (DocumentSnapshot document : queryTask.getResult()) {
+                                                db.collection("sub_sub_services").document(document.getId())
+                                                        .delete()
+                                                        .addOnCompleteListener(deleteTask -> {
+                                                            if (deleteTask.isSuccessful()) {
+                                                                Toast.makeText(this, "Successfully Deleted" + document.getId(), Toast.LENGTH_SHORT).show();
+                                                            }
+                                                        });
+                                            }
+                                        } else {
+                                            Toast.makeText(this, "Failed to retrieve services: " + queryTask.getException(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+
+                            loadServiceData();
+                        } else {
+                            Toast.makeText(this, "Failed to delete: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(this, "Document ID is missing", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 }
