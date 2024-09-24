@@ -49,6 +49,6 @@ public class Employee {
     public String getSalary() { return salary; }
     public void setSalary(String salary) { this.salary = salary; }
     public String getImageUrl() {
-        return imageUrl; // Add this method
+        return imageUrl; // Add this methodd
     }
 }
