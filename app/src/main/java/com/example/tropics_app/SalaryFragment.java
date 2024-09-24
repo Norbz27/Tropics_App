@@ -58,7 +58,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_salary, container, false);
 
-        fabAdd = view.findViewById(R.id.fabAdd1);
+        fabAdd = view.findViewById(R.id.fabAdd);
         rvSalary = view.findViewById(R.id.rvSalary);
         rvSalary.setHasFixedSize(true);
         rvSalary.setLayoutManager(new LinearLayoutManager(getActivity()));
