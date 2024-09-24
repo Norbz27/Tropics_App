@@ -8,13 +8,14 @@ import androidx.viewpager2.widget.ViewPager2;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link AppointmentFragment#newInstance} factory method to
+ * Use the {@link AppointmentSummaryFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class AppointmentFragment extends Fragment {
+public class AppointmentSummaryFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -25,7 +26,7 @@ public class AppointmentFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
-    public AppointmentFragment() {
+    public AppointmentSummaryFragment() {
         // Required empty public constructor
     }
 
@@ -35,11 +36,11 @@ public class AppointmentFragment extends Fragment {
      *
      * @param param1 Parameter 1.
      * @param param2 Parameter 2.
-     * @return A new instance of fragment AppointmentFragment.
+     * @return A new instance of fragment AppointmentSummaryFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static AppointmentFragment newInstance(String param1, String param2) {
-        AppointmentFragment fragment = new AppointmentFragment();
+    public static AppointmentSummaryFragment newInstance(String param1, String param2) {
+        AppointmentSummaryFragment fragment = new AppointmentSummaryFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -60,11 +61,19 @@ public class AppointmentFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_appointment, container, false);
-        ViewPager2 viewPager = view.findViewById(R.id.viewPager);
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getActivity());
-        viewPager.setAdapter(adapter);
+        View view = inflater.inflate(R.layout.fragment_appointment_summary, container, false);
 
+        Button backButton = view.findViewById(R.id.btnBack);
+        backButton.setOnClickListener(v -> {
+            ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
+            viewPager.setCurrentItem(viewPager.getCurrentItem() - 1, true);
+        });
+
+        Button nextButton = view.findViewById(R.id.btnSubmitAppointment);
+        nextButton.setOnClickListener(v -> {
+            ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
+            viewPager.setCurrentItem(viewPager.getCurrentItem() + 1, true);
+        });
         return view;
     }
 }
