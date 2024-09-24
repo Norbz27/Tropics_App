@@ -13,6 +13,7 @@ firebaseAuth = "23.0.0"
 playServicesTasks = "18.2.0"
 firebaseFirestore = "25.1.0"
 firebaseStorage = "21.0.0"
+firebaseMlVision = "24.1.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -27,6 +28,7 @@ firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version
 play-services-tasks = { group = "com.google.android.gms", name = "play-services-tasks", version.ref = "playServicesTasks" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
+firebase-ml-vision = { group = "com.google.firebase", name = "firebase-ml-vision", version.ref = "firebaseMlVision" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
