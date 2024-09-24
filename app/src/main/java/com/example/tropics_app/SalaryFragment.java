@@ -166,7 +166,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     @Override
     public void onEmployeeClick(Employee employee) {
         // Handle employee click events here
-        Toast.makeText(getActivity(), "Clicked: " + employee.getName(), Toast.LENGTH_SHORT).show();
+       // Toast.makeText(getActivity(), "Clicked: " + employee.getName(), Toast.LENGTH_SHORT).show();
 
         // Inflate the dialog layout
         LayoutInflater inflater = LayoutInflater.from(getActivity());

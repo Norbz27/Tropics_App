@@ -8,6 +8,7 @@ public class Employee {
     private String email;
     private String salary;
     private String image;
+    private String imageUrl;
 
     public Employee() {
         // Empty constructor required for Firebase
@@ -26,6 +27,7 @@ public class Employee {
         this.phone = phone;
         this.email = email;
         this.salary = salary;
+        this.imageUrl = imageUrl;
     }
 
     // Getters and Setters
@@ -46,4 +48,7 @@ public class Employee {
 
     public String getSalary() { return salary; }
     public void setSalary(String salary) { this.salary = salary; }
+    public String getImageUrl() {
+        return imageUrl; // Add this method
+    }
 }
