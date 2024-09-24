@@ -1,7 +1,10 @@
 package com.example.tropics_app;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,11 +21,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-
+import android.content.Intent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import android.widget.ImageView;
+
 
 
 public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmployeeClickListener {
@@ -31,6 +36,10 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     private FirebaseFirestore db; // Firestore instance
     private EmployeeAdapter adapter; // Declare adapter
     private List<Employee> employeeList; // List of employees
+
+    private static final int IMAGE_PICK_REQUEST = 100; // Request code for image picker
+    private ImageView imgEmp; // Declare ImageView for displaying selected image
+    private Uri selectedImageUri; // To hold the URI of the selected image
 
     public SalaryFragment() {
         // Required empty public constructor
@@ -69,11 +78,17 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         EditText empEmail = dialogView.findViewById(R.id.empemail);
         EditText empComm = dialogView.findViewById(R.id.empcomm);
         Button btnSubmit = dialogView.findViewById(R.id.empsub);
+        imgEmp = dialogView.findViewById(R.id.imgemp); // Initialize the ImageView
 
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
+
+        imgEmp.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(intent, IMAGE_PICK_REQUEST); // Open image picker
+        });
 
         btnSubmit.setOnClickListener(v -> {
             String name = empName.getText().toString().trim();
@@ -82,7 +97,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             String email = empEmail.getText().toString().trim();
             String salary = empComm.getText().toString().trim();
 
-            if (!name.isEmpty() && !address.isEmpty() && !phone.isEmpty() && !email.isEmpty() && !salary.isEmpty()) {
+            if (!name.isEmpty() && !address.isEmpty() && !phone.isEmpty() && !email.isEmpty() && !salary.isEmpty() && selectedImageUri != null) {
                 // Create a map to store employee data
                 Map<String, Object> employeeData = new HashMap<>();
                 employeeData.put("name", name);
@@ -91,6 +106,9 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 employeeData.put("email", email);
                 employeeData.put("salary", salary);
                 employeeData.put("commission", 0); // Set commission to 0
+
+                // Convert image URI to a string (you may need to upload it to a storage service first)
+                employeeData.put("image", selectedImageUri.toString());
 
                 // Add employee data to Firestore
                 db.collection("Employees") // Your Firestore collection name
@@ -109,6 +127,16 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 Toast.makeText(getActivity(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    // Handle the result of the image selection
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == IMAGE_PICK_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
+            selectedImageUri = data.getData(); // Get the selected image URI
+            imgEmp.setImageURI(selectedImageUri); // Display the selected image in the ImageView
+        }
     }
 
     private void loadEmployeeData() {
