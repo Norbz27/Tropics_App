@@ -165,36 +165,28 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
 
     @Override
     public void onEmployeeClick(Employee employee) {
-        // Handle employee click events here
-       // Toast.makeText(getActivity(), "Clicked: " + employee.getName(), Toast.LENGTH_SHORT).show();
-
-        // Inflate the dialog layout
         LayoutInflater inflater = LayoutInflater.from(getActivity());
         View dialogView = inflater.inflate(R.layout.dialogbox_employee, null);
-
-        // Initialize views from the dialog layout
-        ImageView imgEmp = dialogView.findViewById(R.id.imgemp); // Employee image
+        ImageView imgEmp = dialogView.findViewById(R.id.imgemp);
         TextInputEditText empName = dialogView.findViewById(R.id.empname);
         TextInputEditText empAddress = dialogView.findViewById(R.id.empadd);
         TextInputEditText empPhone = dialogView.findViewById(R.id.empphone);
         TextInputEditText empEmail = dialogView.findViewById(R.id.empemail);
         TextInputEditText empSalary = dialogView.findViewById(R.id.empcomm);
-        Button empSubmit = dialogView.findViewById(R.id.empsub); // Submit button
+        Button empSubmit = dialogView.findViewById(R.id.empsub);
 
-        // Load the employee's image using Glide
+
         Glide.with(getActivity())
-                .load(employee.getImageUrl()) // Assuming there's a method to get the image URL
-                .placeholder(R.drawable.ic_image_placeholder) // Placeholder image
+                .load(employee.getImageUrl())
+                .placeholder(R.drawable.ic_image_placeholder)
                 .into(imgEmp);
 
-        // Populate the views with employee data
+
         empName.setText(employee.getName());
         empAddress.setText(employee.getAddress());
         empPhone.setText(employee.getPhone());
         empEmail.setText(employee.getEmail());
-      //  empSalary.setText(String.valueOf(employee.getWeeklySalary()));
 
-        // Disable input for viewing purposes
         empName.setEnabled(false);
         empAddress.setEnabled(false);
         empPhone.setEnabled(false);
@@ -209,7 +201,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
         dialogBuilder.setView(dialogView);
         dialogBuilder.setTitle("Employee Details"); // Set dialog title
-        dialogBuilder.setNegativeButton("Close", null); // Close button
+        dialogBuilder.setNegativeButton("Close", null); // Close buttonn
 
         // Show the dialog
         AlertDialog dialog = dialogBuilder.create();
