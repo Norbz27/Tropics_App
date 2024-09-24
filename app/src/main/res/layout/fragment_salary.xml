@@ -21,12 +21,7 @@
             android:clickable="true"
             android:focusable="true"
             android:focusableInTouchMode="true" />
-        <TextView
-            android:id="@+id/tvEmployeeName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:textColor="@color/black" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvSalary"
             android:layout_width="match_parent"
@@ -35,7 +30,7 @@
             tools:listitem="@layout/custom_salary_layout"/>/>
     </LinearLayout>
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAdd1"
+        android:id="@+id/fabAdd"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
