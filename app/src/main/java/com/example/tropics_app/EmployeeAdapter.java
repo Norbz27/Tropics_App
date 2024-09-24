@@ -70,5 +70,7 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
                     .placeholder(R.drawable.ic_image_placeholder) // Optional: Placeholder image while loading
                     .into(imageViewLetter); // Set the image to the ImageView
         }
+
+
     }
 }
