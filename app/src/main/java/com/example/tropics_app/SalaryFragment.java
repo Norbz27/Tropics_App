@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+
+import com.bumptech.glide.Glide;
 import com.google.android.material.floatingactionbutton.FloatingActionButton; // Updated import
 import android.widget.Toast;
 
@@ -19,6 +21,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import android.content.Intent;
@@ -140,7 +143,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     }
 
     private void loadEmployeeData() {
-        db.collection("Employees").get() // Fetch data from Firestore
+        db.collection("Employees").get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         employeeList.clear(); // Clear the existing list
@@ -148,13 +151,11 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                             Employee employee = document.toObject(Employee.class);
                             employeeList.add(employee);
                         }
-
-                        // Initialize and set the adapter only once
                         if (adapter == null) {
-                            adapter = new EmployeeAdapter(this, employeeList); // Use 'this' to pass the listener
+                            adapter = new EmployeeAdapter(this, employeeList);
                             rvSalary.setAdapter(adapter);
                         } else {
-                            adapter.notifyDataSetChanged(); // Notify adapter of data change
+                            adapter.notifyDataSetChanged();
                         }
                     } else {
                         Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
@@ -166,6 +167,54 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     public void onEmployeeClick(Employee employee) {
         // Handle employee click events here
         Toast.makeText(getActivity(), "Clicked: " + employee.getName(), Toast.LENGTH_SHORT).show();
-        // You can add further actions here, like opening a detail view for the employee
+
+        // Inflate the dialog layout
+        LayoutInflater inflater = LayoutInflater.from(getActivity());
+        View dialogView = inflater.inflate(R.layout.dialogbox_employee, null);
+
+        // Initialize views from the dialog layout
+        ImageView imgEmp = dialogView.findViewById(R.id.imgemp); // Employee image
+        TextInputEditText empName = dialogView.findViewById(R.id.empname);
+        TextInputEditText empAddress = dialogView.findViewById(R.id.empadd);
+        TextInputEditText empPhone = dialogView.findViewById(R.id.empphone);
+        TextInputEditText empEmail = dialogView.findViewById(R.id.empemail);
+        TextInputEditText empSalary = dialogView.findViewById(R.id.empcomm);
+        Button empSubmit = dialogView.findViewById(R.id.empsub); // Submit button
+
+        // Load the employee's image using Glide
+        Glide.with(getActivity())
+                .load(employee.getImageUrl()) // Assuming there's a method to get the image URL
+                .placeholder(R.drawable.ic_image_placeholder) // Placeholder image
+                .into(imgEmp);
+
+        // Populate the views with employee data
+        empName.setText(employee.getName());
+        empAddress.setText(employee.getAddress());
+        empPhone.setText(employee.getPhone());
+        empEmail.setText(employee.getEmail());
+      //  empSalary.setText(String.valueOf(employee.getWeeklySalary()));
+
+        // Disable input for viewing purposes
+        empName.setEnabled(false);
+        empAddress.setEnabled(false);
+        empPhone.setEnabled(false);
+        empEmail.setEnabled(false);
+        empSalary.setEnabled(false);
+
+        // Disable the submit button
+        empSubmit.setEnabled(false); // Disable the button
+        empSubmit.setVisibility(View.GONE); // Optionally hide the button
+
+        // Create and show the dialog
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        dialogBuilder.setView(dialogView);
+        dialogBuilder.setTitle("Employee Details"); // Set dialog title
+        dialogBuilder.setNegativeButton("Close", null); // Close button
+
+        // Show the dialog
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
     }
+
+
 }
