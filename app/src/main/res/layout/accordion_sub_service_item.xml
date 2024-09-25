@@ -1,0 +1,44 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <CheckBox
+            android:id="@+id/cbSubService"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <!-- Sub-Service Name -->
+        <TextView
+            android:id="@+id/tvSubServiceName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Sub-Service Name"
+            android:textSize="16sp"
+            android:textColor="@color/white" />
+
+        <!-- Expand/Collapse Icon -->
+        <ImageView
+            android:id="@+id/ivExpandSubIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_arrow_down"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <!-- Sub-Sub-Service Container (Initially collapsed) -->
+    <LinearLayout
+        android:id="@+id/subSubServiceContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:paddingStart="20dp" />
+</LinearLayout>
