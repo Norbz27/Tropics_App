@@ -4,10 +4,12 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:padding="5dp">
+
     <CheckBox
         android:id="@+id/cbSubSubService"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
+
     <!-- Sub-Sub-Service Name -->
     <TextView
         android:id="@+id/tvSubSubServiceName"
@@ -18,4 +20,13 @@
         android:textSize="14sp"
         android:textColor="@color/white" />
 
+    <!-- Price TextView -->
+    <TextView
+        android:id="@+id/tvSubSubServicePrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="₱0.00"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        android:layout_marginEnd="8dp" />
 </LinearLayout>

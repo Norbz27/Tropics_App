@@ -117,9 +117,11 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     String subServiceName = document.getString("sub_service_name");
                     String subServiceId = document.getId();
+                    Number priceNumber = document.getDouble("price"); // Retrieve price as Number
+                    String price = priceNumber != null ? String.format("$%.2f", priceNumber.doubleValue()) : "N/A"; // Format as string
 
-                    // Create sub-service view with a checkbox
-                    View subServiceView = createSubServiceView(subServiceName, subServiceId);
+                    // Create sub-service view with a checkbox and price
+                    View subServiceView = createSubServiceView(subServiceName, price, subServiceId);
                     subServiceContainer.addView(subServiceView);
                 }
             } else {
@@ -128,16 +130,18 @@ public class AppointmentAvailableServiceFragment extends Fragment {
         });
     }
 
-    private View createSubServiceView(String subServiceName, String subServiceId) {
+    private View createSubServiceView(String subServiceName, String price, String subServiceId) {
         LayoutInflater inflater = LayoutInflater.from(getContext());
         View subServiceView = inflater.inflate(R.layout.accordion_sub_service_item, null);
 
         TextView tvSubServiceName = subServiceView.findViewById(R.id.tvSubServiceName);
+        TextView tvSubServicePrice = subServiceView.findViewById(R.id.tvSubServicePrice); // Price TextView
         CheckBox cbSubService = subServiceView.findViewById(R.id.cbSubService);
         LinearLayout subSubServiceContainer = subServiceView.findViewById(R.id.subSubServiceContainer);
         ImageView ivExpandIcon = subServiceView.findViewById(R.id.ivExpandSubIcon);
 
         tvSubServiceName.setText(subServiceName);
+        tvSubServicePrice.setText(price); // Set price
         subSubServiceContainer.setVisibility(View.GONE); // Set to GONE initially
 
         // Toggle sub-sub-services visibility
@@ -162,9 +166,11 @@ public class AppointmentAvailableServiceFragment extends Fragment {
 
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     String subSubServiceName = document.getString("sub_service_name");
+                    Number priceNumber = document.getDouble("price"); // Retrieve price as Number
+                    String price = priceNumber != null ? String.format("₱%.2f", priceNumber.doubleValue()) : "N/A"; // Format as string
 
-                    // Create sub-sub-service view with a checkbox
-                    View subSubServiceView = createSubSubServiceView(subSubServiceName);
+                    // Create sub-sub-service view with a checkbox and price
+                    View subSubServiceView = createSubSubServiceView(subSubServiceName, price);
                     subSubServiceContainer.addView(subSubServiceView);
                 }
             } else {
@@ -173,14 +179,16 @@ public class AppointmentAvailableServiceFragment extends Fragment {
         });
     }
 
-    private View createSubSubServiceView(String subSubServiceName) {
+    private View createSubSubServiceView(String subSubServiceName, String price) {
         LayoutInflater inflater = LayoutInflater.from(getContext());
         View subSubServiceView = inflater.inflate(R.layout.accordion_sub_sub_service_item, null);
 
         TextView tvSubSubServiceName = subSubServiceView.findViewById(R.id.tvSubSubServiceName);
+        TextView tvSubSubServicePrice = subSubServiceView.findViewById(R.id.tvSubSubServicePrice); // Price TextView
         CheckBox cbSubSubService = subSubServiceView.findViewById(R.id.cbSubSubService);
 
         tvSubSubServiceName.setText(subSubServiceName);
+        tvSubSubServicePrice.setText(price); // Set price
 
         return subSubServiceView;
     }

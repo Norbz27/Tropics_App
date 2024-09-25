@@ -10,10 +10,12 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical">
+
         <CheckBox
             android:id="@+id/cbSubService"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
+
         <!-- Sub-Service Name -->
         <TextView
             android:id="@+id/tvSubServiceName"
@@ -23,6 +25,16 @@
             android:text="Sub-Service Name"
             android:textSize="16sp"
             android:textColor="@color/white" />
+
+        <!-- Price TextView -->
+        <TextView
+            android:id="@+id/tvSubServicePrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="₱0.00"
+            android:textSize="16sp"
+            android:textColor="@color/white"
+            android:layout_marginEnd="8dp" />
 
         <!-- Expand/Collapse Icon -->
         <ImageView

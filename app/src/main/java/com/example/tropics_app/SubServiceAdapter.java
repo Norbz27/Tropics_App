@@ -76,13 +76,24 @@ public class SubServiceAdapter extends RecyclerView.Adapter<SubServiceAdapter.Vi
 
             // Safely retrieve and convert the price to a string
             Object priceObj = service.get("price");
-            String price = (priceObj != null) ? String.valueOf(priceObj) : "";
+            String price = "";
 
+            if (priceObj != null) {
+                // Convert the price object to a double and format it
+                double priceValue;
+                if (priceObj instanceof Number) {
+                    priceValue = ((Number) priceObj).doubleValue();
+                    price = String.format("₱%.2f", priceValue);
+                }
+            }
+
+            // Remove drawable if applicable
             if (removeDrawable) {
                 tvPrice.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
             }
 
-            if (!price.equals("0.0")) {
+            // Set price text or clear it
+            if (!price.equals("₱0.00")) {
                 tvPrice.setText(price);
             } else {
                 tvPrice.setText("");
@@ -90,6 +101,7 @@ public class SubServiceAdapter extends RecyclerView.Adapter<SubServiceAdapter.Vi
 
             itemView.setOnClickListener(v -> listener.onItemClick(service));
         }
+
 
 
     }
