@@ -8,11 +8,13 @@ public class Employee {
     private String email;
     private String salary;
     private String image;
+    private Double coms;
     private String imageUrl;
 
     public Employee() {
         // Empty constructor required for Firebase
     }
+
     public String getImage() {
         return image;
     }
@@ -20,14 +22,16 @@ public class Employee {
     public void setImage(String image) {
         this.image = image;
     }
-    public Employee(String id, String name, String address, String phone, String email, String salary) {
+
+    public Employee(String id, String name, String address, String phone, String email, String salary, String image, Double coms) {
         this.id = id;
         this.name = name;
         this.address = address;
         this.phone = phone;
         this.email = email;
         this.salary = salary;
-        this.imageUrl = imageUrl;
+        this.coms = coms;
+        this.image = image; // Use 'image' instead of 'imageUrl'
     }
 
     // Getters and Setters
@@ -48,7 +52,16 @@ public class Employee {
 
     public String getSalary() { return salary; }
     public void setSalary(String salary) { this.salary = salary; }
+
+    public Double getComs() {
+        return coms; // Return as Double
+    }
+
+    public void setComs(Double coms) {
+        this.coms = coms; // Set as Double
+    }
+
     public String getImageUrl() {
-        return imageUrl; // Add this methoddd
+        return imageUrl;
     }
 }

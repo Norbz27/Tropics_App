@@ -1,5 +1,6 @@
 package com.example.tropics_app;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,11 +40,24 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
     @Override
     public void onBindViewHolder(@NonNull EmployeeViewHolder holder, int position) {
         Employee employee = employeeList.get(position);
-        holder.bind(employee);
+        holder.bind(employee); // Bind the employee data to the holder
+
+        // Handle coms conversion if necessary
+        Double coms = employee.getComs();
+        if (coms != null) {
+            // Do something with coms as a Double, for example, log or display it
+            Log.d("Employee Coms", "Commission: " + coms);
+        }
 
         // Set an OnClickListener for the entire item
-        holder.itemView.setOnClickListener(v -> listener.onEmployeeClick(employee));
+        holder.itemView.setOnClickListener(v -> {
+            // Check if the listener is not null and call onEmployeeClick
+            if (listener != null) {
+                listener.onEmployeeClick(employee); // Notify the listener that an item was clicked
+            }
+        });
     }
+
 
     @Override
     public int getItemCount() {

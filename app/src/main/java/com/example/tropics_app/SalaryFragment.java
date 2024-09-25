@@ -14,6 +14,9 @@ import android.widget.EditText;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.floatingactionbutton.FloatingActionButton; // Updated import
+
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -24,11 +27,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
 import android.content.Intent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
 import android.widget.ImageView;
 
 
@@ -79,7 +87,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         EditText empAddress = dialogView.findViewById(R.id.empadd);
         EditText empPhone = dialogView.findViewById(R.id.empphone);
         EditText empEmail = dialogView.findViewById(R.id.empemail);
-        EditText empComm = dialogView.findViewById(R.id.empcomm);
+        EditText empSal = dialogView.findViewById(R.id.empcomm);
         Button btnSubmit = dialogView.findViewById(R.id.empsub);
         imgEmp = dialogView.findViewById(R.id.imgemp); // Initialize the ImageView
 
@@ -98,7 +106,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             String address = empAddress.getText().toString().trim();
             String phone = empPhone.getText().toString().trim();
             String email = empEmail.getText().toString().trim();
-            String salary = empComm.getText().toString().trim();
+            String salary = empSal.getText().toString().trim();
 
             if (!name.isEmpty() && !address.isEmpty() && !phone.isEmpty() && !email.isEmpty() && !salary.isEmpty() && selectedImageUri != null) {
                 // Create a map to store employee data
@@ -108,28 +116,39 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 employeeData.put("phone", phone);
                 employeeData.put("email", email);
                 employeeData.put("salary", salary);
-                employeeData.put("commission", 0); // Set commission to 0
+                employeeData.put("coms", 0.0); // Set commission to 0 as a Double
 
-                // Convert image URI to a string (you may need to upload it to a storage service first)
-                employeeData.put("image", selectedImageUri.toString());
+                // Upload image to Firebase Storage
+                StorageReference storageRef = FirebaseStorage.getInstance().getReference().child("employee_images/" + UUID.randomUUID().toString());
+                storageRef.putFile(selectedImageUri)
+                        .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                            // Save the download URL in Firestore
+                            employeeData.put("image", uri.toString());
 
-                // Add employee data to Firestore
-                db.collection("Employees") // Your Firestore collection name
-                        .add(employeeData)
-                        .addOnCompleteListener(task -> {
-                            if (task.isSuccessful()) {
-                                Toast.makeText(getActivity(), "Employee added", Toast.LENGTH_SHORT).show();
-                                dialog.dismiss();
-                                loadEmployeeData(); // Refresh the employee list after adding a new employee
-                            } else {
-                                Log.e("Firestore Error", "Failed to add employee: " + task.getException().getMessage());
-                                Toast.makeText(getActivity(), "Failed to add employee", Toast.LENGTH_SHORT).show();
-                            }
+                            // Add employee data to Firestore
+                            db.collection("Employees") // Your Firestore collection name
+                                    .add(employeeData)
+                                    .addOnCompleteListener(task -> {
+                                        if (task.isSuccessful()) {
+                                            Toast.makeText(getActivity(), "Employee added", Toast.LENGTH_SHORT).show();
+                                            dialog.dismiss();
+                                            loadEmployeeData(); // Refresh the employee list after adding a new employee
+                                        } else {
+                                            Log.e("Firestore Error", "Failed to add employee: " + task.getException().getMessage());
+                                            Toast.makeText(getActivity(), "Failed to add employee", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                        }))
+                        .addOnFailureListener(e -> {
+                            // Handle any errors in image upload
+                            Toast.makeText(getActivity(), "Failed to upload image", Toast.LENGTH_SHORT).show();
+                            Log.e("Storage Error", "Failed to upload image: " + e.getMessage());
                         });
             } else {
                 Toast.makeText(getActivity(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
             }
         });
+
     }
 
     // Handle the result of the image selection
@@ -162,51 +181,49 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                     }
                 });
     }
+    private void showViewEmployeeDialog(Employee employee) {
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_viewemployee, null); // Your dialog layout for viewing employee
 
-    @Override
-    public void onEmployeeClick(Employee employee) {
-        LayoutInflater inflater = LayoutInflater.from(getActivity());
-        View dialogView = inflater.inflate(R.layout.dialogbox_employee, null);
         ImageView imgEmp = dialogView.findViewById(R.id.imgemp);
-        TextInputEditText empName = dialogView.findViewById(R.id.empname);
-        TextInputEditText empAddress = dialogView.findViewById(R.id.empadd);
-        TextInputEditText empPhone = dialogView.findViewById(R.id.empphone);
-        TextInputEditText empEmail = dialogView.findViewById(R.id.empemail);
-        TextInputEditText empSalary = dialogView.findViewById(R.id.empcomm);
-        Button empSubmit = dialogView.findViewById(R.id.empsub);
+        EditText empName = dialogView.findViewById(R.id.empname);
+        EditText empAddress = dialogView.findViewById(R.id.empadd);
+        EditText empPhone = dialogView.findViewById(R.id.empphone);
+        EditText empEmail = dialogView.findViewById(R.id.empemail);
+        EditText empSal = dialogView.findViewById(R.id.empsal1);
+        EditText empComm = dialogView.findViewById(R.id.empcomm);
 
-
-        Glide.with(getActivity())
-                .load(employee.getImageUrl())
-                .placeholder(R.drawable.ic_image_placeholder)
-                .into(imgEmp);
-
-
+        // Set employee details
         empName.setText(employee.getName());
         empAddress.setText(employee.getAddress());
         empPhone.setText(employee.getPhone());
         empEmail.setText(employee.getEmail());
+        empSal.setText(employee.getSalary());
+        empComm.setText(String.valueOf(employee.getComs()));
+
 
         empName.setEnabled(false);
         empAddress.setEnabled(false);
         empPhone.setEnabled(false);
         empEmail.setEnabled(false);
-        empSalary.setEnabled(false);
+        empSal.setEnabled(false);
+        empComm.setEnabled(false);
+        // Load the employee's image using Glide
+        Glide.with(this)
+                .load(employee.getImage()) // Make sure to call the correct method to get the image URL
+                .placeholder(R.drawable.ic_image_placeholder) // Placeholder image
+                .into(imgEmp);
 
-        // Disable the submit button
-        empSubmit.setEnabled(false); // Disable the button
-        empSubmit.setVisibility(View.GONE); // Optionally hide the button
-
-        // Create and show the dialog
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
         dialogBuilder.setView(dialogView);
-        dialogBuilder.setTitle("Employee Details"); // Set dialog title
-        dialogBuilder.setNegativeButton("Close", null); // Close buttonn
-
-        // Show the dialog
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
     }
 
+    @Override
+    public void onEmployeeClick(Employee employee) {
+        showViewEmployeeDialog(employee);
+
+    }
 
 }
