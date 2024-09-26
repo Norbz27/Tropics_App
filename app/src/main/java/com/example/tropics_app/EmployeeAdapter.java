@@ -66,7 +66,7 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
 
     public static class EmployeeViewHolder extends RecyclerView.ViewHolder {
         TextView name;
-        ImageView imageViewLetter; // Add the ImageView reference
+        ImageView imageViewLetter; // Add the ImageView referenced
 
         public EmployeeViewHolder(@NonNull View itemView) {
             super(itemView);
