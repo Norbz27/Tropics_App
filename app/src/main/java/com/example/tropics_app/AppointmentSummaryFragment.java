@@ -79,7 +79,12 @@ public class AppointmentSummaryFragment extends Fragment {
 
         return view;
     }
+    @Override
+    public void onResume() {
+        super.onResume();
 
+        updateSummary();
+    }
     private void updateSummary() {
         tvFullName.setText(viewModel.getFullName());
         tvAddress.setText(viewModel.getAddress());

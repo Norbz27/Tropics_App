@@ -1,4 +1,3 @@
-// SelectedService.java
 package com.example.tropics_app;
 
 import java.util.ArrayList;
@@ -15,6 +14,14 @@ public class SelectedService {
         this.parentServiceName = parentServiceName;
         this.serviceName = serviceName; // Set the service name
         this.subServices = new ArrayList<>();
+    }
+
+    // Method to clear the current service data
+    public void clear() {
+        subServiceName = null;
+        parentServiceName = null;
+        serviceName = null;
+        subServices.clear(); // Clear the sub-services list
     }
 
     public void addSubService(SelectedService subService) {

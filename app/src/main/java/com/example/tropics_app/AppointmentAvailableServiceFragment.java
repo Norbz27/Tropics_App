@@ -62,6 +62,7 @@ public class AppointmentAvailableServiceFragment extends Fragment {
         Button nextButton = view.findViewById(R.id.btnNext);
         nextButton.setOnClickListener(v -> {
             List<SelectedService> selectedServices = new ArrayList<>();
+
             for (int i = 0; i < servicesContainer.getChildCount(); i++) {
                 View serviceView = servicesContainer.getChildAt(i);
                 LinearLayout subServiceContainer = serviceView.findViewById(R.id.subServiceContainer);
@@ -69,12 +70,13 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                 for (int j = 0; j < subServiceContainer.getChildCount(); j++) {
                     View subServiceView = subServiceContainer.getChildAt(j);
                     CheckBox cbSubService = subServiceView.findViewById(R.id.cbSubService);
+
                     if (cbSubService.isChecked()) {
                         // Get the service name from the parent checkbox
                         String serviceName = cbSubService.getText().toString();
-                        // Here, serviceName should be the top-level service name
                         String parentServiceName = ((TextView) serviceView.findViewById(R.id.tvServiceName2)).getText().toString();
-                        SelectedService selectedService = new SelectedService(cbSubService.getText().toString(), parentServiceName, serviceName); // Pass the service name
+
+                        SelectedService selectedService = new SelectedService(cbSubService.getText().toString(), parentServiceName, serviceName);
 
                         // Check for sub-sub-services
                         LinearLayout subSubServiceContainer = subServiceView.findViewById(R.id.subSubServiceContainer);
@@ -82,7 +84,7 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                             View subSubServiceView = subSubServiceContainer.getChildAt(k);
                             CheckBox cbSubSubService = subSubServiceView.findViewById(R.id.cbSubSubService);
                             if (cbSubSubService.isChecked()) {
-                                selectedService.addSubService(new SelectedService(cbSubSubService.getText().toString(), parentServiceName, serviceName)); // Pass the service name
+                                selectedService.addSubService(new SelectedService(cbSubSubService.getText().toString(), parentServiceName, serviceName));
                             }
                         }
 
@@ -91,7 +93,10 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                 }
             }
 
-            // Update ViewModel
+            // Clear previous selections in ViewModel
+            viewModel.clearSelectedServices();
+
+            // Update ViewModel with new selections
             for (SelectedService service : selectedServices) {
                 viewModel.addSelectedService(service);
             }
@@ -103,6 +108,7 @@ public class AppointmentAvailableServiceFragment extends Fragment {
 
         return view;
     }
+
 
     private void loadServices(LinearLayout servicesContainer) {
         db.collection("service").get().addOnCompleteListener(task -> {
