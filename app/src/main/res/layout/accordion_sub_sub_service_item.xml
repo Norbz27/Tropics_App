@@ -7,18 +7,12 @@
 
     <CheckBox
         android:id="@+id/cbSubSubService"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <!-- Sub-Sub-Service Name -->
-    <TextView
-        android:id="@+id/tvSubSubServiceName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="Sub-Sub-Service Name"
         android:textSize="14sp"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"  />
 
     <!-- Price TextView -->
     <TextView

@@ -57,6 +57,7 @@
                 android:background="@drawable/custom_background_3"
                 android:text="Next" />
         </LinearLayout>
+
     </LinearLayout>
 
 </FrameLayout>

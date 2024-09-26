@@ -3,65 +3,64 @@ package com.example.tropics_app;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link AppointmentSummaryFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import java.util.HashSet;
+
 public class AppointmentSummaryFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
-    public AppointmentSummaryFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment AppointmentSummaryFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static AppointmentSummaryFragment newInstance(String param1, String param2) {
-        AppointmentSummaryFragment fragment = new AppointmentSummaryFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
+    private AppointmentViewModel viewModel;
+    private TextView tvFullName, tvAddress, tvPhone, tvEmail;
+    private View view;
+    private String parentname = "";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+        viewModel = new ViewModelProvider(requireActivity()).get(AppointmentViewModel.class);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_appointment_summary, container, false);
+        view = inflater.inflate(R.layout.fragment_appointment_summary, container, false);
+
+        LinearLayout summaryContainer = view.findViewById(R.id.summaryContainer);
+
+        viewModel.getSelectedServices().observe(getViewLifecycleOwner(), services -> {
+            summaryContainer.removeAllViews();
+            Log.d("AppointmentSummaryFragment", "Selected Services: " + services);
+
+            if (services.isEmpty()) {
+                TextView emptyTextView = new TextView(getContext());
+                emptyTextView.setText("No services selected.");
+                emptyTextView.setTextColor(getResources().getColor(android.R.color.white));
+                summaryContainer.addView(emptyTextView);
+            } else {
+                // Reset parentname for each load
+                parentname = "";
+                for (SelectedService service : services) {
+                    Log.d("Service", "Parent Service: " + service.getParentServiceName());
+                    addServiceToSummary(summaryContainer, service, 0); // Start at indentation level 0
+                }
+            }
+        });
+
+        // Initialize TextViews
+        tvFullName = view.findViewById(R.id.tvFname);
+        tvAddress = view.findViewById(R.id.tvAddress);
+        tvPhone = view.findViewById(R.id.tvPhone);
+        tvEmail = view.findViewById(R.id.tvEmail);
 
         Button backButton = view.findViewById(R.id.btnBack);
         backButton.setOnClickListener(v -> {
@@ -74,6 +73,47 @@ public class AppointmentSummaryFragment extends Fragment {
             ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
             viewPager.setCurrentItem(viewPager.getCurrentItem() + 1, true);
         });
+
+        // Call the update method to display the latest data
+        updateSummary();
+
         return view;
+    }
+
+    private void updateSummary() {
+        tvFullName.setText(viewModel.getFullName());
+        tvAddress.setText(viewModel.getAddress());
+        tvPhone.setText(viewModel.getPhone());
+        tvEmail.setText(viewModel.getEmail());
+    }
+
+    private void addServiceToSummary(LinearLayout parent, SelectedService service, int indentLevel) {
+        Log.d("addServiceToSummary", "Adding service: " + service.getName() + " at level: " + indentLevel);
+
+        // Add Parent Service only if it's not already displayed
+        if (!parentname.equals(service.getParentServiceName())) {
+            TextView parentTextView = new TextView(getContext());
+            parentTextView.setText(service.getParentServiceName());
+            parentTextView.setPadding(indentLevel * 30, 0, 0, 0); // Indent based on level
+            parentTextView.setTextColor(getResources().getColor(android.R.color.white));
+            parent.addView(parentTextView);
+            parentname = service.getParentServiceName(); // Update parentname to the current parent
+        }
+
+        // Add SubService
+        TextView subServiceTextView = new TextView(getContext());
+        subServiceTextView.setText(service.getName());
+        subServiceTextView.setPadding((indentLevel + 1) * 30, 0, 0, 0); // One more level of indentation
+        subServiceTextView.setTextColor(getResources().getColor(android.R.color.white));
+        parent.addView(subServiceTextView);
+
+        // Recursively add sub-sub-services
+        for (SelectedService subService : service.getSubServices()) {
+            TextView subSubServiceTextView = new TextView(getContext());
+            subSubServiceTextView.setText(subService.getName());
+            subSubServiceTextView.setPadding((indentLevel + 2) * 30, 0, 0, 0); // Two more levels of indentation
+            subSubServiceTextView.setTextColor(getResources().getColor(android.R.color.white));
+            parent.addView(subSubServiceTextView);
+        }
     }
 }
