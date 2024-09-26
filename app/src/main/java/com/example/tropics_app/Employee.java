@@ -8,21 +8,13 @@ public class Employee {
     private String email;
     private String salary;
     private String image;
-    private Double coms;
+    private Double coms; // Commission as a String
     private String imageUrl;
 
-    public Employee() {
-        // Empty constructor required for Firebase
-    }
+    // Empty constructor required for Firebase
+    public Employee() {}
 
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
+    // Constructor with parameters
     public Employee(String id, String name, String address, String phone, String email, String salary, String image, Double coms) {
         this.id = id;
         this.name = name;
@@ -30,8 +22,8 @@ public class Employee {
         this.phone = phone;
         this.email = email;
         this.salary = salary;
-        this.coms = coms;
         this.image = image; // Use 'image' instead of 'imageUrl'
+        this.coms = coms; // Store commission as a String
     }
 
     // Getters and Setters
@@ -53,15 +45,13 @@ public class Employee {
     public String getSalary() { return salary; }
     public void setSalary(String salary) { this.salary = salary; }
 
-    public Double getComs() {
-        return coms; // Return as Double
-    }
+    public double getComs() { return coms; } // Commission as String
 
-    public void setComs(Double coms) {
-        this.coms = coms; // Set as Double
-    }
+    public void setComs(double coms) { this.coms = coms; } // Set commission as String
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
+    public String getImage() { return image; }
+    public void setImage(String image) { this.image = image; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; } // Set the imageUrl
 }

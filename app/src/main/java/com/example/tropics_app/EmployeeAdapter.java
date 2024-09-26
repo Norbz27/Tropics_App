@@ -22,6 +22,7 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
     // Nested interface for click listener
     public interface OnEmployeeClickListener {
         void onEmployeeClick(Employee employee);
+        void onEmployeeLongClick(Employee employee); // Added long click method
     }
 
     public EmployeeAdapter(OnEmployeeClickListener listener, List<Employee> employeeList) {
@@ -45,19 +46,30 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
         // Handle coms conversion if necessary
         Double coms = employee.getComs();
         if (coms != null) {
-            // Do something with coms as a Double, for example, log or display it
             Log.d("Employee Coms", "Commission: " + coms);
         }
 
         // Set an OnClickListener for the entire item
         holder.itemView.setOnClickListener(v -> {
-            // Check if the listener is not null and call onEmployeeClick
             if (listener != null) {
                 listener.onEmployeeClick(employee); // Notify the listener that an item was clicked
             }
         });
+
+        // Set an OnLongClickListener for the entire item
+        holder.itemView.setOnLongClickListener(v -> {
+            if (listener != null) {
+                listener.onEmployeeLongClick(employee); // Notify the listener that an item was long-pressed
+            }
+            return true; // Return true to indicate that the long click event was handled
+        });
     }
 
+    public void updateEmployeeList(List<Employee> newList) {
+        employeeList.clear(); // Clear current list
+        employeeList.addAll(newList); // Add new list
+        notifyDataSetChanged(); // Notify the adapter of data changes
+    }
 
     @Override
     public int getItemCount() {
@@ -66,7 +78,7 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
 
     public static class EmployeeViewHolder extends RecyclerView.ViewHolder {
         TextView name;
-        ImageView imageViewLetter; // Add the ImageView reference
+        ImageView imageViewLetter; // Add the ImageView referenced
 
         public EmployeeViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -84,7 +96,5 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
                     .placeholder(R.drawable.ic_image_placeholder) // Optional: Placeholder image while loading
                     .into(imageViewLetter); // Set the image to the ImageView
         }
-
-
     }
 }
