@@ -73,7 +73,7 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                         // Get the service name from the parent checkbox
                         String serviceName = cbSubService.getText().toString();
                         // Here, serviceName should be the top-level service name
-                        String parentServiceName = ((TextView) serviceView.findViewById(R.id.cbSubService)).getText().toString();
+                        String parentServiceName = ((TextView) serviceView.findViewById(R.id.tvServiceName2)).getText().toString();
                         SelectedService selectedService = new SelectedService(cbSubService.getText().toString(), parentServiceName, serviceName); // Pass the service name
 
                         // Check for sub-sub-services
@@ -127,7 +127,7 @@ public class AppointmentAvailableServiceFragment extends Fragment {
         LayoutInflater inflater = LayoutInflater.from(getContext());
         View serviceView = inflater.inflate(R.layout.accordion_service_item, null);
 
-        CheckBox cbSubService = serviceView.findViewById(R.id.cbSubService);
+        TextView cbSubService = serviceView.findViewById(R.id.tvServiceName2); // parent checkbox
         LinearLayout subServiceContainer = serviceView.findViewById(R.id.subServiceContainer);
         ImageView ivExpandIcon = serviceView.findViewById(R.id.ivExpandIcon);
 
