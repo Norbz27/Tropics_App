@@ -10,19 +10,19 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
         <!-- Left Panel: Form Section -->
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
             android:orientation="vertical"
             android:padding="20dp">
 
             <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content">
                 <LinearLayout
                     android:id="@+id/accordionContainer"
                     android:layout_width="match_parent"
@@ -44,7 +44,7 @@
                         android:layout_marginTop="20dp"
                         android:fontFamily="@font/manrope"
                         android:textSize="15sp"
-                        android:textColor="#B6B6B6" />
+                        android:textColor="#B6B6B6"/>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -76,6 +76,7 @@
                                 android:textColor="#B6B6B6" />
                         </LinearLayout>
 
+                        <!-- Spacing between the two EditTexts -->
                         <Space
                             android:layout_width="30dp"
                             android:layout_height="wrap_content" />
@@ -135,6 +136,7 @@
                                 android:textColor="#B6B6B6" />
                         </LinearLayout>
 
+                        <!-- Spacing between the two EditTexts -->
                         <Space
                             android:layout_width="30dp"
                             android:layout_height="wrap_content" />
@@ -217,35 +219,41 @@
                         android:fontFamily="@font/manrope"
                         android:textColor="@color/white"
                         android:timePickerMode="spinner" />
+                    <!-- Push content to fill remaining space -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical" />
 
+                    <!-- Buttons at the bottom of the screen -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="right"
+                        android:layout_gravity="bottom"
+                        android:layout_marginBottom="20dp">
+
+                        <Button
+                            android:id="@+id/btnBack"
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/custom_background_2"
+                            android:text="Back" />
+                        <Space
+                            android:layout_width="20dp"
+                            android:layout_height="wrap_content" />
+                        <Button
+                            android:id="@+id/btnSubmitAppointment"
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/custom_background_3"
+                            android:text="Submit" />
+
+                    </LinearLayout>
                 </LinearLayout>
             </ScrollView>
-        </LinearLayout>
-
-        <!-- Buttons at the bottom of the screen -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="right"
-            android:layout_marginBottom="20dp"
-            android:layout_marginHorizontal="20dp">
-
-            <Button
-                android:id="@+id/btnBack"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:background="@drawable/custom_background_2"
-                android:text="Back" />
-            <Space
-                android:layout_width="20dp"
-                android:layout_height="wrap_content" />
-            <Button
-                android:id="@+id/btnSubmitAppointment"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:background="@drawable/custom_background_3"
-                android:text="Submit" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

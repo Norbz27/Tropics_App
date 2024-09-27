@@ -84,6 +84,11 @@ public class AppointmentDateTimeFragment extends Fragment {
             viewPager.setCurrentItem(viewPager.getCurrentItem() + 1, true);
         });
 
+        Button backButton = view.findViewById(R.id.btnBack);
+        backButton.setOnClickListener(v -> {
+            ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
+            viewPager.setCurrentItem(viewPager.getCurrentItem() - 1, true);
+        });
         return view;
     }
 

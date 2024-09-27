@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121315"
+    tools:context=".AppointmentAvailableServiceFragment">
+
+    <!-- Parent layout with horizontal orientation -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:padding="20dp"
+        android:weightSum="3">
+
+        <!-- Left side: Existing content (service selection) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:orientation="vertical"
+            android:paddingEnd="10dp">
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/tvCI"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select service for appointment"
+                android:fontFamily="@font/manrope"
+                android:textSize="22sp"
+                android:textColor="@color/orange" />
+
+            <!-- ScrollView to contain the accordion services -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:paddingTop="10dp">
+
+                <LinearLayout
+                    android:id="@+id/servicesContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <!-- Your accordion content will be inserted here -->
+                </LinearLayout>
+            </ScrollView>
+        </LinearLayout>
+
+        <!-- Right side: Upcoming Events section -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Upcoming Appointments"
+                android:fontFamily="@font/manrope"
+                android:textSize="22sp"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No appointments available"
+                android:textColor="#B6B6B6"
+                android:layout_marginTop="10dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Buttons at the bottom -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="right"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="20dp"
+        android:paddingHorizontal="20dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/custom_background_2"
+            android:text="Back" />
+
+        <Space
+            android:layout_width="20dp"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/btnNext"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/custom_background_3"
+            android:text="Next" />
+    </LinearLayout>
+
+</FrameLayout>
