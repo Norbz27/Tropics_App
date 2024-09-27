@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#121315"
     tools:context=".AppointmentDateTimeFragment">
 
@@ -29,39 +29,47 @@
                 android:textSize="22sp"
                 android:textColor="@color/orange" />
 
-            <LinearLayout
-                android:id="@+id/calendar"
+            <!-- ScrollView to contain the calendar and time picker -->
+            <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/darkgray">
+                android:paddingBottom="10dp">
 
-                <com.applandeo.materialcalendarview.CalendarView
-                    android:id="@+id/calendarView"
+                <LinearLayout
+                    android:id="@+id/calendar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:abbreviationsBarColor="@color/darkgray"
-                    app:abbreviationsLabelsColor="@color/white"
-                    app:anotherMonthsDaysLabelsColor="#787878"
-                    app:daysLabelsColor="@color/white"
-                    app:headerColor="@color/darkgray"
-                    app:headerLabelColor="@color/orange"
-                    app:highlightedDaysLabelsColor="@color/orange"
-                    app:pagesColor="@color/darkgray"
-                    app:selectionColor="@color/orange"
-                    app:selectionLabelColor="@color/white"
-                    app:todayLabelColor="@color/white" />
-            </LinearLayout>
+                    android:orientation="vertical"
+                    android:background="@color/darkgray">
 
-            <!-- TimePicker -->
-            <TimePicker
-                android:id="@+id/timePicker"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:layout_gravity="center_horizontal"
-                android:background="@color/darkgray"
-                android:textColor="@color/white"
-                android:timePickerMode="spinner" />
+                    <com.applandeo.materialcalendarview.CalendarView
+                        android:id="@+id/calendarView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:abbreviationsBarColor="@color/darkgray"
+                        app:abbreviationsLabelsColor="@color/white"
+                        app:anotherMonthsDaysLabelsColor="#787878"
+                        app:daysLabelsColor="@color/white"
+                        app:headerColor="@color/darkgray"
+                        app:headerLabelColor="@color/orange"
+                        app:highlightedDaysLabelsColor="@color/orange"
+                        app:pagesColor="@color/darkgray"
+                        app:selectionColor="@color/orange"
+                        app:selectionLabelColor="@color/white"
+                        app:todayLabelColor="@color/white" />
+
+                    <!-- TimePicker -->
+                    <TimePicker
+                        android:id="@+id/timePicker"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:layout_gravity="center_horizontal"
+                        android:background="@color/darkgray"
+                        android:textColor="@color/white"
+                        android:timePickerMode="spinner" />
+                </LinearLayout>
+            </ScrollView>
 
             <!-- Push content to fill remaining space -->
             <LinearLayout
@@ -76,7 +84,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="right"
-                android:layout_gravity="bottom"
                 android:layout_marginBottom="20dp">
 
                 <Button
@@ -85,9 +92,11 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/custom_background_2"
                     android:text="Back" />
+
                 <Space
                     android:layout_width="20dp"
                     android:layout_height="wrap_content" />
+
                 <Button
                     android:id="@+id/btnNext"
                     android:layout_width="100dp"

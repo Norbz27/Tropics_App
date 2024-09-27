@@ -22,14 +22,21 @@
             android:textSize="22sp"
             android:textColor="@color/orange" />
 
-        <!-- Accordion will be inserted here -->
-        <LinearLayout
-            android:id="@+id/servicesContainer"
+        <!-- ScrollView to contain the accordion services -->
+        <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:paddingTop="10dp" />
+            android:paddingTop="10dp">
+
+            <LinearLayout
+                android:id="@+id/servicesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <!-- Your accordion content will be inserted here -->
+            </LinearLayout>
+        </ScrollView>
 
         <!-- Buttons at the bottom -->
         <LinearLayout
