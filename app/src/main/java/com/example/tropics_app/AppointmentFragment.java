@@ -62,6 +62,7 @@ public class AppointmentFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_appointment, container, false);
         ViewPager2 viewPager = view.findViewById(R.id.viewPager);
+        viewPager.setUserInputEnabled(false);
         ViewPagerAdapter adapter = new ViewPagerAdapter(getActivity());
         viewPager.setAdapter(adapter);
 

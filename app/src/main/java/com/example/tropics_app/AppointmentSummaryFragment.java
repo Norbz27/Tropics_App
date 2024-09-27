@@ -55,7 +55,7 @@ public class AppointmentSummaryFragment extends Fragment {
         LinearLayout summaryContainer = view.findViewById(R.id.summaryContainer);
         CalendarView disCalendar = view.findViewById(R.id.disCalendar);
         TimePicker disTime = view.findViewById(R.id.disTime);
-        disTime.setEnabled(false);
+
         List<EventDay> events = new ArrayList<>();
 
         // Display current date with custom background
@@ -81,10 +81,14 @@ public class AppointmentSummaryFragment extends Fragment {
 
                 // Add the selected event to the CalendarView
                 disCalendar.setEvents(events); // Set all events (current date and selected date)
+
+                // Focus the calendar on the selected date
+                disCalendar.setDate(calendar.getTime()); // This sets the calendar to display the selected date
             } catch (ParseException e) {
                 e.printStackTrace();
             }
         }
+
 
         // Set the selected time in TimePicker
         String selectedTime = viewModel.getSelectedTime();
@@ -95,7 +99,9 @@ public class AppointmentSummaryFragment extends Fragment {
 
             disTime.setHour(hour);
             disTime.setMinute(minute);
+            disTime.setEnabled(false);
         }
+
         viewModel.getSelectedServices().observe(getViewLifecycleOwner(), services -> {
             summaryContainer.removeAllViews();
             Log.d("AppointmentSummaryFragment", "Selected Services: " + services);

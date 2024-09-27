@@ -44,6 +44,7 @@ public class AppointmentDateTimeFragment extends Fragment {
         List<EventDay> events = new ArrayList<>();
         // Handle date selection
         calendarView.setOnDayClickListener(eventDay -> {
+            events.clear();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             selectedDate = eventDay.getCalendar().getTime();
             String formattedDate = sdf.format(selectedDate);
