@@ -29,7 +29,6 @@
                 android:textSize="22sp"
                 android:textColor="@color/orange" />
 
-            <!-- ScrollView to contain the calendar and time picker -->
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
