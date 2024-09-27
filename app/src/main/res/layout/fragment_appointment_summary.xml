@@ -12,7 +12,6 @@
         android:layout_height="match_parent"
         android:orientation="horizontal">
 
-
         <!-- Left Panel: Form Section -->
         <LinearLayout
             android:layout_width="0dp"
@@ -21,165 +20,208 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <TextView
-                android:id="@+id/tvCI"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Appointment Summary"
-                android:fontFamily="@font/manrope"
-                android:textSize="22sp"
-                android:textColor="@color/orange" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Client Information"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/manrope"
-                android:textSize="15sp"
-                android:textColor="#B6B6B6"/>
-
-            <LinearLayout
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="10dp">
-
+                android:layout_height="wrap_content">
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/accordionContainer"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1">
+                    android:orientation="vertical">
                     <TextView
-                        android:id="@+id/fname"
+                        android:id="@+id/tvCI"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Full name:"
+                        android:text="Appointment Summary"
                         android:fontFamily="@font/manrope"
-                        android:textSize="11sp"
-                        android:textColor="#B6B6B6" />
+                        android:textSize="22sp"
+                        android:textColor="@color/orange" />
+
                     <TextView
-                        android:id="@+id/tvFname"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
-                        android:text="Norberto Bruzon"
+                        android:text="Client Information"
+                        android:layout_marginTop="20dp"
                         android:fontFamily="@font/manrope"
-                        android:textSize="13sp"
-                        android:textColor="#B6B6B6" />
+                        android:textSize="15sp"
+                        android:textColor="#B6B6B6"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="10dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_weight="1">
+                            <TextView
+                                android:id="@+id/fname"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Full name:"
+                                android:fontFamily="@font/manrope"
+                                android:textSize="11sp"
+                                android:textColor="#B6B6B6" />
+                            <TextView
+                                android:id="@+id/tvFname"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="Norberto Bruzon"
+                                android:fontFamily="@font/manrope"
+                                android:textSize="13sp"
+                                android:textColor="#B6B6B6" />
+                        </LinearLayout>
+
+                        <!-- Spacing between the two EditTexts -->
+                        <Space
+                            android:layout_width="30dp"
+                            android:layout_height="wrap_content" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_weight="1">
+                            <TextView
+                                android:id="@+id/address"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Address:"
+                                android:fontFamily="@font/manrope"
+                                android:textSize="11sp"
+                                android:textColor="#B6B6B6" />
+                            <TextView
+                                android:id="@+id/tvAddress"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="Espina St. Mat-i Surigao City"
+                                android:fontFamily="@font/manrope"
+                                android:textSize="13sp"
+                                android:textColor="#B6B6B6" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="10dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_weight="1">
+                            <TextView
+                                android:id="@+id/phone"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Phone:"
+                                android:fontFamily="@font/manrope"
+                                android:textSize="11sp"
+                                android:textColor="#B6B6B6" />
+                            <TextView
+                                android:id="@+id/tvPhone"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="0909090909"
+                                android:fontFamily="@font/manrope"
+                                android:textSize="13sp"
+                                android:textColor="#B6B6B6" />
+                        </LinearLayout>
+
+                        <!-- Spacing between the two EditTexts -->
+                        <Space
+                            android:layout_width="30dp"
+                            android:layout_height="wrap_content" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_weight="1">
+                            <TextView
+                                android:id="@+id/email"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Email:"
+                                android:fontFamily="@font/manrope"
+                                android:textSize="11sp"
+                                android:textColor="#B6B6B6" />
+                            <TextView
+                                android:id="@+id/tvEmail"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="email@gmail.com"
+                                android:fontFamily="@font/manrope"
+                                android:textSize="13sp"
+                                android:textColor="#B6B6B6" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Selected Services"
+                        android:layout_marginTop="20dp"
+                        android:fontFamily="@font/manrope"
+                        android:textSize="15sp"
+                        android:textColor="#B6B6B6"/>
+                    <LinearLayout
+                        android:id="@+id/summaryContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Date &amp; Time"
+                        android:layout_marginTop="20dp"
+                        android:fontFamily="@font/manrope"
+                        android:textSize="15sp"
+                        android:textColor="#B6B6B6"/>
+
+                    <com.applandeo.materialcalendarview.CalendarView
+                        android:id="@+id/disCalendar"
+                        android:layout_width="match_parent"
+                        android:layout_marginTop="20dp"
+                        android:layout_height="wrap_content"
+                        app:abbreviationsBarColor="@color/darkgray"
+                        app:abbreviationsLabelsColor="@color/white"
+                        app:anotherMonthsDaysLabelsColor="#787878"
+                        app:daysLabelsColor="@color/white"
+                        app:headerColor="@color/darkgray"
+                        app:headerLabelColor="@color/orange"
+                        app:highlightedDaysLabelsColor="@color/orange"
+                        app:pagesColor="@color/darkgray"
+                        app:selectionColor="@color/orange"
+                        app:selectionLabelColor="@color/white"
+                        app:todayLabelColor="@color/white"
+                        android:enabled="false"
+                        android:fontFamily="@font/manrope"
+                        android:layout_gravity="center"/>
+
+                    <TimePicker
+                        android:id="@+id/disTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="10dp"
+                        android:background="@color/darkgray"
+                        android:enabled="false"
+                        android:fontFamily="@font/manrope"
+                        android:textColor="@color/white"
+                        android:timePickerMode="spinner" />
+
                 </LinearLayout>
-
-                <!-- Spacing between the two EditTexts -->
-                <Space
-                    android:layout_width="30dp"
-                    android:layout_height="wrap_content" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1">
-                    <TextView
-                        android:id="@+id/address"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Address"
-                        android:fontFamily="@font/manrope"
-                        android:textSize="11sp"
-                        android:textColor="#B6B6B6" />
-                    <TextView
-                        android:id="@+id/tvAddress"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
-                        android:text="Espina St. Mat-i Surigao City"
-                        android:fontFamily="@font/manrope"
-                        android:textSize="13sp"
-                        android:textColor="#B6B6B6" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="10dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1">
-                    <TextView
-                        android:id="@+id/phone"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Phone:"
-                        android:fontFamily="@font/manrope"
-                        android:textSize="11sp"
-                        android:textColor="#B6B6B6" />
-                    <TextView
-                        android:id="@+id/tvPhone"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
-                        android:text="0909090909"
-                        android:fontFamily="@font/manrope"
-                        android:textSize="13sp"
-                        android:textColor="#B6B6B6" />
-                </LinearLayout>
-
-                <!-- Spacing between the two EditTexts -->
-                <Space
-                    android:layout_width="30dp"
-                    android:layout_height="wrap_content" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1">
-                    <TextView
-                        android:id="@+id/email"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Address"
-                        android:fontFamily="@font/manrope"
-                        android:textSize="11sp"
-                        android:textColor="#B6B6B6" />
-                    <TextView
-                        android:id="@+id/tvEmail"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
-                        android:text="email@gmail.com"
-                        android:fontFamily="@font/manrope"
-                        android:textSize="13sp"
-                        android:textColor="#B6B6B6" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Selected Services"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/manrope"
-                android:textSize="15sp"
-                android:textColor="#B6B6B6"/>
-            <LinearLayout
-                android:id="@+id/summaryContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Date &amp; Time"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/manrope"
-                android:textSize="15sp"
-                android:textColor="#B6B6B6"/>
+            </ScrollView>
             <!-- Push content to fill remaining space -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -215,5 +257,4 @@
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-
 </FrameLayout>

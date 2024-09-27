@@ -13,6 +13,10 @@ public class AppointmentViewModel extends ViewModel {
     private String phone;
     private String email;
 
+    // Add fields for date and time
+    private String selectedDate;
+    private String selectedTime;
+
     private final MutableLiveData<List<SelectedService>> selectedServices = new MutableLiveData<>(new ArrayList<>());
 
     // Getters for selected services
@@ -66,4 +70,22 @@ public class AppointmentViewModel extends ViewModel {
     public void setEmail(String email) {
         this.email = email;
     }
+
+    // Getter and Setter for date and time
+    public String getSelectedDate() {
+        return selectedDate;
+    }
+
+    public void setSelectedDate(String selectedDate) {
+        this.selectedDate = selectedDate;
+    }
+
+    public String getSelectedTime() {
+        return selectedTime;
+    }
+
+    public void setSelectedTime(String selectedTime) {
+        this.selectedTime = selectedTime;
+    }
 }
+

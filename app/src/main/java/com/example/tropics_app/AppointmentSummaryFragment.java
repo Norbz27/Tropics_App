@@ -1,7 +1,11 @@
 package com.example.tropics_app;
 
+import android.annotation.SuppressLint;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
@@ -13,8 +17,21 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.TimePicker;
 
+import com.applandeo.materialcalendarview.CalendarDay;
+import com.applandeo.materialcalendarview.CalendarView;
+import com.applandeo.materialcalendarview.EventDay;
+import com.applandeo.materialcalendarview.exceptions.OutOfDateRangeException;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 
 public class AppointmentSummaryFragment extends Fragment {
 
@@ -36,7 +53,49 @@ public class AppointmentSummaryFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_appointment_summary, container, false);
 
         LinearLayout summaryContainer = view.findViewById(R.id.summaryContainer);
+        CalendarView disCalendar = view.findViewById(R.id.disCalendar);
+        TimePicker disTime = view.findViewById(R.id.disTime);
+        disTime.setEnabled(false);
+        List<EventDay> events = new ArrayList<>();
 
+        // Display current date with custom background
+        Calendar calendarnow = Calendar.getInstance();
+        EventDay todayEvent = new EventDay(calendarnow, R.drawable.custom_selector2);
+        events.add(todayEvent);
+
+        // Get the selected date from ViewModel
+        String selectedDate = viewModel.getSelectedDate();
+        if (selectedDate != null) {
+            try {
+                @SuppressLint("SimpleDateFormat")
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                Date startDate = dateFormat.parse(selectedDate);
+
+                // Create a Calendar instance for the selected date
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(startDate);
+
+                // Set up EventDay for the selected date
+                EventDay selectedEvent = new EventDay(calendar, R.drawable.custom_selector); // Use your custom drawable for the selected date
+                events.add(selectedEvent);
+
+                // Add the selected event to the CalendarView
+                disCalendar.setEvents(events); // Set all events (current date and selected date)
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Set the selected time in TimePicker
+        String selectedTime = viewModel.getSelectedTime();
+        if (selectedTime != null) {
+            String[] timeParts = selectedTime.split(":");
+            int hour = Integer.parseInt(timeParts[0]);
+            int minute = Integer.parseInt(timeParts[1]);
+
+            disTime.setHour(hour);
+            disTime.setMinute(minute);
+        }
         viewModel.getSelectedServices().observe(getViewLifecycleOwner(), services -> {
             summaryContainer.removeAllViews();
             Log.d("AppointmentSummaryFragment", "Selected Services: " + services);
@@ -95,29 +154,34 @@ public class AppointmentSummaryFragment extends Fragment {
     private void addServiceToSummary(LinearLayout parent, SelectedService service, int indentLevel) {
         Log.d("addServiceToSummary", "Adding service: " + service.getName() + " at level: " + indentLevel);
 
+        Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.manrope); // Replace your_font
+
         // Add Parent Service only if it's not already displayed
         if (!parentname.equals(service.getParentServiceName())) {
             TextView parentTextView = new TextView(getContext());
             parentTextView.setText(service.getParentServiceName());
-            parentTextView.setPadding(indentLevel * 30, 0, 0, 0); // Indent based on level
-            parentTextView.setTextColor(getResources().getColor(android.R.color.white));
+            parentTextView.setPadding(indentLevel * 30, 0, 0, 0);
+            parentTextView.setTextColor(Color.parseColor("#B6B6B6"));
+            parentTextView.setTypeface(typeface); // Set typeface
             parent.addView(parentTextView);
-            parentname = service.getParentServiceName(); // Update parentname to the current parent
+            parentname = service.getParentServiceName();
         }
 
         // Add SubService
         TextView subServiceTextView = new TextView(getContext());
         subServiceTextView.setText(service.getName());
-        subServiceTextView.setPadding((indentLevel + 1) * 30, 0, 0, 0); // One more level of indentation
-        subServiceTextView.setTextColor(getResources().getColor(android.R.color.white));
+        subServiceTextView.setPadding((indentLevel + 1) * 30, 0, 0, 0);
+        subServiceTextView.setTextColor(Color.parseColor("#B6B6B6"));
+        subServiceTextView.setTypeface(typeface); // Set typeface
         parent.addView(subServiceTextView);
 
         // Recursively add sub-sub-services
         for (SelectedService subService : service.getSubServices()) {
             TextView subSubServiceTextView = new TextView(getContext());
             subSubServiceTextView.setText(subService.getName());
-            subSubServiceTextView.setPadding((indentLevel + 2) * 30, 0, 0, 0); // Two more levels of indentation
-            subSubServiceTextView.setTextColor(getResources().getColor(android.R.color.white));
+            subSubServiceTextView.setPadding((indentLevel + 2) * 30, 0, 0, 0);
+            subSubServiceTextView.setTextColor(Color.parseColor("#B6B6B6"));
+            subSubServiceTextView.setTypeface(typeface); // Set typeface
             parent.addView(subSubServiceTextView);
         }
     }
