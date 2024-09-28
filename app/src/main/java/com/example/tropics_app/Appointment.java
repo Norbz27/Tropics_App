@@ -1,25 +1,51 @@
 package com.example.tropics_app;
 
+import com.google.firebase.firestore.PropertyName;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class Appointment {
-    private String fullName;
-    private String date;
-    private String time;
+    private String id; // Assuming you have an ID field
+    private String createdDateTime; // Store as String initially, change to Date if possible
+    private double totalPrice;
 
-    public Appointment(String fullName, String date, String time) {
-        this.fullName = fullName;
-        this.date = date;
-        this.time = time;
+    // Required empty constructor for Firestore
+    public Appointment() {
     }
 
-    public String getFullName() {
-        return fullName;
+    // Getter for createdDateTime
+    public String getCreatedDateTime() {
+        return createdDateTime;
     }
 
-    public String getDate() {
-        return date;
+    // Set createdDateTime directly
+    public void setCreatedDateTime(String createdDateTime) {
+        this.createdDateTime = createdDateTime;
     }
 
-    public String getTime() {
-        return time;
+    // Convert string date to Date object
+    public Date getCreatedDateTimeAsDate() {
+        return parseDate(createdDateTime);
+    }
+
+    private Date parseDate(String dateString) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        try {
+            return sdf.parse(dateString);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null; // Return null if parsing fails
+        }
+    }
+
+    public double getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(double totalPrice) {
+        this.totalPrice = totalPrice;
     }
 }

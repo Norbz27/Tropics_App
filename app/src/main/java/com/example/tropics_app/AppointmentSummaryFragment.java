@@ -215,7 +215,7 @@ public class AppointmentSummaryFragment extends Fragment {
                 addServiceToFirestore(subServiceMap, subService, indentLevel + 1); // Increase indent level
                 subServiceList.add(subServiceMap);
             }
-            parentMap.put("subServices", subServiceList); // Store sub-services under this service
+            parentMap.put("subServices", subServiceList);
         }
     }
 
