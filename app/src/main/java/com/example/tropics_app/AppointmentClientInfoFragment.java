@@ -36,6 +36,31 @@ public class AppointmentClientInfoFragment extends Fragment {
 
         Button nextButton = view.findViewById(R.id.btnNext);
         nextButton.setOnClickListener(v -> {
+            if(edFirstname.getText().toString().isEmpty()){
+                edFirstname.setError("Enter First name");
+                edFirstname.requestFocus();
+                return;
+            }
+            if(edLastname.getText().toString().isEmpty()){
+                edLastname.setError("Enter Last name");
+                edLastname.requestFocus();
+                return;
+            }
+            if(edAddress.getText().toString().isEmpty()){
+                edAddress.setError("Enter Address");
+                edAddress.requestFocus();
+                return;
+            }
+            if(edPhone.getText().toString().isEmpty()){
+                edPhone.setError("Enter Phone number");
+                edPhone.requestFocus();
+                return;
+            }
+            if(edEmail.getText().toString().isEmpty()){
+                edEmail.setError("Enter Email");
+                edEmail.requestFocus();
+                return;
+            }
             saveData(); // Save data before navigating
             ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
             viewPager.setCurrentItem(viewPager.getCurrentItem() + 1, true);

@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
@@ -92,18 +93,24 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                     }
                 }
             }
+            if (!selectedServices.isEmpty()) {
+                viewModel.clearSelectedServices();
 
-            // Clear previous selections in ViewModel
-            viewModel.clearSelectedServices();
+                for (SelectedService service : selectedServices) {
+                    viewModel.addSelectedService(service);
+                }
 
-            // Update ViewModel with new selections
-            for (SelectedService service : selectedServices) {
-                viewModel.addSelectedService(service);
+                ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
+                viewPager.setCurrentItem(viewPager.getCurrentItem() + 1, true);
+            } else {
+                new AlertDialog.Builder(getContext())
+                        .setTitle("No Service Selected")
+                        .setMessage("Please select at least one service to continue.")
+                        .setPositiveButton("OK", (dialog, which) -> {
+                            // Do nothing (or handle OK click if needed)
+                        })
+                        .show();
             }
-
-            // Navigate to the next fragment
-            ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
-            viewPager.setCurrentItem(viewPager.getCurrentItem() + 1, true);
         });
 
         return view;

@@ -3,6 +3,7 @@ package com.example.tropics_app;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
@@ -74,14 +75,25 @@ public class AppointmentDateTimeFragment extends Fragment {
 
         // Handle time selection
         nextButton.setOnClickListener(v -> {
-            int hour = timePicker.getHour();
-            int minute = timePicker.getMinute();
-            String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
-            viewModel.setSelectedTime(selectedTime);
+            if (selectedDate != null) {
+                int hour = timePicker.getHour();
+                int minute = timePicker.getMinute();
+                String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
+                viewModel.setSelectedTime(selectedTime);
 
-            // Navigate to the next fragment
-            ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
-            viewPager.setCurrentItem(viewPager.getCurrentItem() + 1, true);
+                // Navigate to the next fragment
+                ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
+                viewPager.setCurrentItem(viewPager.getCurrentItem() + 1, true);
+            } else {
+                // Show a dialog
+                new AlertDialog.Builder(getContext())
+                        .setTitle("No Date Selected")
+                        .setMessage("Please select a date to continue.")
+                        .setPositiveButton("OK", (dialog, which) -> {
+                            // Do nothing (or handle OK click if needed)
+                        })
+                        .show();
+            }
         });
 
         Button backButton = view.findViewById(R.id.btnBack);
