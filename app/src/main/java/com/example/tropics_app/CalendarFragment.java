@@ -23,7 +23,7 @@ import java.util.Locale;
 public class CalendarFragment extends Fragment {
 
     private RecyclerView recyclerView;
-    private Appointmentadapter appointmentAdapter;
+    private AppointmentAdapter appointmentAdapter;
     private List<Appointment> appointmentList;
     private FirebaseFirestore db;
 
@@ -45,8 +45,11 @@ public class CalendarFragment extends Fragment {
 
         // Initialize appointment list and adapter
         appointmentList = new ArrayList<>();
-        appointmentAdapter = new Appointmentadapter(appointmentList);
+        appointmentAdapter = new AppointmentAdapter(appointmentList);
         recyclerView.setAdapter(appointmentAdapter);
+
+        // Load today's appointments on fragment creation
+        loadAppointmentsForToday();
 
         // Set date click listener on CalendarView
         calendarView.setOnDayClickListener(eventDay -> {
@@ -55,11 +58,17 @@ public class CalendarFragment extends Fragment {
             String selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                     .format(selectedCalendar.getTime());
 
-            // Load appointments for the selected date from Firestoressssss
+            // Load appointments for the selected date from Firestore
             loadAppointmentsFromFirestore(selectedDate);
         });
 
         return view;
+    }
+
+    // Method to load today's appointments
+    private void loadAppointmentsForToday() {
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().getTime());
+        loadAppointmentsFromFirestore(todayDate);
     }
 
     // Method to load appointments from Firestore based on the selected date
@@ -74,9 +83,15 @@ public class CalendarFragment extends Fragment {
                             String fullName = document.getString("fullName");
                             String time = document.getString("time");
                             String date = document.getString("date");
+                            double totalPrice = document.getDouble("totalPrice"); // Get totalPrice
+                            String createdDateTime = document.getString("createdDateTime"); // Get createdDateTime
 
                             // Add appointment to list
-                            appointmentList.add(new Appointment(fullName, date, time));
+                            Appointment appointment = new Appointment(fullName, date, time);
+                            appointment.setTotalPrice(totalPrice);
+                            appointment.setCreatedDateTime(createdDateTime); // Set the createdDateTime
+                            appointmentList.add(appointment);
+
                             Log.d("Firestore", "Fetched appointment: " + fullName + " on " + date + " at " + time);
                         }
                         // Notify adapter that data has changed
@@ -86,5 +101,4 @@ public class CalendarFragment extends Fragment {
                     }
                 });
     }
-
 }
