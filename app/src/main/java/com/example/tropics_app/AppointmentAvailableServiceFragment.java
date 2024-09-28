@@ -26,15 +26,13 @@ public class AppointmentAvailableServiceFragment extends Fragment {
 
     private FirebaseFirestore db;
     private AppointmentViewModel viewModel;
+
     public AppointmentAvailableServiceFragment() {
         // Required empty public constructor
     }
 
-    public static AppointmentAvailableServiceFragment newInstance(String param1, String param2) {
-        AppointmentAvailableServiceFragment fragment = new AppointmentAvailableServiceFragment();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
-        return fragment;
+    public static AppointmentAvailableServiceFragment newInstance() {
+        return new AppointmentAvailableServiceFragment();
     }
 
     @Override
@@ -73,11 +71,12 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                     CheckBox cbSubService = subServiceView.findViewById(R.id.cbSubService);
 
                     if (cbSubService.isChecked()) {
-                        // Get the service name from the parent checkbox
                         String serviceName = cbSubService.getText().toString();
                         String parentServiceName = ((TextView) serviceView.findViewById(R.id.tvServiceName2)).getText().toString();
+                        String priceText = ((TextView) subServiceView.findViewById(R.id.tvSubServicePrice)).getText().toString();
+                        double price = parsePrice(priceText);
 
-                        SelectedService selectedService = new SelectedService(cbSubService.getText().toString(), parentServiceName, serviceName);
+                        SelectedService selectedService = new SelectedService(cbSubService.getText().toString(), parentServiceName, serviceName, price);
 
                         // Check for sub-sub-services
                         LinearLayout subSubServiceContainer = subServiceView.findViewById(R.id.subSubServiceContainer);
@@ -85,7 +84,10 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                             View subSubServiceView = subSubServiceContainer.getChildAt(k);
                             CheckBox cbSubSubService = subSubServiceView.findViewById(R.id.cbSubSubService);
                             if (cbSubSubService.isChecked()) {
-                                selectedService.addSubService(new SelectedService(cbSubSubService.getText().toString(), parentServiceName, serviceName));
+                                String subSubServiceName = cbSubSubService.getText().toString();
+                                String subSubPriceText = ((TextView) subSubServiceView.findViewById(R.id.tvSubSubServicePrice)).getText().toString();
+                                double subSubPrice = parsePrice(subSubPriceText);
+                                selectedService.addSubService(new SelectedService(subSubServiceName, parentServiceName, serviceName, subSubPrice));
                             }
                         }
 
@@ -93,9 +95,9 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                     }
                 }
             }
+
             if (!selectedServices.isEmpty()) {
                 viewModel.clearSelectedServices();
-
                 for (SelectedService service : selectedServices) {
                     viewModel.addSelectedService(service);
                 }
@@ -107,7 +109,7 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                         .setTitle("No Service Selected")
                         .setMessage("Please select at least one service to continue.")
                         .setPositiveButton("OK", (dialog, which) -> {
-                            // Do nothing (or handle OK click if needed)
+                            // Handle OK click if needed
                         })
                         .show();
             }
@@ -115,7 +117,6 @@ public class AppointmentAvailableServiceFragment extends Fragment {
 
         return view;
     }
-
 
     private void loadServices(LinearLayout servicesContainer) {
         db.collection("service").get().addOnCompleteListener(task -> {
@@ -126,7 +127,6 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                     String serviceName = document.getString("service_name");
                     String serviceId = document.getId();
 
-                    // Create the parent service view
                     View serviceView = createServiceView(serviceName, serviceId);
                     servicesContainer.addView(serviceView);
                 }
@@ -172,10 +172,10 @@ public class AppointmentAvailableServiceFragment extends Fragment {
                     String subServiceId = document.getId();
                     Number priceNumber = document.getDouble("price"); // Retrieve price as Number
                     String price = priceNumber != null ? String.format("₱%.2f", priceNumber.doubleValue()) : "N/A"; // Format as string
-                    if(price.equals("₱0.00")){
+                    if (price.equals("₱0.00")) {
                         price = "";
                     }
-                    // Create sub-service view with a checkbox and price
+
                     View subServiceView = createSubServiceView(subServiceName, price, subServiceId);
                     subServiceContainer.addView(subServiceView);
                 }
@@ -190,7 +190,7 @@ public class AppointmentAvailableServiceFragment extends Fragment {
         View subServiceView = inflater.inflate(R.layout.accordion_sub_service_item, null);
 
         TextView tvSubServicePrice = subServiceView.findViewById(R.id.tvSubServicePrice); // Price TextView
-        CheckBox cbSubService = subServiceView.findViewById(R.id.cbSubService); // sub service checkbox
+        CheckBox cbSubService = subServiceView.findViewById(R.id.cbSubService); // Sub service checkbox
         LinearLayout subSubServiceContainer = subServiceView.findViewById(R.id.subSubServiceContainer);
         ImageView ivExpandIcon = subServiceView.findViewById(R.id.ivExpandSubIcon);
 
@@ -198,7 +198,6 @@ public class AppointmentAvailableServiceFragment extends Fragment {
         tvSubServicePrice.setText(price); // Set price
         subSubServiceContainer.setVisibility(View.GONE); // Set to GONE initially
 
-        // Toggle sub-sub-services visibility
         ivExpandIcon.setOnClickListener(v -> {
             if (subSubServiceContainer.getVisibility() == View.GONE) {
                 subSubServiceContainer.setVisibility(View.VISIBLE);
@@ -210,16 +209,6 @@ public class AppointmentAvailableServiceFragment extends Fragment {
             }
         });
 
-        tvSubServicePrice.setOnClickListener(v -> {
-            if (subSubServiceContainer.getVisibility() == View.GONE) {
-                subSubServiceContainer.setVisibility(View.VISIBLE);
-                ivExpandIcon.setImageResource(R.drawable.ic_arrow_up); // Expand icon
-                loadSubSubServices(subSubServiceContainer, subServiceId, cbSubService); // Pass parent checkbox
-            } else {
-                subSubServiceContainer.setVisibility(View.GONE);
-                ivExpandIcon.setImageResource(R.drawable.ic_arrow_down); // Collapse icon
-            }
-        });
         return subServiceView;
     }
 
@@ -280,5 +269,11 @@ public class AppointmentAvailableServiceFragment extends Fragment {
         return subSubServiceView;
     }
 
-
+    private double parsePrice(String priceText) {
+        try {
+            return Double.parseDouble(priceText.replaceAll("[^\\d.]", ""));
+        } catch (NumberFormatException e) {
+            return 0.0; // Default to 0.0 if parsing fails
+        }
+    }
 }

@@ -40,7 +40,7 @@ import java.util.Map;
 public class AppointmentSummaryFragment extends Fragment {
 
     private AppointmentViewModel viewModel;
-    private TextView tvFullName, tvAddress, tvPhone, tvEmail;
+    private TextView tvFullName, tvAddress, tvPhone, tvEmail, tvTotalPrice;
     private View view;
     private String parentname = "";
     private CalendarView disCalendar; // Declare CalendarView here
@@ -69,6 +69,7 @@ public class AppointmentSummaryFragment extends Fragment {
         tvAddress = view.findViewById(R.id.tvAddress);
         tvPhone = view.findViewById(R.id.tvPhone);
         tvEmail = view.findViewById(R.id.tvEmail);
+        tvTotalPrice = view.findViewById(R.id.tvTotalPrice);
 
         // Set up back button
         Button backButton = view.findViewById(R.id.btnBack);
@@ -101,6 +102,9 @@ public class AppointmentSummaryFragment extends Fragment {
                     addServiceToSummary(summaryContainer, service, 0); // Start at indentation level 0
                 }
             }
+
+            double totalPrice = viewModel.getTotalPrice();
+            tvTotalPrice.setText(String.format(Locale.getDefault(), "Total Price: ₱%.2f", totalPrice));
         });
         // Call the update method to display the latest data
         updateSummary();
@@ -292,7 +296,7 @@ public class AppointmentSummaryFragment extends Fragment {
     private void addServiceToSummary(LinearLayout parent, SelectedService service, int indentLevel) {
         Log.d("addServiceToSummary", "Adding service: " + service.getName() + " at level: " + indentLevel);
 
-        Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.manrope); // Replace your_font
+        Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.manrope); // Set the typeface
 
         // Add Parent Service only if it's not already displayed
         if (!parentname.equals(service.getParentServiceName())) {
@@ -305,18 +309,21 @@ public class AppointmentSummaryFragment extends Fragment {
             parentname = service.getParentServiceName();
         }
 
-        // Add SubService
         TextView subServiceTextView = new TextView(getContext());
-        subServiceTextView.setText(service.getName());
+        if(service.getPrice() != 0.0) {
+            subServiceTextView.setText(service.getName() + " - ₱" + service.getPrice());
+        }else {
+            subServiceTextView.setText(service.getName());
+        }
         subServiceTextView.setPadding((indentLevel + 1) * 30, 0, 0, 0);
         subServiceTextView.setTextColor(Color.parseColor("#B6B6B6"));
         subServiceTextView.setTypeface(typeface); // Set typeface
         parent.addView(subServiceTextView);
 
-        // Recursively add sub-sub-services
+        // Recursively add sub-sub-services with their prices
         for (SelectedService subService : service.getSubServices()) {
             TextView subSubServiceTextView = new TextView(getContext());
-            subSubServiceTextView.setText(subService.getName());
+            subSubServiceTextView.setText(subService.getName() + " - ₱" + subService.getPrice());
             subSubServiceTextView.setPadding((indentLevel + 2) * 30, 0, 0, 0);
             subSubServiceTextView.setTextColor(Color.parseColor("#B6B6B6"));
             subSubServiceTextView.setTypeface(typeface); // Set typeface
