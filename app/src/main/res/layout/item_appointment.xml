@@ -13,28 +13,35 @@
 
         <TextView
             android:id="@+id/tvFullName"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Full Name:"
-            android:textColor="#B6B6B6" />
+            android:text="Full Name" />
 
         <TextView
             android:id="@+id/tvDate"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_medium"
-            android:text="Time:"
-            android:textColor="#B6B6B6" />
+            android:text="Date" />
 
         <TextView
             android:id="@+id/tvTime"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_medium"
-            android:text="Address:"
-            android:textColor="#B6B6B6" />
+            android:text="Time" />
 
- =
+        <TextView
+            android:id="@+id/tvCreatedDateTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Created Date/Time" />
+
+        <TextView
+            android:id="@+id/tvTotalPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Total Price" />
+
+
+        =
     </LinearLayout>
 </ScrollView>
