@@ -55,7 +55,7 @@ public class CalendarFragment extends Fragment {
             String selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                     .format(selectedCalendar.getTime());
 
-            // Load appointments for the selected date from Firestore
+            // Load appointments for the selected date from Firestoresssss
             loadAppointmentsFromFirestore(selectedDate);
         });
 
