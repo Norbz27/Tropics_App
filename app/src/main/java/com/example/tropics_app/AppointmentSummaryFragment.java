@@ -135,8 +135,6 @@ public class AppointmentSummaryFragment extends Fragment {
         String email = viewModel.getEmail();
         String selectedDate = viewModel.getSelectedDate();
         String selectedTime = viewModel.getSelectedTime();
-
-        // Get the current date and time
         String currentDateTime = getCurrentDateTime();
 
         // Create a Map to store appointment data
@@ -147,19 +145,19 @@ public class AppointmentSummaryFragment extends Fragment {
         appointment.put("email", email);
         appointment.put("date", selectedDate);
         appointment.put("time", selectedTime);
-        appointment.put("createdDateTime", currentDateTime); // Add the current date and time
+        appointment.put("createdDateTime", currentDateTime);
 
-        // Get selected services from ViewModel
+        // Get selected services and total price
         List<SelectedService> services = viewModel.getSelectedServices().getValue();
+        double totalPrice = viewModel.getTotalPrice();
+        appointment.put("totalPrice", totalPrice); // Add total price to Firestore
+
         if (services != null && !services.isEmpty()) {
             List<Map<String, Object>> serviceHierarchy = new ArrayList<>();
-
-            // Add each service to the hierarchy
             for (SelectedService service : services) {
                 Map<String, Object> serviceMap = new HashMap<>();
                 addServiceToFirestore(serviceMap, service, 0); // Build the hierarchy
-
-                serviceHierarchy.add(serviceMap); // Add the service map to the main list
+                serviceHierarchy.add(serviceMap);
             }
             appointment.put("services", serviceHierarchy); // Store the hierarchical services list
         }
@@ -169,13 +167,10 @@ public class AppointmentSummaryFragment extends Fragment {
                 .add(appointment)
                 .addOnSuccessListener(documentReference -> {
                     Log.d("Firestore", "Appointment submitted successfully with ID: " + documentReference.getId());
-                    // Show success dialog
                     showMessageDialog("Success", "Appointment submitted successfully!");
-                    // Optionally navigate to the next page or update the UI
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Firestore", "Error submitting appointment", e);
-                    // Show error dialog
                     showMessageDialog("Error", "Error submitting appointment. Please try again.");
                 });
     }
@@ -192,8 +187,7 @@ public class AppointmentSummaryFragment extends Fragment {
         builder.setMessage(message);
 
         builder.setPositiveButton("OK", (dialog, which) -> {
-            dialog.dismiss(); // Dismiss the dialog
-            // Optionally navigate to another page or reset fields
+            dialog.dismiss();
         });
 
         AlertDialog dialog = builder.create();
@@ -207,8 +201,9 @@ public class AppointmentSummaryFragment extends Fragment {
             parentMap.put("parentServiceName", service.getParentServiceName());
         }
 
-        // Add SubService
+        // Add SubService Name and Price
         parentMap.put("serviceName", service.getName());
+        parentMap.put("servicePrice", service.getPrice());
 
         // Check if there are sub-services
         if (!service.getSubServices().isEmpty()) {
@@ -223,6 +218,7 @@ public class AppointmentSummaryFragment extends Fragment {
             parentMap.put("subServices", subServiceList); // Store sub-services under this service
         }
     }
+
 
     @Override
     public void onResume() {
