@@ -35,13 +35,32 @@
                 android:padding="10dp"/>
 
         </LinearLayout>
+        <LinearLayout
+            android:id="@+id/l3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="20dp"
+            android:layout_below="@id/l1"
+            android:gravity="center">
+
+            <Spinner
+                android:id="@+id/month_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <Spinner
+                android:id="@+id/year_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/l2"
             android:layout_width="match_parent"
             android:layout_height="500dp"
             android:layout_above="@+id/relativeLayout"
-            android:layout_below="@id/l1"
+            android:layout_below="@id/l3"
             android:layout_marginHorizontal="20dp"
             android:layout_marginVertical="20dp"
             android:layout_marginBottom="158dp"
