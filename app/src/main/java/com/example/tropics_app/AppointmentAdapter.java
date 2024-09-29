@@ -1,5 +1,6 @@
 package com.example.tropics_app;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,17 +9,22 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.AppointmentViewHolder> {
 
     private List<Appointment> appointmentList;
+    private OnItemClickListener itemClickListener;
+    private OnItemLongClickListener itemLongClickListener;
 
+    // Constructor
     public AppointmentAdapter(List<Appointment> appointmentList) {
         this.appointmentList = appointmentList;
+    }
+
+    public AppointmentAdapter(List<Appointment> appointmentList, OnItemClickListener listener) {
+        this.appointmentList = appointmentList;
+        this.itemClickListener = listener; // Store the click listener
     }
 
     @NonNull
@@ -33,22 +39,28 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
     public void onBindViewHolder(@NonNull AppointmentViewHolder holder, int position) {
         Appointment appointment = appointmentList.get(position);
 
-        // Set fullName, date, and time
+        // Set text values
         holder.tvFullName.setText(appointment.getFullName());
         holder.tvDate.setText(appointment.getDate());
         holder.tvTime.setText(appointment.getTime());
 
-        // Format and display createdDateTime
-        Date createdDate = appointment.getCreatedDateTimeAsDate();
-        if (createdDate != null) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
-            holder.tvCreatedDateTime.setText(dateFormat.format(createdDate));
-        } else {
-            holder.tvCreatedDateTime.setText("Invalid date"); // Handle invalid date case
-        }
+        // Handle item long press event
+        holder.itemView.setOnLongClickListener(v -> {
+            if (itemLongClickListener != null) {
+                Log.d("Adapter", "Item long pressed: " + appointment.getFullName()); // Debug log for long press
+                itemLongClickListener.onItemLongClick(appointment); // Pass appointment to listener
+                return true;
+            }
+            return false;
+        });
 
-        // Set totalPrice
-        holder.tvTotalPrice.setText(String.format(Locale.getDefault(), "₱%.2f", appointment.getTotalPrice()));
+        // Handle item click event
+        holder.itemView.setOnClickListener(v -> {
+            if (itemClickListener != null) {
+                Log.d("Adapter", "Item clicked: " + appointment.getFullName()); // Debug log for click
+                itemClickListener.onItemClick(appointment); // Pass appointment to listener
+            }
+        });
     }
 
     @Override
@@ -56,16 +68,32 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         return appointmentList.size();
     }
 
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.itemClickListener = listener;
+    }
+
+    public void setOnItemLongClickListener(OnItemLongClickListener listener) {
+        this.itemLongClickListener = listener;
+    }
+
+    public interface OnItemClickListener {
+        void onItemClick(Appointment appointment);
+    }
+
+    public interface OnItemLongClickListener {
+        void onItemLongClick(Appointment appointment);
+    }
+
     static class AppointmentViewHolder extends RecyclerView.ViewHolder {
-        TextView tvFullName, tvDate, tvTime, tvTotalPrice, tvCreatedDateTime;
+        TextView tvFullName, tvDate, tvTime, tvCreatedDateTime, tvPhone;
 
         public AppointmentViewHolder(@NonNull View itemView) {
             super(itemView);
             tvFullName = itemView.findViewById(R.id.tvFullName);
             tvDate = itemView.findViewById(R.id.tvDate);
             tvTime = itemView.findViewById(R.id.tvTime);
-            tvTotalPrice = itemView.findViewById(R.id.tvTotalPrice);
-            tvCreatedDateTime = itemView.findViewById(R.id.tvCreatedDateTime);
+            tvCreatedDateTime = itemView.findViewById(R.id.timecreated); // Make sure this is defined in item_appointment.xml
+            tvPhone = itemView.findViewById(R.id.tvPhone); // Make sure this is defined in item_appointment.xml
         }
     }
 }
