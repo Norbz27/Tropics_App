@@ -11,22 +11,15 @@
         android:paddingVertical="10dp"
         android:background="@color/darkgray">
 
-        <ImageView
-            android:id="@+id/imageViewLetter"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
-            android:layout_marginRight="15dp"
-            android:layout_centerVertical="true"/>
-
         <TextView
-            android:id="@+id/tvEmpName"
-            android:layout_width="wrap_content"
+            android:id="@+id/tvCustomerName"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/manrope_semibold"
             android:layout_centerVertical="true"
             android:text="Customer Name"
             android:textColor="@color/white"
-            android:layout_toRightOf="@id/imageViewLetter"/>
+            android:drawableRight="@drawable/baseline_keyboard_arrow_right_24" />
 
     </RelativeLayout>
     <View

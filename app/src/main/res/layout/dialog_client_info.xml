@@ -1,0 +1,86 @@
+<!-- dialog_client_info.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/gray">
+
+    <TextView
+        android:id="@+id/tvClientName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Client Name"
+        android:textSize="20sp"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:fontFamily="@font/manrope"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvClientEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Client Email"
+        android:textSize="16sp"
+        android:fontFamily="@font/manrope"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvClientPhone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Client Phone"
+        android:textSize="16sp"
+        android:fontFamily="@font/manrope"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvClientAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Client Address"
+        android:textSize="16sp"
+        android:fontFamily="@font/manrope"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/tvAppointmentsHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Appointments"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:fontFamily="@font/manrope"
+        android:layout_marginTop="16dp" />
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAppointments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/gray"
+            android:nestedScrollingEnabled="false" />
+
+    </androidx.cardview.widget.CardView>
+
+    <Button
+        android:id="@+id/btnClose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Close"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/custom_background_3"
+        android:textColor="@android:color/white"
+        android:padding="12dp"
+        android:textSize="16sp" />
+
+</LinearLayout>

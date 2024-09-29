@@ -13,7 +13,6 @@
         android:orientation="horizontal">
 
 
-        <!-- Left Panel: Form Section -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -65,10 +64,10 @@
                         android:background="@drawable/custom_input"
                         android:fontFamily="@font/manrope_medium"
                         android:hint="First name"
-                        android:inputType="text"
+                        android:inputType="text|textCapSentences"
                         android:paddingHorizontal="12dp"
-                        android:textColorHint="#B6B6B6"
                         android:textColor="#B6B6B6"
+                        android:textColorHint="#B6B6B6"
                         android:textSize="15sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -95,10 +94,10 @@
                         android:background="@drawable/custom_input"
                         android:fontFamily="@font/manrope_medium"
                         android:hint="Last name"
-                        android:inputType="text"
+                        android:inputType="text|textCapSentences"
                         android:paddingHorizontal="12dp"
-                        android:textColorHint="#B6B6B6"
                         android:textColor="#B6B6B6"
+                        android:textColorHint="#B6B6B6"
                         android:textSize="15sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -129,11 +128,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
                     android:background="@drawable/custom_input"
-                    android:fontFamily="@font/manrope_medium"
                     android:drawableStart="@drawable/outline_location_on_24"
                     android:drawablePadding="10dp"
+                    android:fontFamily="@font/manrope_medium"
                     android:hint=" "
-                    android:inputType="text"
+                    android:inputType="text|textCapSentences"
                     android:paddingHorizontal="12dp"
                     android:textColor="#B6B6B6"
                     android:textColorHint="#B6B6B6"
@@ -186,13 +185,13 @@
                             android:layout_width="match_parent"
                             android:layout_height="60dp"
                             android:background="@drawable/custom_input"
-                            android:fontFamily="@font/manrope_medium"
                             android:drawableStart="@drawable/rounded_phone_iphone_24"
+                            android:fontFamily="@font/manrope_medium"
                             android:hint=" "
-                            android:inputType="text"
+                            android:inputType="phone"
                             android:paddingHorizontal="12dp"
-                            android:textColorHint="#B6B6B6"
                             android:textColor="#B6B6B6"
+                            android:textColorHint="#B6B6B6"
                             android:textSize="15sp" />
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
@@ -233,10 +232,10 @@
                             android:layout_width="match_parent"
                             android:layout_height="60dp"
                             android:background="@drawable/custom_input"
+                            android:drawableStart="@drawable/outline_email_24"
                             android:fontFamily="@font/manrope_medium"
                             android:hint=" "
-                            android:drawableStart="@drawable/outline_email_24"
-                            android:inputType="text"
+                            android:inputType="text|textEmailAddress"
                             android:paddingHorizontal="12dp"
                             android:textColor="#B6B6B6"
                             android:textColorHint="#B6B6B6"
