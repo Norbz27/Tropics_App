@@ -119,9 +119,9 @@
         <Spinner
             android:id="@+id/employee"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="46dp"
             android:layout_marginTop="10dp"
-            android:background="@drawable/custom_input"/>
+            android:background="@drawable/custom_input" />
 
         <Button
             android:id="@+id/empsub"

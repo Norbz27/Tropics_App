@@ -231,8 +231,8 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         empAddress.setText(employee.getAddress());
         empPhone.setText(employee.getPhone());
         empEmail.setText(employee.getEmail());
-        empSal.setText(employee.getSalary());
-        empComm.setText(String.valueOf(employee.getComs()));
+        empSal.setText(String.valueOf(employee.getSalary())); // Convert to String
+        empComm.setText(String.valueOf(employee.getComs())); // Convert to String
 
         Glide.with(this)
                 .load(employee.getImage())
@@ -244,6 +244,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
     }
+
 
     @Override
     public void onEmployeeClick(Employee employee) {

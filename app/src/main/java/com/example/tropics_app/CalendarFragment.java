@@ -221,22 +221,10 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     }
 
     private void deleteAppointment(Appointment appointment) {
-        Log.d("DeleteAppointment", "Attempting to delete Appointment: " + appointment.getFullName());
-        if (appointment.getId() != null && !appointment.getId().isEmpty()) {
-            db.collection("appointments").document(appointment.getId())
-                    .delete()
-                    .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(getActivity(), "Appointment deleted", Toast.LENGTH_SHORT).show();
-                        loadAppointmentData(selectedDate); // Refresh the list after deletion
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e("DeleteAppointment", "Error deleting document: ", e);
-                        Toast.makeText(getActivity(), "Failed to delete appointment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-        } else {
-            Toast.makeText(getActivity(), "Invalid appointment ID", Toast.LENGTH_SHORT).show();
-        }
+        // Display a toast message
+        Toast.makeText(getActivity(), "test", Toast.LENGTH_SHORT).show();
     }
+
 
     private void showEditAppointmentDialog(Appointment appointment) {
         LayoutInflater inflater = getLayoutInflater();
@@ -281,7 +269,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
 
     private void fetchEmployees(Spinner spinnerEmployees) {
         List<String> employeeList = new ArrayList<>();
-        db.collection("employees")
+        db.collection("Employees")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {

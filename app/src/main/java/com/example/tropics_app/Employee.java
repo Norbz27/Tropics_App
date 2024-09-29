@@ -5,16 +5,16 @@ public class Employee {
     private String address;
     private String phone;
     private String email;
-    private String salary;
+    private Double salary;
     private String image;
-    private String coms; // Change from Double to String
+    private Double coms; // Change from Double to String
     private String imageUrl;
 
     // Empty constructor required for Firebase
     public Employee() {}
 
     // Constructor with parameters
-    public Employee(String id, String name, String address, String phone, String email, String salary, String image, String coms) {
+    public Employee(String id, String name, String address, String phone, String email, Double salary, String image, Double coms) {
         this.id = id;
         this.name = name;
         this.address = address;
@@ -41,11 +41,11 @@ public class Employee {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getSalary() { return salary; }
-    public void setSalary(String salary) { this.salary = salary; }
+    public Double getSalary() { return salary; }
+    public void setSalary(Double salary) { this.salary = salary; }
 
-    public String getComs() { return coms; } // Change getter to return String
-    public void setComs(String coms) { this.coms = coms; } // Change setter to accept String
+    public Double getComs() { return coms; } // Change getter to return String
+    public void setComs(Double coms) { this.coms = coms; } // Change setter to accept String
 
     public String getImage() { return image; }
     public void setImage(String image) { this.image = image; }
