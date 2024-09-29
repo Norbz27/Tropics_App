@@ -21,7 +21,8 @@ public class Appointment {
     private String phone; // Phone number of the person
     private String serviceId; // Service ID associated with the appointment
     private List<Map<String, Object>> services; // List of services associated with the appointment
-    private String createdDateTime; // Creation date and time as a string
+    private String createdDateTime;
+
 
     // Required empty constructor for Firestore
     public Appointment() {
@@ -36,7 +37,8 @@ public class Appointment {
         this.time = time;
         this.serviceId = serviceId;
         this.services = services != null ? services : new ArrayList<>(); // Avoid null
-        this.createdDateTime = createdDateTime; // Initialize createdDateTime
+        this.createdDateTime = createdDateTime;
+
     }
 
     // Constructor to initialize fullName, date, and time fields without ID

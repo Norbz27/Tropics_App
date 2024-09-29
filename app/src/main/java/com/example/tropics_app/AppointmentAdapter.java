@@ -92,7 +92,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             tvFullName = itemView.findViewById(R.id.tvFullName);
             tvDate = itemView.findViewById(R.id.tvDate);
             tvTime = itemView.findViewById(R.id.tvTime);
-            tvCreatedDateTime = itemView.findViewById(R.id.timecreated); // Make sure this is defined in item_appointment.xml
+          //  tvCreatedDateTime = itemView.findViewById(R.id.timecreated); // Make sure this is defined in item_appointment.xml
             tvPhone = itemView.findViewById(R.id.tvPhone); // Make sure this is defined in item_appointment.xml
         }
     }

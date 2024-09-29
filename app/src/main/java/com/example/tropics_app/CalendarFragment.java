@@ -122,8 +122,8 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         // Find TextViews
         TextView fullnameTextView = dialogView.findViewById(R.id.tvFullName);
         TextView dateTextView = dialogView.findViewById(R.id.tvdate);
-        TextView timeTextView = dialogView.findViewById(R.id.timecreated);
-        TextView timeCreatedTextView = dialogView.findViewById(R.id.tvTime);
+        TextView timeTextView = dialogView.findViewById(R.id.tvTime);
+        TextView phoneNumberTextView = dialogView.findViewById(R.id.tvPhoneNumber);  // Updated to Phone Number
         TextView empNameTextView = dialogView.findViewById(R.id.empname);
         TextView serviceTextView = dialogView.findViewById(R.id.textView5);
         TextView totalPriceTextView = dialogView.findViewById(R.id.total);  // Assuming you have a TextView for the total price
@@ -132,14 +132,13 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         fullnameTextView.setText(appointment.getFullName());
         dateTextView.setText(appointment.getDate());
         timeTextView.setText(appointment.getTime());
-        timeCreatedTextView.setText(appointment.getCreatedDateTime());
+        phoneNumberTextView.setText(appointment.getPhone());  // Set phone number from Appointment object
         empNameTextView.setText("Basta pangayan sa employee");
 
         // Format service details and calculate total price
         StringBuilder serviceDetails = new StringBuilder();
         double totalPrice = 0.0;
 
-        // Assuming appointment.getServices() returns List<Map<String, Object>>
         for (Map<String, Object> service : appointment.getServices()) {
             // Extract main service details
             String parentServiceName = (String) service.get("parentServiceName");

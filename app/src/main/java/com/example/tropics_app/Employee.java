@@ -1,5 +1,4 @@
 package com.example.tropics_app;
-
 public class Employee {
     private String id;
     private String name;
@@ -8,22 +7,22 @@ public class Employee {
     private String email;
     private String salary;
     private String image;
-    private Double coms; // Commission as a String
+    private String coms; // Change from Double to String
     private String imageUrl;
 
     // Empty constructor required for Firebase
     public Employee() {}
 
     // Constructor with parameters
-    public Employee(String id, String name, String address, String phone, String email, String salary, String image, Double coms) {
+    public Employee(String id, String name, String address, String phone, String email, String salary, String image, String coms) {
         this.id = id;
         this.name = name;
         this.address = address;
         this.phone = phone;
         this.email = email;
         this.salary = salary;
-        this.image = image; // Use 'image' instead of 'imageUrl'
-        this.coms = coms; // Store commission as a String
+        this.image = image;
+        this.coms = coms; // Now stored as String
     }
 
     // Getters and Setters
@@ -45,9 +44,8 @@ public class Employee {
     public String getSalary() { return salary; }
     public void setSalary(String salary) { this.salary = salary; }
 
-    public double getComs() { return coms; } // Commission as String
-
-    public void setComs(double coms) { this.coms = coms; } // Set commission as String
+    public String getComs() { return coms; } // Change getter to return String
+    public void setComs(String coms) { this.coms = coms; } // Change setter to accept String
 
     public String getImage() { return image; }
     public void setImage(String image) { this.image = image; }

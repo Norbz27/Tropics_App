@@ -43,9 +43,10 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
         Employee employee = employeeList.get(position);
         holder.bind(employee); // Bind the employee data to the holder
 
-        // Handle coms conversion if necessary
-        Double coms = employee.getComs();
+        // Get the commission as a String
+        String coms = employee.getComs();
         if (coms != null) {
+            // Log the commission for debugging
             Log.d("Employee Coms", "Commission: " + coms);
         }
 
