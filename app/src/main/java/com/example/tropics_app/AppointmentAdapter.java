@@ -13,7 +13,7 @@ import java.util.List;
 
 public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.AppointmentViewHolder> {
 
-    private List<Appointment> appointmentList;
+    private final List<Appointment> appointmentList;
     private OnItemClickListener itemClickListener;
     private OnItemLongClickListener itemLongClickListener;
 

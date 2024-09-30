@@ -16,8 +16,8 @@ import java.util.List;
 
 public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.EmployeeViewHolder> {
 
-    private List<Employee> employeeList;
-    private OnEmployeeClickListener listener; // Listener for item clicks
+    private final List<Employee> employeeList;
+    private final OnEmployeeClickListener listener; // Listener for item clicks
 
     // Nested interface for click listener
     public interface OnEmployeeClickListener {

@@ -16,10 +16,10 @@ import java.util.Map;
 
 public class SubServiceAdapter extends RecyclerView.Adapter<SubServiceAdapter.ViewHolder> {
     private List<Map<String, Object>> serviceList;
-    private OnItemClickListener listener;
-    private boolean removeDrawable;
+    private final OnItemClickListener listener;
+    private final boolean removeDrawable;
     private SubServiceAdapter.OnItemLongClickListener longClickListener;
-    private Context context;
+    private final Context context;
 
     public interface OnItemClickListener {
         void onItemClick(Map<String, Object> service);

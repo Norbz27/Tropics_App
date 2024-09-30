@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class CustomerAppointmentAdapter extends RecyclerView.Adapter<CustomerAppointmentAdapter.CustomerAppointmentAdapterViewHolder> {
 
-    private List<Map<String, Object>> appointmentList;
+    private final List<Map<String, Object>> appointmentList;
 
     public CustomerAppointmentAdapter(List<Map<String, Object>> appointmentList) {
         this.appointmentList = appointmentList;

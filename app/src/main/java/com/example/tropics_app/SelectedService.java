@@ -8,7 +8,7 @@ public class SelectedService {
     private String parentServiceName; // Field for the parent service name
     private String serviceName; // Field for the service name
     private double price; // Field for the price of the service or sub-service
-    private List<SelectedService> subServices;
+    private final List<SelectedService> subServices;
 
     // Updated constructor with price parameter
     public SelectedService(String subServiceName, String parentServiceName, String serviceName, double price) {

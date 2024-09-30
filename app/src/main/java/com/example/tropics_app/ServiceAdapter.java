@@ -20,9 +20,9 @@ import java.util.Map;
 
 public class ServiceAdapter extends RecyclerView.Adapter<ServiceAdapter.ServiceViewHolder> {
 
-    private Context context;
+    private final Context context;
     private List<Map<String, Object>> serviceList;
-    private OnItemClickListener onItemClickListener;
+    private final OnItemClickListener onItemClickListener;
     private OnItemLongClickListener onItemLongClickListener; // Custom long click listener
 
     public ServiceAdapter(Context context, List<Map<String, Object>> inventoryList, OnItemClickListener listener) {

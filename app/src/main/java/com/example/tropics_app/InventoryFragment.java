@@ -1,6 +1,7 @@
 package com.example.tropics_app;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
@@ -442,9 +443,12 @@ public class InventoryFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == getActivity().RESULT_OK && data != null && data.getData() != null) {
-            imageUri = data.getData();
-            imgProduct.setImageURI(imageUri); // Display the selected image
+        if (requestCode == PICK_IMAGE_REQUEST) {
+            getActivity();
+            if (resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
+                imageUri = data.getData();
+                imgProduct.setImageURI(imageUri); // Display the selected image
+            }
         }
     }
 }

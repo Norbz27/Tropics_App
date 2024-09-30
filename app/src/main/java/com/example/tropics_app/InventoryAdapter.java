@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.InventoryViewHolder> {
 
-    private Context context;
+    private final Context context;
     private List<Map<String, Object>> inventoryList;
     private OnItemLongClickListener longClickListener;
 

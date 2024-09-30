@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -24,6 +25,7 @@ import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -32,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -44,6 +47,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     private FirebaseFirestore db;
     private String selectedDate;
     private CalendarView calendarView;
+    private List<String> employeeIdList;  // Holds employee IDs for appointments
 
     @Nullable
     @Override
@@ -88,7 +92,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         return dateFormat.format(new Date());
     }
 
-    // Inside your loadAppointmentData method
     private void loadAppointmentData(String date) {
         db.collection("appointments")
                 .get()
@@ -141,7 +144,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                 });
     }
 
-    // Show the icons
     private void showSampleThreeIcons(View parentView) {
         ImageView imageView = parentView.findViewById(R.id.imageview1);
         if (imageView != null) {
@@ -151,7 +153,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         }
     }
 
-    // Hide the icons when no appointments are found
     private void hideSampleThreeIcons(View parentView) {
         ImageView imageView = parentView.findViewById(R.id.imageview1);
         if (imageView != null) {
@@ -159,11 +160,8 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         }
     }
 
-
-
     @Override
     public void onItemLongClick(Appointment appointment) {
-        // Show options dialog for edit and delete
         showAppointmentOptionsDialog(appointment);
     }
 
@@ -180,24 +178,23 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         TextView fullnameTextView = dialogView.findViewById(R.id.tvFullName);
         TextView dateTextView = dialogView.findViewById(R.id.tvdate);
         TextView timeTextView = dialogView.findViewById(R.id.tvTime);
-        TextView phoneNumberTextView = dialogView.findViewById(R.id.tvPhoneNumber);  // Updated to Phone Number
+        TextView phoneNumberTextView = dialogView.findViewById(R.id.tvPhoneNumber);
         TextView empNameTextView = dialogView.findViewById(R.id.empname);
         TextView serviceTextView = dialogView.findViewById(R.id.textView5);
-        TextView totalPriceTextView = dialogView.findViewById(R.id.total);  // Assuming you have a TextView for the total price
+        TextView totalPriceTextView = dialogView.findViewById(R.id.total);
 
         // Set appointment details
         fullnameTextView.setText(appointment.getFullName());
         dateTextView.setText(appointment.getDate());
         timeTextView.setText(appointment.getTime());
-        phoneNumberTextView.setText(appointment.getPhone());  // Set phone number from Appointment object
-        empNameTextView.setText("Basta pangayan sa employee");
+        phoneNumberTextView.setText(appointment.getPhone());
+        empNameTextView.setText("Employee Names");
 
         // Format service details and calculate total price
         StringBuilder serviceDetails = new StringBuilder();
         double totalPrice = 0.0;
 
         for (Map<String, Object> service : appointment.getServices()) {
-            // Extract main service details
             String parentServiceName = (String) service.get("parentServiceName");
             String serviceName = (String) service.get("serviceName");
             double servicePrice = (double) service.get("servicePrice");
@@ -208,7 +205,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
 
             totalPrice += servicePrice;
 
-            // Check for sub-services
             List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
             if (subServices != null) {
                 for (Map<String, Object> subService : subServices) {
@@ -234,41 +230,15 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         dialog.show();
     }
 
-
-    // Helper method to format service details
-    private String getServiceDetails(List<Map<String, Object>> services) {
-        StringBuilder serviceDetails = new StringBuilder();
-        for (Map<String, Object> service : services) {
-            String parentServiceName = (String) service.get("parentServiceName");
-            String serviceName = (String) service.get("serviceName");
-            double servicePrice = (double) service.get("servicePrice");
-            serviceDetails.append("Service: ").append(parentServiceName).append(" - ").append(serviceName)
-                    .append(" (Price: ").append(servicePrice).append(")\n");
-
-            List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
-            if (subServices != null) {
-                for (Map<String, Object> subService : subServices) {
-                    String subServiceName = (String) subService.get("serviceName");
-                    double subServicePrice = (double) subService.get("servicePrice");
-                    serviceDetails.append("   Sub-Service: ").append(subServiceName)
-                            .append(" (Price: ").append(subServicePrice).append(")\n");
-                }
-            }
-        }
-        return serviceDetails.toString();
-    }
-
     private void showAppointmentOptionsDialog(Appointment appointment) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Options")
                 .setItems(new CharSequence[]{"Edit", "Delete"}, (dialog, which) -> {
                     switch (which) {
                         case 0:
-                            // Handle edit action
                             showEditAppointmentDialog(appointment);
                             break;
                         case 1:
-                            // Handle delete action
                             deleteAppointment(appointment);
                             break;
                     }
@@ -278,81 +248,99 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     }
 
     private void deleteAppointment(Appointment appointment) {
-        // Display a toast message
-        Toast.makeText(getActivity(), "test", Toast.LENGTH_SHORT).show();
+        db.collection("appointments").document(appointment.getId())
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getActivity(), "Appointment deleted", Toast.LENGTH_SHORT).show();
+                    loadAppointmentData(selectedDate); // Refresh data
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("DeleteAppointment", "Error deleting appointment: ", e);
+                    Toast.makeText(getActivity(), "Failed to delete appointment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
-
 
     private void showEditAppointmentDialog(Appointment appointment) {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialogbox_editappointment, null);
 
-        EditText etFullName = dialogView.findViewById(R.id.etFullName);
-        EditText etDate = dialogView.findViewById(R.id.etDate);
-        EditText etTime = dialogView.findViewById(R.id.etTime);
-        Spinner spinnerEmployees = dialogView.findViewById(R.id.employee); // Updated to Spinner
+        EditText fullNameEditText = dialogView.findViewById(R.id.etFullName);
+        EditText dateEditText = dialogView.findViewById(R.id.etDate);
+        EditText timeEditText = dialogView.findViewById(R.id.etTime);
+        Spinner spinnerEmployees = dialogView.findViewById(R.id.employee); // Spinner for employee selection
+        Button applyChangesButton = dialogView.findViewById(R.id.empsub); // Apply changes button
 
-        // Set existing appointment details
-        etFullName.setText(appointment.getFullName());
-        etDate.setText(appointment.getDate());
-        etTime.setText(appointment.getTime());
+        fullNameEditText.setText(appointment.getFullName());
+        dateEditText.setText(appointment.getDate());
+        timeEditText.setText(appointment.getTime());
 
-        // Fetch employees from Firestore
-        fetchEmployees(spinnerEmployees);
+        // Load employees into spinner
+        employeeIdList = new ArrayList<>(); // Initialize employeeIdList
+        loadEmployees(spinnerEmployees, employeeIdList);
 
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
         dialogBuilder.setView(dialogView);
+
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
 
-        dialogBuilder.setPositiveButton("Update", (dialog1, which) -> {
-            // Validate and update appointment details
-            String updatedFullName = etFullName.getText().toString().trim();
-            String updatedDate = etDate.getText().toString().trim();
-            String updatedTime = etTime.getText().toString().trim();
-            String selectedEmployee = spinnerEmployees.getSelectedItem().toString(); // Get selected employee
+        // Set click listener for the Apply Changes button
+        applyChangesButton.setOnClickListener(v -> {
+            String newFullName = fullNameEditText.getText().toString();
+            String newDate = dateEditText.getText().toString();
+            String newTime = timeEditText.getText().toString();
+            String selectedEmployeeId = employeeIdList.get(spinnerEmployees.getSelectedItemPosition());
 
-            if (!updatedFullName.isEmpty() && !updatedDate.isEmpty() && !updatedTime.isEmpty()) {
-                // Update appointment in Firestore
-                updateAppointment(appointment.getId(), updatedFullName, updatedDate, updatedTime, selectedEmployee);
-                dialog.dismiss();
-            } else {
-                Toast.makeText(getActivity(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
-            }
+            // Update appointment details
+            updateAppointment(appointment.getId(), newFullName, newDate, newTime, selectedEmployeeId);
+
+            // Dismiss dialog after applying changes
+            dialog.dismiss();
         });
-
-        dialogBuilder.setNegativeButton("Cancel", (dialog12, which) -> dialog12.dismiss());
     }
 
-    private void fetchEmployees(Spinner spinnerEmployees) {
+
+    private void loadEmployees(Spinner spinnerEmployees, List<String> employeeIdList) {
         List<String> employeeList = new ArrayList<>();
+
         db.collection("Employees")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        String employeeName = document.getString("name"); // Assuming the employee's name field is "name"
+                    for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                        String employeeName = documentSnapshot.getString("name");
+                        String employeeId = documentSnapshot.getId(); // Get the document ID
                         employeeList.add(employeeName);
+                        employeeIdList.add(employeeId); // Add employee ID to the list
                     }
+
+                    // Set up the spinner with employee names
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_item, employeeList);
                     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     spinnerEmployees.setAdapter(adapter);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FetchEmployees", "Error fetching employees: ", e);
+                    Log.e("LoadEmployees", "Error loading employees: ", e);
                     Toast.makeText(getActivity(), "Failed to load employees: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
-    private void updateAppointment(String id, String fullName, String date, String time, String employee) {
-        db.collection("appointments").document(id)
-                .update("fullName", fullName, "date", date, "time", time, "employee", employee) // Add employee field here
+    private void updateAppointment(String appointmentId, String fullName, String date, String time, String employeeId) {
+        Map<String, Object> updatedAppointment = new HashMap<>();
+        updatedAppointment.put("fullName", fullName);
+        updatedAppointment.put("date", date);
+        updatedAppointment.put("time", time);
+        updatedAppointment.put("employeeId", employeeId); // Update with the selected employee ID
+
+        db.collection("appointments").document(appointmentId)
+                .update(updatedAppointment)
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(getActivity(), "Appointment updated", Toast.LENGTH_SHORT).show();
-                    loadAppointmentData(selectedDate); // Refresh the list after updating
+                    loadAppointmentData(selectedDate); // Refresh appointment data after update
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("UpdateAppointment", "Error updating document: ", e);
+                    Log.e("UpdateAppointment", "Error updating appointment: ", e);
                     Toast.makeText(getActivity(), "Failed to update appointment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
 }

@@ -16,9 +16,9 @@ import java.util.Map;
 
 public class CustomerAdapter extends RecyclerView.Adapter<CustomerAdapter.InventoryViewHolder> {
 
-    private Context context;
+    private final Context context;
     private List<Map<String, Object>> customerList;
-    private OnItemClickListener listener;
+    private final OnItemClickListener listener;
 
     public interface OnItemClickListener {
         void onItemClick(Map<String, Object> customerData);
