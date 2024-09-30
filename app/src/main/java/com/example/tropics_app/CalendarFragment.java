@@ -1,6 +1,6 @@
 package com.example.tropics_app;
 
-import android.app.Service;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -8,25 +8,29 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.applandeo.materialcalendarview.CalendarView;
+import com.applandeo.materialcalendarview.EventDay;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -39,6 +43,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     private List<Appointment> appointmentList;
     private FirebaseFirestore db;
     private String selectedDate;
+    private CalendarView calendarView;
 
     @Nullable
     @Override
@@ -64,11 +69,14 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         appointmentAdapter.setOnItemLongClickListener(this);
 
         // Set up the calendar view
-        CalendarView calendarView = view.findViewById(R.id.calendarView);
+        calendarView = view.findViewById(R.id.calendarView);
         calendarView.setOnDayClickListener(event -> {
             // Get selected date and update the RecyclerView
             selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(event.getCalendar().getTime());
             loadAppointmentData(selectedDate); // Load appointments for the selected date
+
+            // Show sample_three_icons when a date is clicked
+            showSampleThreeIcons(view);
         });
 
         return view;
@@ -80,11 +88,15 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         return dateFormat.format(new Date());
     }
 
+    // Inside your loadAppointmentData method
     private void loadAppointmentData(String date) {
         db.collection("appointments")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     appointmentList.clear();
+                    List<EventDay> events = new ArrayList<>(); // List to hold event days for calendar view
+                    boolean hasAppointments = false;  // Track if any appointments are available
+
                     for (DocumentSnapshot document : queryDocumentSnapshots) {
                         Appointment appointment = document.toObject(Appointment.class);
                         if (appointment != null) { // Check if appointment is not null
@@ -93,16 +105,61 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                             // Check if the appointment's date matches the selected date
                             if (appointment.getDate().equals(date)) {
                                 appointmentList.add(appointment);
+                                hasAppointments = true; // Set flag to true if appointments are found
+                            }
+
+                            // Highlight dates with appointments
+                            Calendar appointmentCalendar = Calendar.getInstance();
+                            try {
+                                Date appointmentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(appointment.getDate());
+                                appointmentCalendar.setTime(appointmentDate);
+
+                                // Use sample_three_icons drawable to highlight the date
+                                Drawable threeIconsDrawable = getResources().getDrawable(R.drawable.sample_three_icons, null);
+                                events.add(new EventDay(appointmentCalendar, threeIconsDrawable)); // Add event to the list
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
                         }
                     }
+
+                    // Set the events to highlight dates with appointments
+                    calendarView.setEvents(events);
                     appointmentAdapter.notifyDataSetChanged();
+
+                    // If there are appointments, show the ImageView
+                    if (hasAppointments) {
+                        showSampleThreeIcons(getView());
+                    } else {
+                        hideSampleThreeIcons(getView());  // Hide ImageView if no appointments
+                    }
+
                 })
                 .addOnFailureListener(e -> {
                     Log.e("LoadAppointments", "Error loading appointments: ", e);
                     Toast.makeText(getActivity(), "Failed to load appointments: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
+    // Show the icons
+    private void showSampleThreeIcons(View parentView) {
+        ImageView imageView = parentView.findViewById(R.id.imageview1);
+        if (imageView != null) {
+            imageView.setVisibility(View.VISIBLE); // Make the ImageView visible
+            Drawable threeIconsDrawable = getResources().getDrawable(R.drawable.sample_three_icons, null);
+            imageView.setImageDrawable(threeIconsDrawable); // Set the drawable to the ImageView
+        }
+    }
+
+    // Hide the icons when no appointments are found
+    private void hideSampleThreeIcons(View parentView) {
+        ImageView imageView = parentView.findViewById(R.id.imageview1);
+        if (imageView != null) {
+            imageView.setVisibility(View.GONE); // Hide the ImageView
+        }
+    }
+
+
 
     @Override
     public void onItemLongClick(Appointment appointment) {

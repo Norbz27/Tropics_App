@@ -8,51 +8,61 @@
     android:clickable="true"
     android:focusable="true"
     tools:context=".CalendarFragment">
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
         android:scrollbars="none">
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="10dp">
-            <LinearLayout
-                android:id="@+id/calendar"
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp">
+
+            <com.applandeo.materialcalendarview.CalendarView
+                android:id="@+id/calendarView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/darkgray">
-                <com.applandeo.materialcalendarview.CalendarView
-                    android:id="@+id/calendarView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:abbreviationsBarColor="@color/darkgray"
-                    app:abbreviationsLabelsColor="@color/white"
-                    app:anotherMonthsDaysLabelsColor="#787878"
-                    app:daysLabelsColor="@color/white"
-                    app:headerColor="@color/darkgray"
-                    app:headerLabelColor="@color/orange"
-                    app:highlightedDaysLabelsColor="@color/orange"
-                    app:pagesColor="@color/darkgray"
-                    app:todayLabelColor="@color/orange" />
-            </LinearLayout>
+                app:abbreviationsBarColor="@color/darkgray"
+                app:abbreviationsLabelsColor="@color/white"
+                app:anotherMonthsDaysLabelsColor="#787878"
+                app:daysLabelsColor="@color/white"
+                app:headerColor="@color/darkgray"
+                app:headerLabelColor="@color/orange"
+                app:highlightedDaysLabelsColor="@color/orange"
+                app:pagesColor="@color/darkgray"
+                app:todayLabelColor="@color/orange" />
+
+            <ImageView
+                android:id="@+id/imageview1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/calendarView"
+                android:visibility="gone"
+                android:layout_marginTop="20dp"
+             />
+
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/calendar"
-                android:layout_marginTop="20dp"
+                android:layout_below="@id/imageview1"
                 android:fillViewport="true"
                 android:scrollbars="none">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical">
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rcview"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
+
                 </LinearLayout>
             </ScrollView>
+
         </RelativeLayout>
     </ScrollView>
 </FrameLayout>
