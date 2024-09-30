@@ -188,8 +188,31 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         dateTextView.setText(appointment.getDate());
         timeTextView.setText(appointment.getTime());
         phoneNumberTextView.setText(appointment.getPhone());
-        empNameTextView.setText("Employee Names");
 
+        // Get employee ID from the appointment
+        String employeeId = appointment.getEmployeeId(); // Assuming you have this method
+
+        // Check if the employee ID is null or empty
+        if (employeeId == null || employeeId.isEmpty()) {
+            empNameTextView.setText("Employee ID not available");
+            return; // Exit early if the employee ID is invalid
+        }
+
+        // Fetch employee name using Firestore
+        db.collection("Employees").document(employeeId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String employeeName = documentSnapshot.getString("name"); // Adjust field name if necessary
+                        empNameTextView.setText(employeeName);
+                    } else {
+                        empNameTextView.setText("Employee not found");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    empNameTextView.setText("Error fetching employee");
+                    Log.e("ViewAppointment", "Error fetching employee: ", e);
+                });
         // Format service details and calculate total price
         StringBuilder serviceDetails = new StringBuilder();
         double totalPrice = 0.0;

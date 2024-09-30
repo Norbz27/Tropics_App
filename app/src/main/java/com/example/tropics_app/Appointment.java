@@ -20,9 +20,9 @@ public class Appointment {
     private String email; // Email of the person
     private String phone; // Phone number of the person
     private String serviceId; // Service ID associated with the appointment
+    private String employeeId; // Employee ID associated with the appointment
     private List<Map<String, Object>> services; // List of services associated with the appointment
     private String createdDateTime;
-
 
     // Required empty constructor for Firestore
     public Appointment() {
@@ -38,7 +38,6 @@ public class Appointment {
         this.serviceId = serviceId;
         this.services = services != null ? services : new ArrayList<>(); // Avoid null
         this.createdDateTime = createdDateTime;
-
     }
 
     // Constructor to initialize fullName, date, and time fields without ID
@@ -125,6 +124,14 @@ public class Appointment {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getEmployeeId() { // Add this method
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) { // Add this method
+        this.employeeId = employeeId;
     }
 
     // Getter and Setter for createdDateTime
