@@ -129,11 +129,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     appointmentAdapter.notifyDataSetChanged();
 
                     // If there are appointments, show the ImageView
-                    if (hasAppointments) {
-                        showSampleThreeIcons(getView());
-                    } else {
-                        hideSampleThreeIcons(getView());  // Hide ImageView if no appointments
-                    }
+
 
                 })
                 .addOnFailureListener(e -> {
@@ -142,21 +138,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                 });
     }
 
-    private void showSampleThreeIcons(View parentView) {
-        ImageView imageView = parentView.findViewById(R.id.imageview1);
-        if (imageView != null) {
-            imageView.setVisibility(View.VISIBLE); // Make the ImageView visible
-            Drawable threeIconsDrawable = getResources().getDrawable(R.drawable.sample_three_icons, null);
-            imageView.setImageDrawable(threeIconsDrawable); // Set the drawable to the ImageView
-        }
-    }
-
-    private void hideSampleThreeIcons(View parentView) {
-        ImageView imageView = parentView.findViewById(R.id.imageview1);
-        if (imageView != null) {
-            imageView.setVisibility(View.GONE); // Hide the ImageView
-        }
-    }
 
     @Override
     public void onItemLongClick(Appointment appointment) {
