@@ -1,176 +1,160 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@color/gray"
-    android:padding="16dp">
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/gray">
+
+    <!-- Client Name -->
+    <TextView
+        android:id="@+id/tvName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Name: John Doe"
+        android:textSize="20sp"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:fontFamily="@font/manrope"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Email Address -->
+    <TextView
+        android:id="@+id/tvEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Email: johndoe@example.com"
+        android:textSize="16sp"
+        android:fontFamily="@font/manrope"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Phone Number -->
+    <TextView
+        android:id="@+id/tvPhoneNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Phone: 123-456-7890"
+        android:textSize="16sp"
+        android:fontFamily="@font/manrope"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Date and Time Section (Two Columns) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:id="@+id/tvdate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Date: 20/12/2024"
+            android:textSize="16sp"
+            android:layout_weight="1"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/manrope"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Time: 10:00 AM"
+            android:textSize="16sp"
+            android:layout_weight="1"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/manrope"
+            android:layout_marginBottom="4dp"/>
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <FrameLayout
-            android:id="@+id/dialog_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"/>
-
-        <TextView
-            android:id="@+id/textView8"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Name:"
-            android:textSize="15sp"
-            android:textColor="@color/white" />
-
-        <TextView
-            android:id="@+id/tvFullName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope"
-            android:text="Name:"
-            android:textSize="15sp"
-            android:textColor="#B6B6B6" />
-
-        <TextView
-            android:id="@+id/textView21"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Phone Number:"
-            android:textColor="@color/white"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/tvPhoneNumber"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope"
-            android:text="Phone:"
-            android:textColor="#B6B6B6"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/textView19"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Date:"
-            android:textColor="@color/white"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/tvdate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope"
-            android:text="date:"
-            android:textSize="15sp"
-            android:textColor="#B6B6B6" />
-
-        <TextView
-            android:id="@+id/textView20"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Time:"
-            android:textColor="@color/white"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/tvTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="time:"
-            android:textSize="15sp"
-            android:textColor="#B6B6B6" />
-
-        <TextView
-            android:id="@+id/textView17"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Services"
-            android:textSize="15sp"
-            android:textColor="@color/white" />
-
-        <TextView
-            android:id="@+id/ttextview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Employee Name:"
-            android:textColor="@color/white" />
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:layout_marginTop="8dp">
 
         <TextView
             android:id="@+id/empname"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:fontFamily="@font/manrope_medium"
-            android:hint="Full Name"
-            android:inputType="textCapSentences"
-            android:paddingHorizontal="12dp"
-            android:textColor="#B6B6B6"
-            android:textColorHint="#B6B6B6"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/Service1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Service:"
-            android:textColor="@color/white" />
-
-        <TextView
-            android:id="@+id/textView5"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Services"
-            android:textColor="#B6B6B6"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/tt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Total"
-            android:textColor="@color/white" />
-
-        <TextView
-            android:id="@+id/service_name_text_view"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1" />
+            android:text="Employee Assigned"
+            android:textSize="16sp"
+            android:layout_weight="1"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/manrope"
+            android:layout_marginBottom="4dp"/>
+    </LinearLayout>
+    <!-- Service Header -->
+    <TextView
+        android:id="@+id/tvServiceHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Services"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:fontFamily="@font/manrope"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/services"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:fontFamily="@font/manrope"
+        android:textSize="13sp"/>
+
+    <!-- Total Section (Two Columns) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:layout_marginTop="8dp">
 
         <TextView
-            android:id="@+id/total"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:fontFamily="@font/manrope_medium"
-            android:hint="Total"
-            android:inputType="textCapSentences"
-            android:paddingHorizontal="12dp"
-            android:textColor="#B6B6B6"
-            android:textColorHint="#B6B6B6"
-            android:textSize="15sp" />
+            android:id="@+id/tvServiceTotal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Total:"
+            android:textSize="16sp"
+            android:layout_weight="1"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/manrope"/>
 
         <TextView
-            android:id="@+id/service_price_text_view"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:id="@+id/tvTotalPrice"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="PHP 1000"
+            android:textSize="16sp"
+            android:layout_weight="1"
+            android:textColor="@android:color/white"
+            android:fontFamily="@font/manrope_bold"/>
+    </LinearLayout>
 
-        <LinearLayout
+    <!-- Buttons Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/btnClose"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:orientation="horizontal"
-            android:gravity="end"/>
+            android:text="Close"
+            android:background="@drawable/custom_background_3"
+            android:textColor="@android:color/white"
+            android:padding="12dp"
+            android:textSize="16sp" />
     </LinearLayout>
-</ScrollView>
+
+</LinearLayout>

@@ -125,9 +125,9 @@ public class CustomerFragment extends Fragment {
         TextView tvClientAddress = dialogView.findViewById(R.id.tvClientAddress);
 
         tvClientName.setText((String) clientData.get("fullName"));
-        tvClientEmail.setText((String) clientData.get("email"));
-        tvClientPhone.setText((String) clientData.get("phone"));
-        tvClientAddress.setText((String) clientData.get("address"));
+        tvClientEmail.setText("Email: " + clientData.get("email"));
+        tvClientPhone.setText("Phone: " + clientData.get("phone"));
+        tvClientAddress.setText("Address: " + clientData.get("address"));
 
         // Set up RecyclerView for appointments
         RecyclerView rvAppointments = dialogView.findViewById(R.id.rvAppointments);

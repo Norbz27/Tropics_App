@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -78,9 +79,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
             // Get selected date and update the RecyclerView
             selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(event.getCalendar().getTime());
             loadAppointmentData(selectedDate); // Load appointments for the selected date
-
-            // Show sample_three_icons when a date is clicked
-            showSampleThreeIcons(view);
         });
 
         return view;
@@ -175,30 +173,38 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         View dialogView = inflater.inflate(R.layout.view_appointment1, null);
 
         // Find TextViews
-        TextView fullnameTextView = dialogView.findViewById(R.id.tvFullName);
+        TextView fullnameTextView = dialogView.findViewById(R.id.tvName);
+        TextView emailTextView = dialogView.findViewById(R.id.tvEmail);
         TextView dateTextView = dialogView.findViewById(R.id.tvdate);
         TextView timeTextView = dialogView.findViewById(R.id.tvTime);
         TextView phoneNumberTextView = dialogView.findViewById(R.id.tvPhoneNumber);
         TextView empNameTextView = dialogView.findViewById(R.id.empname);
-        TextView serviceTextView = dialogView.findViewById(R.id.textView5);
-        TextView totalPriceTextView = dialogView.findViewById(R.id.total);
+        TextView serviceTextView = dialogView.findViewById(R.id.services);
+        TextView totalPriceTextView = dialogView.findViewById(R.id.tvTotalPrice);
+        Button btnClose = dialogView.findViewById(R.id.btnClose);
 
         // Set appointment details
         fullnameTextView.setText(appointment.getFullName());
-        dateTextView.setText(appointment.getDate());
-        timeTextView.setText(appointment.getTime());
-        phoneNumberTextView.setText(appointment.getPhone());
+        emailTextView.setText("Email: " + appointment.getEmail());
+        dateTextView.setText("Date: " + appointment.getDate());
+        timeTextView.setText("Time: " + appointment.getTime());
+        phoneNumberTextView.setText("Phone: " + appointment.getPhone());
 
-        // Get employee ID from the appointment
+        // Close the dialog
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        dialogBuilder.setView(dialogView);
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        // Fetch employee name using Firestore if available
         String employeeId = appointment.getEmployeeId(); // Assuming you have this method
-
-        // Check if the employee ID is null or empty
         if (employeeId == null || employeeId.isEmpty()) {
             empNameTextView.setText("Employee ID not available");
             return; // Exit early if the employee ID is invalid
         }
 
-        // Fetch employee name using Firestore
         db.collection("Employees").document(employeeId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -213,44 +219,27 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     empNameTextView.setText("Error fetching employee");
                     Log.e("ViewAppointment", "Error fetching employee: ", e);
                 });
+
         // Format service details and calculate total price
         StringBuilder serviceDetails = new StringBuilder();
         double totalPrice = 0.0;
 
         for (Map<String, Object> service : appointment.getServices()) {
+            // Safe casting to String and double
             String parentServiceName = (String) service.get("parentServiceName");
             String serviceName = (String) service.get("serviceName");
-            double servicePrice = (double) service.get("servicePrice");
+            Double servicePrice = service.get("servicePrice") != null ? (double) service.get("servicePrice") : 0.0;
 
             serviceDetails.append(parentServiceName).append(": ")
                     .append(serviceName).append(" - ")
                     .append(servicePrice).append(" PHP\n");
 
-            totalPrice += servicePrice;
-
-            List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
-            if (subServices != null) {
-                for (Map<String, Object> subService : subServices) {
-                    String subServiceName = (String) subService.get("serviceName");
-                    double subServicePrice = (double) subService.get("servicePrice");
-
-                    serviceDetails.append("\tSubService: ").append(subServiceName)
-                            .append(" - ").append(subServicePrice)
-                            .append(" PHP\n");
-
-                    totalPrice += subServicePrice;
-                }
-            }
+            totalPrice += servicePrice; // Accumulate total price
         }
 
-        // Set the services text and total price
+        // Set the services and total price in the dialog
         serviceTextView.setText(serviceDetails.toString());
-        totalPriceTextView.setText("Total: " + totalPrice + " PHP");
-
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
-        dialogBuilder.setView(dialogView);
-        AlertDialog dialog = dialogBuilder.create();
-        dialog.show();
+        totalPriceTextView.setText("Total Price: " + totalPrice + " PHP");
     }
 
     private void showAppointmentOptionsDialog(Appointment appointment) {
@@ -269,7 +258,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                 .create()
                 .show();
     }
-
     private void deleteAppointment(Appointment appointment) {
         db.collection("appointments").document(appointment.getId())
                 .delete()
@@ -322,7 +310,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         });
     }
 
-
     private void loadEmployees(Spinner spinnerEmployees, List<String> employeeIdList) {
         List<String> employeeList = new ArrayList<>();
 
@@ -365,5 +352,4 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     Toast.makeText(getActivity(), "Failed to update appointment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
-
 }
