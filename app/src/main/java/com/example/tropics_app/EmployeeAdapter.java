@@ -22,7 +22,8 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
     // Nested interface for click listener
     public interface OnEmployeeClickListener {
         void onEmployeeClick(Employee employee);
-        void onEmployeeLongClick(Employee employee); // Added long click method
+
+        void onEmployeeLongClick(View view, Employee employee);
     }
 
     public EmployeeAdapter(OnEmployeeClickListener listener, List<Employee> employeeList) {
@@ -60,7 +61,7 @@ public class EmployeeAdapter extends RecyclerView.Adapter<EmployeeAdapter.Employ
         // Set an OnLongClickListener for the entire item
         holder.itemView.setOnLongClickListener(v -> {
             if (listener != null) {
-                listener.onEmployeeLongClick(employee); // Notify the listener that an item was long-pressed
+                listener.onEmployeeLongClick(v,employee); // Notify the listener that an item was long-pressed
             }
             return true; // Return true to indicate that the long click event was handled
         });

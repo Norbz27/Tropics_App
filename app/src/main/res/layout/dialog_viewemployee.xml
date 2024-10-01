@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/gray"
     android:padding="16dp">
 
@@ -14,172 +14,121 @@
         <FrameLayout
             android:id="@+id/dialog_container"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"/>
+            android:layout_height="wrap_content"
+            android:gravity="center" />
 
-        <ImageView
-            android:id="@+id/imgemp"
-            android:layout_width="150dp"
-            android:layout_height="150dp"
-            android:layout_gravity="center_horizontal"
-            android:src="@drawable/ic_image_placeholder"
-            android:contentDescription="Image"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+        <!-- Employee Info Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/imgemp"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_marginEnd="16dp"
+                android:src="@drawable/ic_image_placeholder"
+                android:contentDescription="Employee Image"
+                android:scaleType="centerCrop"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/empname"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:paddingHorizontal="12dp"
+                    android:fontFamily="@font/manrope_semibold"
+                    android:text="Name: John Doe"
+                    android:textColor="@color/white"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/empadd"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:paddingHorizontal="12dp"
+                    android:fontFamily="@font/manrope"
+                    android:text="Address: 123 Main St, City"
+                    android:textColor="#B6B6B6"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/empphone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:paddingHorizontal="12dp"
+                    android:fontFamily="@font/manrope"
+                    android:text="Phone: (123) 456-7890"
+                    android:textColor="#B6B6B6"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/empemail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:paddingHorizontal="12dp"
+                    android:fontFamily="@font/manrope"
+                    android:text="Email: johndoe@example.com"
+                    android:textColor="#B6B6B6"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Salary and Commission Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Salary Information"
+            android:textColor="@color/orange"
+            android:fontFamily="@font/manrope_semibold"
+            android:textSize="20sp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:color/darker_gray" />
 
         <TextView
-            android:id="@+id/textView8"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Name:"
-            android:textColor="#B6B6B6" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_weight="1"
-            android:textColorHint="@android:color/darker_gray"
-            app:boxStrokeWidth="3dp"
-            app:boxStrokeWidthFocused="3dp"
-            app:hintEnabled="false">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/empname"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:background="@drawable/custom_input"
-                android:fontFamily="@font/manrope_medium"
-                android:hint="Name"
-                android:inputType="textCapSentences"
-                android:paddingHorizontal="12dp"
-                android:textColorHint="#B6B6B6"
-                android:textColor="#B6B6B6"
-                android:textSize="15sp" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <TextView
-            android:id="@+id/textView14"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Address:"
-            android:textColor="#B6B6B6" />
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/empadd"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/custom_input"
-            android:fontFamily="@font/manrope_medium"
-            android:hint="Address"
-            android:inputType="textCapSentences"
-            android:paddingHorizontal="12dp"
-            android:textColorHint="#B6B6B6"
-            android:textColor="#B6B6B6"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/textView15"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Phone:"
-            android:textColor="#B6B6B6" />
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/empphone"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/custom_input"
-            android:fontFamily="@font/manrope_medium"
-            android:hint="Phone"
-            android:inputType="textCapSentences"
-            android:paddingHorizontal="12dp"
-            android:textColorHint="#B6B6B6"
-            android:textColor="#B6B6B6"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/textView16"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Email:"
-            android:textColor="#B6B6B6" />
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/empemail"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/custom_input"
-            android:fontFamily="@font/manrope_medium"
-            android:hint="Email"
-            android:inputType="textCapSentences"
-            android:paddingHorizontal="12dp"
-            android:textColorHint="#B6B6B6"
-            android:textColor="#B6B6B6"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/textView17"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Salary:"
-            android:textColor="#B6B6B6" />
-
-        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/empsal1"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/custom_input"
-            android:fontFamily="@font/manrope_medium"
-            android:hint="Weekly Salary"
-            android:inputType="textCapSentences"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:paddingHorizontal="12dp"
-            android:textColorHint="#B6B6B6"
+            android:fontFamily="@font/manrope"
+            android:text="Weekly Salary: $500"
             android:textColor="#B6B6B6"
-            android:textSize="15sp" />
+            android:textSize="15sp"/>
 
         <TextView
-            android:id="@+id/textView18"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="@font/manrope_bold"
-            android:text="Comission:"
-            android:textColor="#B6B6B6" />
-
-        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/empcomm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:layout_weight="1"
-            android:textColorHint="@android:color/darker_gray"
-            app:boxStrokeWidth="3dp"
-            app:boxStrokeWidthFocused="3dp"
-            app:hintEnabled="false">
+            android:paddingHorizontal="12dp"
+            android:fontFamily="@font/manrope"
+            android:text="Commission: $100"
+            android:textColor="#B6B6B6"
+            android:textSize="15sp"/>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/empcomm"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:background="@drawable/custom_input"
-                android:fontFamily="@font/manrope_medium"
-                android:hint="Comission"
-                android:inputType="textCapSentences"
-                android:paddingHorizontal="12dp"
-                android:textColorHint="#B6B6B6"
-                android:textColor="#B6B6B6"
-                android:textSize="15sp" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <!-- Add some padding at the bottom for better scrolling experience -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
     </LinearLayout>
 </ScrollView>

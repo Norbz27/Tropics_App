@@ -6,7 +6,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -15,16 +18,14 @@ import android.widget.EditText;
 import com.bumptech.glide.Glide;
 import com.google.android.material.floatingactionbutton.FloatingActionButton; // Updated import
 
-import android.widget.FrameLayout;
-import android.widget.LinearLayout;
+import android.widget.PopupMenu;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
@@ -52,6 +53,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     private static final int IMAGE_PICK_REQUEST = 100;
     private ImageView imgEmp;
     private Uri selectedImageUri;
+    private static final int PICK_IMAGE_REQUEST = 1;
 
     public SalaryFragment() {
         // Required empty public constructor
@@ -220,19 +222,19 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         View dialogView = inflater.inflate(R.layout.dialog_viewemployee, null);
 
         ImageView imgEmp = dialogView.findViewById(R.id.imgemp);
-        EditText empName = dialogView.findViewById(R.id.empname);
-        EditText empAddress = dialogView.findViewById(R.id.empadd);
-        EditText empPhone = dialogView.findViewById(R.id.empphone);
-        EditText empEmail = dialogView.findViewById(R.id.empemail);
-        EditText empSal = dialogView.findViewById(R.id.empsal1);
-        EditText empComm = dialogView.findViewById(R.id.empcomm);
+        TextView empName = dialogView.findViewById(R.id.empname);
+        TextView empAddress = dialogView.findViewById(R.id.empadd);
+        TextView empPhone = dialogView.findViewById(R.id.empphone);
+        TextView empEmail = dialogView.findViewById(R.id.empemail);
+        TextView empSal = dialogView.findViewById(R.id.empsal1);
+        TextView empComm = dialogView.findViewById(R.id.empcomm);
 
         empName.setText(employee.getName());
-        empAddress.setText(employee.getAddress());
-        empPhone.setText(employee.getPhone());
-        empEmail.setText(employee.getEmail());
-        empSal.setText(String.valueOf(employee.getSalary())); // Convert to String
-        empComm.setText(String.valueOf(employee.getComs())); // Convert to String
+        empAddress.setText("Address: " + employee.getAddress());
+        empPhone.setText("Phone: " + employee.getPhone());
+        empEmail.setText("Email: " + employee.getEmail());
+        empSal.setText("Weekly Salary: ₱" + employee.getSalary());
+        empComm.setText("Commission: ₱" + employee.getComs());
 
         Glide.with(this)
                 .load(employee.getImage())
@@ -252,24 +254,43 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     }
 
     @Override
-    public void onEmployeeLongClick(Employee employee) {
-        showEmployeeOptionsDialog(employee);
+    public void onEmployeeLongClick(View view, Employee employee) {
+        showEmployeeOptionsDialog(view, employee);
     }
 
-    private void showEmployeeOptionsDialog(Employee employee) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Options")
-                .setItems(new CharSequence[]{"Edit", "Delete"}, (dialog, which) -> {
-                    switch (which) {
-                        case 0:
-                            showEditEmployeeDialog(employee);
-                            break;
-                        case 1:
-                            deleteEmployee(employee);
-                            break;
-                    }
-                })
-                .show();
+
+    private void showEmployeeOptionsDialog(View view, Employee employee) {
+        // Create a PopupMenu
+        PopupMenu popupMenu = new PopupMenu(getActivity(), view);
+
+        // Set the gravity to the right (you can also use Gravity.END)
+        popupMenu.setGravity(Gravity.END);
+
+        // Inflate the menu layout (assuming you have a menu resource)
+        MenuInflater inflater = popupMenu.getMenuInflater();
+        inflater.inflate(R.menu.employee_item_menu, popupMenu.getMenu());
+
+        Menu menu = popupMenu.getMenu();
+
+        // Set a listener for menu item clicks
+        popupMenu.setOnMenuItemClickListener(menuItem -> {
+            int id = menuItem.getItemId();
+
+            if (id == R.id.action_edit) {
+                // Call the edit action
+                showEditEmployeeDialog(employee);
+                return true;
+            } else if (id == R.id.action_delete) {
+                // Call the delete action
+                deleteEmployee(employee);
+                return true;
+            } else {
+                return false; // Unhandled item
+            }
+        });
+
+        // Show the popup menu
+        popupMenu.show();
     }
 
     private void showEditEmployeeDialog(Employee employee) {
@@ -298,8 +319,10 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         dialog.show();
 
         imgEmp.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(intent, IMAGE_PICK_REQUEST);
+            Intent intent = new Intent();
+            intent.setType("image/*");
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
         });
 
         btnSubmit.setOnClickListener(v -> {

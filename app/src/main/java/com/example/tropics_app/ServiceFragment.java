@@ -110,11 +110,11 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
     private void filterInventory(String query) {
         filteredList.clear(); // Clear the filtered list
 
-        if (query.isEmpty() || query.equals("")) {
+        if (query.isEmpty()) {
             filteredList.addAll(serviceList); // Add all items back
         } else {
             for (Map<String, Object> item : serviceList) {
-                String name = (String) item.get("name");
+                String name = (String) item.get("service_name");
                 if (name != null && name.toLowerCase().contains(query.toLowerCase())) {
                     filteredList.add(item);
                 }

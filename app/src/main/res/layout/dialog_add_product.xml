@@ -15,6 +15,7 @@
         android:layout_gravity="center_horizontal"
         android:src="@drawable/ic_image_placeholder"
         android:contentDescription="Product Image"
+        android:scaleType="centerCrop"
         android:clickable="true"
         android:focusable="true"
         android:background="?attr/selectableItemBackgroundBorderless" />

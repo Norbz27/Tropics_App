@@ -127,15 +127,26 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="16dp">
-
+        android:layout_marginTop="16dp"
+        android:gravity="right">
         <Button
             android:id="@+id/btnClose"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text="Close"
-            android:background="@drawable/custom_background_3"
-            android:textColor="@android:color/white"
+            android:background="@drawable/custom_background_2"
+            android:textColor="@color/orange"
+            android:padding="12dp"
+            android:textSize="16sp" />
+        <Button
+            android:id="@+id/btnAssign"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Assign"
+            android:background="@drawable/custom_background_2"
+            android:textColor="@color/orange"
             android:padding="12dp"
             android:textSize="16sp" />
     </LinearLayout>

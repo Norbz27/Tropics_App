@@ -1,8 +1,10 @@
 package com.example.tropics_app;
 
 import android.annotation.SuppressLint;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,6 +21,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -26,6 +30,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.applandeo.materialcalendarview.CalendarDay;
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -179,6 +185,133 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         TextView serviceTextView = dialogView.findViewById(R.id.services);
         TextView totalPriceTextView = dialogView.findViewById(R.id.tvTotalPrice);
         Button btnClose = dialogView.findViewById(R.id.btnClose);
+        Button btnAssign = dialogView.findViewById(R.id.btnAssign);
+        btnAssign.setOnClickListener(v -> {
+            // Fetch employee names from Firestore collection
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            CollectionReference employeesRef = db.collection("Employees");
+
+            // Create the dialog view for assigning employees
+            LayoutInflater inflaterAssign = getLayoutInflater();
+            View assignDialogView = inflaterAssign.inflate(R.layout.dialog_assign_sub_services, null);
+
+            // LinearLayout to hold the dynamically added Spinner views
+            LinearLayout subServiceContainer = assignDialogView.findViewById(R.id.subServiceContainer);
+
+            // Fetch employee names and proceed with setting up the dialog
+            employeesRef.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    List<String> employeeNames = new ArrayList<>();
+                    employeeNames.add("None");
+                    for (QueryDocumentSnapshot document : task.getResult()) {
+                        String employeeName = document.getString("name");
+                        if (employeeName != null) {
+                            employeeNames.add(employeeName);
+                        }
+                    }
+
+                    // Iterate through the services and sub-services to create Spinners
+                    for (Map<String, Object> service : appointment.getServices()) {
+                        String subServiceName = (String) service.get("serviceName");
+                        String assignedEmployee = (String) service.get("assignedEmployee"); // Fetch the assigned employee if it exists
+
+                        // Create a TextView to display the sub-service name
+                        TextView subServiceTextView = new TextView(getActivity());
+                        subServiceTextView.setText(subServiceName);
+                        subServiceTextView.setPadding(16, 16, 16, 0); // Optional padding
+
+                        // Create a Spinner to assign the employee
+                        Spinner employeeSpinner = new Spinner(getActivity());
+                        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(getActivity(),
+                                android.R.layout.simple_spinner_item, employeeNames);
+                        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                        employeeSpinner.setAdapter(spinnerAdapter);
+
+                        // If an employee is already assigned, set that as the selected item
+                        if (assignedEmployee != null && employeeNames.contains(assignedEmployee)) {
+                            employeeSpinner.setSelection(employeeNames.indexOf(assignedEmployee));
+                        }
+
+                        // Add the TextView and Spinner to the container
+                        subServiceContainer.addView(subServiceTextView);
+                        subServiceContainer.addView(employeeSpinner);
+                    }
+
+                    // Build and display the dialog
+                    AlertDialog.Builder assignDialogBuilder = new AlertDialog.Builder(getActivity());
+                    assignDialogBuilder.setView(assignDialogView)
+                            .setTitle("Assign Employees")
+                            .setPositiveButton("Assign", (dialogInterface, which) -> {
+                                // Handle assigning employees here
+                                int childCount = subServiceContainer.getChildCount();
+                                for (int i = 0; i < childCount; i += 2) { // Skip the TextViews (i.e., every second view)
+                                    TextView subServiceTextView = (TextView) subServiceContainer.getChildAt(i);
+                                    Spinner employeeSpinner = (Spinner) subServiceContainer.getChildAt(i + 1);
+
+                                    String subServiceName = subServiceTextView.getText().toString();
+                                    String assignedEmployee = employeeSpinner.getSelectedItem().toString();
+
+                                    // Log assignment (for debug)
+                                    Log.d("Assignment", "Sub-service: " + subServiceName + ", Employee: " + assignedEmployee);
+
+                                    // Update the Firestore document
+                                    DocumentReference appointmentRef = db.collection("appointments").document(appointment.getId());
+
+                                    // Update the specific service in the services array
+                                    List<Map<String, Object>> services = appointment.getServices();
+                                    for (Map<String, Object> service : services) {
+                                        if (subServiceName.equals(service.get("serviceName"))) {
+                                            // Add the assigned employee to the service
+                                            service.put("assignedEmployee", assignedEmployee);
+                                            break;
+                                        }
+                                    }
+
+                                    // Update the document in Firestore
+                                    appointmentRef.update("services", services)
+                                            .addOnSuccessListener(aVoid -> {
+                                                Log.d("Firestore", "Employee assigned successfully.");
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                Log.w("Firestore", "Error updating document", e);
+                                            });
+                                }
+                            })
+                            .setNegativeButton("Cancel", (dialogInterface, which) -> dialogInterface.dismiss());
+
+                    // Show the assign dialog
+                    AlertDialog assignDialog = assignDialogBuilder.create();
+                    assignDialog.setOnShowListener(dialogInterface -> {
+                        // Load the custom font
+                        Typeface manrope = ResourcesCompat.getFont(getActivity(), R.font.manrope);
+
+                        // Set the custom font for the positive button ("Assign")
+                        Button positiveButton = assignDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                        positiveButton.setTextColor(ContextCompat.getColor(getActivity(), R.color.orange));
+                        positiveButton.setTypeface(manrope);
+
+                        // Set the custom font for the negative button ("Cancel")
+                        Button negativeButton = assignDialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+                        negativeButton.setTextColor(ContextCompat.getColor(getActivity(), R.color.orange));
+                        negativeButton.setTypeface(manrope);
+
+                        // Iterate through the views in the dialog and set the custom font
+                        int childCount = subServiceContainer.getChildCount();
+                        for (int i = 0; i < childCount; i++) {
+                            View child = subServiceContainer.getChildAt(i);
+
+                            if (child instanceof TextView) {
+                                ((TextView) child).setTypeface(manrope); // Set custom font for TextViews
+                            }
+                        }
+                    });
+                    assignDialog.show();
+                } else {
+                    Log.d("Firestore", "Error getting documents: ", task.getException());
+                }
+            });
+        });
+
 
         // Set appointment details
         fullnameTextView.setText(appointment.getFullName());
@@ -226,7 +359,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         for (Map<String, Object> service : appointment.getServices()) {
             // Safe casting to String and double
             String parentServiceName = (String) service.get("parentServiceName");
-            String serviceName = (String) service.get("serviceName");
+            String serviceName = (String) service.get("serviceName"); // Check for sub-services
             Double servicePrice = service.get("servicePrice") != null ? (double) service.get("servicePrice") : 0.0;
 
             // Append parent service name
@@ -246,14 +379,13 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
 
             totalPrice += servicePrice; // Accumulate total price
 
-            // Check for sub-services
+            // Check for sub-sub-services
             List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
             if (subServices != null) {
                 for (Map<String, Object> subService : subServices) {
                     String subServiceName = (String) subService.get("serviceName");
                     Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
 
-                    // Append sub-service with more indentation
                     if(!subServicePrice.equals(0.0)){
                         serviceDetails.append("\t\t").append(subServiceName).append(" - ₱")
                                 .append(subServicePrice).append("\n");
@@ -261,7 +393,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                         serviceDetails.append("\t\t").append(subServiceName).append("\n");
                     }
 
-                    totalPrice += subServicePrice; // Accumulate total price
+                    totalPrice += subServicePrice;
                 }
             }
         }
@@ -276,12 +408,9 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     private void showAppointmentOptionsDialog(Appointment appointment) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Options")
-                .setItems(new CharSequence[]{"Edit", "Delete"}, (dialog, which) -> {
+                .setItems(new CharSequence[]{"Delete"}, (dialog, which) -> {
                     switch (which) {
                         case 0:
-                            showEditAppointmentDialog(appointment);
-                            break;
-                        case 1:
                             deleteAppointment(appointment);
                             break;
                     }
@@ -299,88 +428,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                 .addOnFailureListener(e -> {
                     Log.e("DeleteAppointment", "Error deleting appointment: ", e);
                     Toast.makeText(getActivity(), "Failed to delete appointment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    private void showEditAppointmentDialog(Appointment appointment) {
-        LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.dialogbox_editappointment, null);
-
-        EditText fullNameEditText = dialogView.findViewById(R.id.etFullName);
-        EditText dateEditText = dialogView.findViewById(R.id.etDate);
-        EditText timeEditText = dialogView.findViewById(R.id.etTime);
-        Spinner spinnerEmployees = dialogView.findViewById(R.id.employee); // Spinner for employee selection
-        Button applyChangesButton = dialogView.findViewById(R.id.empsub); // Apply changes button
-
-        fullNameEditText.setText(appointment.getFullName());
-        dateEditText.setText(appointment.getDate());
-        timeEditText.setText(appointment.getTime());
-
-        // Load employees into spinner
-        employeeIdList = new ArrayList<>(); // Initialize employeeIdList
-        loadEmployees(spinnerEmployees, employeeIdList);
-
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
-        dialogBuilder.setView(dialogView);
-
-        AlertDialog dialog = dialogBuilder.create();
-        dialog.show();
-
-        // Set click listener for the Apply Changes button
-        applyChangesButton.setOnClickListener(v -> {
-            String newFullName = fullNameEditText.getText().toString();
-            String newDate = dateEditText.getText().toString();
-            String newTime = timeEditText.getText().toString();
-            String selectedEmployeeId = employeeIdList.get(spinnerEmployees.getSelectedItemPosition());
-
-            // Update appointment details
-            updateAppointment(appointment.getId(), newFullName, newDate, newTime, selectedEmployeeId);
-
-            // Dismiss dialog after applying changes
-            dialog.dismiss();
-        });
-    }
-
-    private void loadEmployees(Spinner spinnerEmployees, List<String> employeeIdList) {
-        List<String> employeeList = new ArrayList<>();
-
-        db.collection("Employees")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
-                        String employeeName = documentSnapshot.getString("name");
-                        String employeeId = documentSnapshot.getId(); // Get the document ID
-                        employeeList.add(employeeName);
-                        employeeIdList.add(employeeId); // Add employee ID to the list
-                    }
-
-                    // Set up the spinner with employee names
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_item, employeeList);
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    spinnerEmployees.setAdapter(adapter);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("LoadEmployees", "Error loading employees: ", e);
-                    Toast.makeText(getActivity(), "Failed to load employees: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    private void updateAppointment(String appointmentId, String fullName, String date, String time, String employeeId) {
-        Map<String, Object> updatedAppointment = new HashMap<>();
-        updatedAppointment.put("fullName", fullName);
-        updatedAppointment.put("date", date);
-        updatedAppointment.put("time", time);
-        updatedAppointment.put("employeeId", employeeId); // Update with the selected employee ID
-
-        db.collection("appointments").document(appointmentId)
-                .update(updatedAppointment)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(getActivity(), "Appointment updated", Toast.LENGTH_SHORT).show();
-                    loadAppointmentData(selectedDate); // Refresh appointment data after update
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("UpdateAppointment", "Error updating appointment: ", e);
-                    Toast.makeText(getActivity(), "Failed to update appointment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 }
