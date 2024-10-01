@@ -10,12 +10,12 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="20dp"
+        android:paddingTop="20dp"
         android:fillViewport="true"
         android:scrollbars="none">
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_marginHorizontal="10dp"
         android:layout_marginTop="20dp">
             <LinearLayout
@@ -38,8 +38,9 @@
                     app:todayLabelColor="@color/orange" />
             </LinearLayout>
             <ScrollView
+                android:id="@+id/scrollview"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_below="@id/calendar"
                 android:layout_marginTop="20dp"
                 android:fillViewport="true"
@@ -51,9 +52,13 @@
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rcview"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
+                        android:layout_height="match_parent" />
                 </LinearLayout>
             </ScrollView>
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_below="@id/scrollview"/>
         </RelativeLayout>
     </ScrollView>
 </FrameLayout>

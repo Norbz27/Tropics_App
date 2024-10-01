@@ -109,7 +109,10 @@ public class SalesFragment extends Fragment {
         btnDaily.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setDailyData(appointmentsList, targetMonth, targetYear);
+                String selectedMonth = monthSpinner.getSelectedItem().toString();
+                int monthIndex = getMonthIndex(selectedMonth);
+                int selectedYear = Integer.parseInt(yearSpinner.getSelectedItem().toString());
+                setDailyData(appointmentsList, monthIndex, selectedYear);
                 monthSpinner.setVisibility(View.VISIBLE);
                 btnDaily.setBackgroundResource(R.drawable.button_daily_checked);
                 btnMonthly.setBackgroundResource(R.drawable.button_monthly);
@@ -119,7 +122,8 @@ public class SalesFragment extends Fragment {
         btnMonthly.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setMonthlyData(appointmentsList, targetYear);
+                int selectedYear = Integer.parseInt(yearSpinner.getSelectedItem().toString());
+                setMonthlyData(appointmentsList, selectedYear);
                 isDaily = false;
                 monthSpinner.setVisibility(View.GONE);
                 btnDaily.setBackgroundResource(R.drawable.button_daily);
