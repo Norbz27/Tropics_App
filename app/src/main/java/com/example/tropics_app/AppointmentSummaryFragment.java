@@ -2,6 +2,7 @@ package com.example.tropics_app;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -167,13 +168,18 @@ public class AppointmentSummaryFragment extends Fragment {
                 .add(appointment)
                 .addOnSuccessListener(documentReference -> {
                     Log.d("Firestore", "Appointment submitted successfully with ID: " + documentReference.getId());
-                    showMessageDialog("Success", "Appointment submitted successfully!");
+                    // Pass the ViewPager2 instance to showMessageDialog
+                    ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
+                    showMessageDialog("Success", "Appointment submitted successfully!", viewPager);
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Firestore", "Error submitting appointment", e);
-                    showMessageDialog("Error", "Error submitting appointment. Please try again.");
+                    // Pass the ViewPager2 instance to showMessageDialog
+                    ViewPager2 viewPager = getActivity().findViewById(R.id.viewPager);
+                    showMessageDialog("Error", "Error submitting appointment. Please try again.", viewPager);
                 });
     }
+
 
     // Method to get the current date and time as a formatted string
     private String getCurrentDateTime() {
@@ -181,18 +187,24 @@ public class AppointmentSummaryFragment extends Fragment {
         return dateFormat.format(Calendar.getInstance().getTime());
     }
 
-    private void showMessageDialog(String title, String message) {
+    private void showMessageDialog(String title, String message, ViewPager2 viewPager) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle(title);
         builder.setMessage(message);
 
         builder.setPositiveButton("OK", (dialog, which) -> {
             dialog.dismiss();
+            // Navigate back to the first page
+            viewPager.setCurrentItem(0, true); // 'true' for smooth scroll
+
+            viewModel.setAppointmentDone(true);
         });
 
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+
+
     private void addServiceToFirestore(Map<String, Object> parentMap, SelectedService service, int indentLevel) {
         Log.d("addServiceToFirestore", "Adding service: " + service.getName() + " at level: " + indentLevel);
 

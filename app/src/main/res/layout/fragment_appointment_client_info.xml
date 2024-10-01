@@ -30,12 +30,51 @@
                 android:textSize="22sp"
                 android:textColor="@color/orange" />
 
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/edSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColorHint="@android:color/darker_gray"
+                android:layout_marginTop="20dp"
+                app:boxStrokeWidth="3dp"
+                app:boxStrokeWidthFocused="3dp"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edSearchFirstname"
+                    android:layout_width="match_parent"
+                    android:layout_height="45dp"
+                    android:background="@drawable/custom_background"
+                    android:fontFamily="@font/manrope_medium"
+                    android:drawableStart="@drawable/baseline_search_20"
+                    android:drawablePadding="5dp"
+                    android:hint="Search Last Customer Name..."
+                    android:inputType="text|textCapSentences"
+                    android:paddingHorizontal="12dp"
+                    android:textColor="#B6B6B6"
+                    android:textColorHint="#8E8E8E"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- RecyclerView for search results -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSearchResults"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginTop="10dp"
+                android:visibility="gone" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="15dp"
+                android:background="#8E8E8E" />
             <TextView
                 android:id="@+id/tvFname"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Full name"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="15dp"
                 android:fontFamily="@font/manrope"
                 android:textSize="14sp"
                 android:textColor="#B6B6B6" />

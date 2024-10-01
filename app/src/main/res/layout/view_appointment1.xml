@@ -71,24 +71,6 @@
             android:layout_marginBottom="4dp"/>
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="2"
-        android:layout_marginTop="8dp">
-
-        <TextView
-            android:id="@+id/empname"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Employee Assigned"
-            android:textSize="16sp"
-            android:layout_weight="1"
-            android:textColor="@android:color/darker_gray"
-            android:fontFamily="@font/manrope"
-            android:layout_marginBottom="4dp"/>
-    </LinearLayout>
     <!-- Service Header -->
     <TextView
         android:id="@+id/tvServiceHeader"
@@ -135,6 +117,7 @@
             android:text="PHP 1000"
             android:textSize="16sp"
             android:layout_weight="1"
+            android:gravity="right"
             android:textColor="@android:color/white"
             android:fontFamily="@font/manrope_bold"/>
     </LinearLayout>

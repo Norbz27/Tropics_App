@@ -16,7 +16,15 @@ public class AppointmentViewModel extends ViewModel {
     // Fields for date and time
     private String selectedDate;
     private String selectedTime;
+    private boolean isAppointmentDone = false;
 
+    public boolean isAppointmentDone() {
+        return isAppointmentDone;
+    }
+
+    public void setAppointmentDone(boolean appointmentDone) {
+        isAppointmentDone = appointmentDone;
+    }
     // LiveData to hold selected services
     private final MutableLiveData<List<SelectedService>> selectedServices = new MutableLiveData<>(new ArrayList<>());
 

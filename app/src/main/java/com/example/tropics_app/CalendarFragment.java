@@ -1,5 +1,6 @@
 package com.example.tropics_app;
 
+import android.annotation.SuppressLint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,15 +23,14 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.applandeo.materialcalendarview.CalendarDay;
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -48,7 +48,10 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     private FirebaseFirestore db;
     private String selectedDate;
     private CalendarView calendarView;
-    private List<String> employeeIdList;  // Holds employee IDs for appointments
+    private List<String> employeeIdList;
+    private String parentName = "";
+    private List<CalendarDay> eventDays = new ArrayList<>();
+    private List<CalendarDay> today = new ArrayList<>();
 
     @Nullable
     @Override
@@ -61,29 +64,45 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         // Initialize RecyclerView and AppointmentAdapter
         recyclerView = view.findViewById(R.id.rcview);
         appointmentList = new ArrayList<>();
-        appointmentAdapter = new AppointmentAdapter(appointmentList, this); // Pass the listener
+        appointmentAdapter = new AppointmentAdapter(appointmentList, this);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         recyclerView.setAdapter(appointmentAdapter);
-
+        calendarView = view.findViewById(R.id.calendarView);
         // Load today's appointments
-        selectedDate = getCurrentDate(); // Get today's date
-        loadAppointmentData(selectedDate); // Load appointments for today
+        selectedDate = getCurrentDate();
+        loadAppointmentData(selectedDate);
 
         // Set the long click listener on your adapter
         appointmentAdapter.setOnItemLongClickListener(this);
-
+        showToday();
         // Set up the calendar view
-        calendarView = view.findViewById(R.id.calendarView);
         calendarView.setOnDayClickListener(event -> {
-            // Get selected date and update the RecyclerView
+            eventDays.clear();
+            Date clickedDateString = event.getCalendar().getTime();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(clickedDateString);
+
+            CalendarDay calendarDay = new CalendarDay(calendar);
+            calendarDay.setBackgroundResource(R.drawable.circle_indicator);
+            calendarDay.setLabelColor(R.color.white);
+            eventDays.add(calendarDay);
+            showToday();
+            calendarView.setCalendarDays(eventDays);
+
             selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(event.getCalendar().getTime());
-            loadAppointmentData(selectedDate); // Load appointments for the selected date
+            loadAppointmentData(selectedDate);
         });
 
         return view;
     }
-
+    private void showToday(){
+        Calendar calendarnow = Calendar.getInstance();
+        CalendarDay calendarDaynow = new CalendarDay(calendarnow);
+        calendarDaynow.setBackgroundResource(R.drawable.circle_indicator_day);
+        eventDays.add(calendarDaynow);
+        calendarView.setCalendarDays(eventDays);
+    }
     private String getCurrentDate() {
         // Format today's date as needed (e.g., "yyyy-MM-dd")
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -137,8 +156,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     Toast.makeText(getActivity(), "Failed to load appointments: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
-
-
     @Override
     public void onItemLongClick(Appointment appointment) {
         showAppointmentOptionsDialog(appointment);
@@ -152,14 +169,13 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     private void showViewAppointmentDialog(Appointment appointment) {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.view_appointment1, null);
-
+        parentName = "";
         // Find TextViews
         TextView fullnameTextView = dialogView.findViewById(R.id.tvName);
         TextView emailTextView = dialogView.findViewById(R.id.tvEmail);
         TextView dateTextView = dialogView.findViewById(R.id.tvdate);
         TextView timeTextView = dialogView.findViewById(R.id.tvTime);
         TextView phoneNumberTextView = dialogView.findViewById(R.id.tvPhoneNumber);
-        TextView empNameTextView = dialogView.findViewById(R.id.empname);
         TextView serviceTextView = dialogView.findViewById(R.id.services);
         TextView totalPriceTextView = dialogView.findViewById(R.id.tvTotalPrice);
         Button btnClose = dialogView.findViewById(R.id.btnClose);
@@ -167,8 +183,32 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         // Set appointment details
         fullnameTextView.setText(appointment.getFullName());
         emailTextView.setText("Email: " + appointment.getEmail());
-        dateTextView.setText("Date: " + appointment.getDate());
-        timeTextView.setText("Time: " + appointment.getTime());
+
+        // Assume these are the input formats of the strings
+        SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat inputTimeFormat = new SimpleDateFormat("HH:mm");
+
+        // Desired output formats
+        SimpleDateFormat outputDateFormat = new SimpleDateFormat("MMM dd, yyyy");
+        SimpleDateFormat outputTimeFormat = new SimpleDateFormat("hh:mm a");
+
+        try {
+            // Parse the date and time strings to Date objects
+            String appointmentDateStr = appointment.getDate(); // "2024-01-27"
+            String appointmentTimeStr = appointment.getTime(); // "15:30"
+
+            Date appointmentDate = inputDateFormat.parse(appointmentDateStr);
+            Date appointmentTime = inputTimeFormat.parse(appointmentTimeStr);
+
+            // Format the Date objects to the desired format
+            dateTextView.setText("Date: " + outputDateFormat.format(appointmentDate));
+            timeTextView.setText("Time: " + outputTimeFormat.format(appointmentTime));
+
+        } catch (ParseException e) {
+            e.printStackTrace(); // Handle the exception if parsing fails
+            dateTextView.setText("Date: Invalid");
+            timeTextView.setText("Time: Invalid");
+        }
         phoneNumberTextView.setText("Phone: " + appointment.getPhone());
 
         // Close the dialog
@@ -179,29 +219,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
-        // Fetch employee name using Firestore if available
-        String employeeId = appointment.getEmployeeId(); // Assuming you have this method
-        if (employeeId == null || employeeId.isEmpty()) {
-            empNameTextView.setText("Employee ID not available");
-            return; // Exit early if the employee ID is invalid
-        }
-
-        db.collection("Employees").document(employeeId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        String employeeName = documentSnapshot.getString("name"); // Adjust field name if necessary
-                        empNameTextView.setText(employeeName);
-                    } else {
-                        empNameTextView.setText("Employee not found");
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    empNameTextView.setText("Error fetching employee");
-                    Log.e("ViewAppointment", "Error fetching employee: ", e);
-                });
-
-        // Format service details and calculate total price
+        // Format service details with indention and calculate total price
         StringBuilder serviceDetails = new StringBuilder();
         double totalPrice = 0.0;
 
@@ -211,17 +229,49 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
             String serviceName = (String) service.get("serviceName");
             Double servicePrice = service.get("servicePrice") != null ? (double) service.get("servicePrice") : 0.0;
 
-            serviceDetails.append(parentServiceName).append(": ")
-                    .append(serviceName).append(" - ")
-                    .append(servicePrice).append(" PHP\n");
+            // Append parent service name
+            if(!parentName.equals(parentServiceName)){
+                serviceDetails.append(parentServiceName).append(": \n");
+                parentName = parentServiceName;
+            }
+
+            // Append service name
+            if(!servicePrice.equals(0.0)){
+                serviceDetails.append("\t").append(serviceName).append(" - ₱")
+                        .append(servicePrice).append("\n");
+            }else {
+                serviceDetails.append("\t").append(serviceName).append("\n");
+            }
+
 
             totalPrice += servicePrice; // Accumulate total price
+
+            // Check for sub-services
+            List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+            if (subServices != null) {
+                for (Map<String, Object> subService : subServices) {
+                    String subServiceName = (String) subService.get("serviceName");
+                    Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+
+                    // Append sub-service with more indentation
+                    if(!subServicePrice.equals(0.0)){
+                        serviceDetails.append("\t\t").append(subServiceName).append(" - ₱")
+                                .append(subServicePrice).append("\n");
+                    }else {
+                        serviceDetails.append("\t\t").append(subServiceName).append("\n");
+                    }
+
+                    totalPrice += subServicePrice; // Accumulate total price
+                }
+            }
         }
 
         // Set the services and total price in the dialog
         serviceTextView.setText(serviceDetails.toString());
-        totalPriceTextView.setText("Total Price: " + totalPrice + " PHP");
+        totalPriceTextView.setText("₱" + totalPrice);
     }
+
+
 
     private void showAppointmentOptionsDialog(Appointment appointment) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());

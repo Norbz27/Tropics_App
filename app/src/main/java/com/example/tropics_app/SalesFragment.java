@@ -200,7 +200,6 @@ public class SalesFragment extends Fragment {
     private void setDailyData(List<Appointment> appointmentsList, int targetMonth, int targetYear) {
         ArrayList<Entry> dailyEntries = new ArrayList<>();
         Map<Integer, Float> dailySales = new HashMap<>();
-        Map<Integer, Date> dateMapping = new HashMap<>(); // To map days to dates
 
         float totalSales = 0f;
         int daysWithSales = 0;
@@ -210,11 +209,12 @@ public class SalesFragment extends Fragment {
         float lowestSales = Float.MAX_VALUE;
 
         // Group appointments by day of the target month and sum the sales
+        Calendar calendar = Calendar.getInstance(); // Initialize calendar
         for (Appointment appointment : appointmentsList) {
             Date date = appointment.getCreatedDateTimeAsDate(); // Use the updated method
             if (date != null) {
                 calendar.setTime(date);
-                int month = calendar.get(Calendar.MONTH);
+                int month = calendar.get(Calendar.MONTH) + 1; // Months are zero-based in Calendar
                 int year = calendar.get(Calendar.YEAR);
                 int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
 
@@ -261,34 +261,37 @@ public class SalesFragment extends Fragment {
         LineData lineData = new LineData(dataSet);
         lineChart.setData(lineData);
 
+        CustomMarkerView markerView = new CustomMarkerView(requireContext(), R.layout.custom_marker_view); // Replace with your layout resource
+        lineChart.setMarker(markerView);
+
         // Customize chart appearance
         lineChart.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray)); // Set chart background color
 
-        // Hide the legend
+        // Hide the legend and description
         lineChart.getLegend().setEnabled(false);
-
-        // Hide the description
         lineChart.getDescription().setEnabled(false);
 
-        // Set X-axis labels to daily format
+        // Set X-axis labels to display each day of the month
+        // Set X-axis labels to display in mm-dd format
         XAxis xAxis = lineChart.getXAxis();
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
                 int day = (int) value;
-                Date date = dateMapping.get(day);
-                if (date != null) {
-                    SimpleDateFormat sdf = new SimpleDateFormat("MM-dd", Locale.getDefault());
-                    return sdf.format(date);
-                }
-                return ""; // Return an empty string if there's no date
+                // Format the date as mm-dd
+                String formattedDate = String.format("%02d-%02d", targetMonth, day);
+                return formattedDate; // Return the formatted date string
             }
         });
+
+
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setGranularity(1f); // Ensure each day is shown
-        xAxis.setAxisMinimum(1f); // Set minimum value of X-axis to 1 (first day)
-        xAxis.setAxisMaximum(calendar.getActualMaximum(Calendar.DAY_OF_MONTH)); // Set max value to the last day of the month
+        xAxis.setGranularity(1f);
+        xAxis.setLabelCount(calendar.getActualMaximum(Calendar.DAY_OF_MONTH)); // Ensure all month labels are displayed
+        xAxis.setDrawLabels(true); // Enable drawing labels
         xAxis.setTextColor(Color.WHITE); // Set X-axis text color to white
+        xAxis.setAxisMinimum(1f); // Set the minimum value of X-axis to 1 (January)
+        xAxis.setAxisMaximum(calendar.getActualMaximum(Calendar.DAY_OF_MONTH)); // Set the maximum value of X-axis to 12 (December)
 
         // Customize Y-axis
         YAxis leftAxis = lineChart.getAxisLeft();
@@ -297,6 +300,8 @@ public class SalesFragment extends Fragment {
 
         lineChart.invalidate(); // Refresh the chart
     }
+
+
 
     private void setMonthlyData(List<Appointment> appointmentsList, int selectedYear) {
         ArrayList<Entry> monthlyEntries = new ArrayList<>();
@@ -363,6 +368,9 @@ public class SalesFragment extends Fragment {
 
         LineData lineData = new LineData(dataSet);
         lineChart.setData(lineData);
+
+        CustomMarkerView markerView = new CustomMarkerView(requireContext(), R.layout.custom_marker_view); // Replace with your layout resource
+        lineChart.setMarker(markerView);
 
         // Customize chart appearance
         lineChart.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray)); // Set chart background color

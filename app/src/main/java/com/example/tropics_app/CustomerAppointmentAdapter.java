@@ -14,7 +14,7 @@ import java.util.Map;
 public class CustomerAppointmentAdapter extends RecyclerView.Adapter<CustomerAppointmentAdapter.CustomerAppointmentAdapterViewHolder> {
 
     private final List<Map<String, Object>> appointmentList;
-
+    private String parentN = "";
     public CustomerAppointmentAdapter(List<Map<String, Object>> appointmentList) {
         this.appointmentList = appointmentList;
     }
@@ -29,7 +29,7 @@ public class CustomerAppointmentAdapter extends RecyclerView.Adapter<CustomerApp
     @Override
     public void onBindViewHolder(@NonNull CustomerAppointmentAdapterViewHolder holder, int position) {
         Map<String, Object> appointment = appointmentList.get(position);
-
+        parentN = "";
         // Get the services array
         List<Map<String, Object>> services = (List<Map<String, Object>>) appointment.get("services");
         StringBuilder servicesString = new StringBuilder();
@@ -38,11 +38,14 @@ public class CustomerAppointmentAdapter extends RecyclerView.Adapter<CustomerApp
         if (services != null && !services.isEmpty()) {
             for (Map<String, Object> service : services) {
                 String parentServiceName = (String) service.get("parentServiceName");
-                if (parentServiceName != null) {
-                    if (servicesString.length() > 0) {
-                        servicesString.append(", "); // Add a comma for separation
+                if(!parentN.equals(parentServiceName)){
+                    if (parentServiceName != null) {
+                        if (servicesString.length() > 0) {
+                            servicesString.append(", "); // Add a comma for separation
+                        }
+                        servicesString.append(parentServiceName);
                     }
-                    servicesString.append(parentServiceName);
+                    parentN = parentServiceName;
                 }
             }
         } else {

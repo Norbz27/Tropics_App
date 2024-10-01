@@ -9,6 +9,9 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.AppointmentViewHolder> {
@@ -41,8 +44,30 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
 
         // Set text values
         holder.tvFullName.setText(appointment.getFullName());
-        holder.tvDate.setText(appointment.getDate());
-        holder.tvTime.setText(appointment.getTime());
+        SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd"); // Example: "2024-01-27"
+        SimpleDateFormat inputTimeFormat = new SimpleDateFormat("HH:mm");      // Example: "15:30" (24-hour format)
+
+        // Desired output formats
+        SimpleDateFormat outputDateFormat = new SimpleDateFormat("MMM dd, yyyy"); // Example: "Jan 27, 2024"
+        SimpleDateFormat outputTimeFormat = new SimpleDateFormat("hh:mm a");      // Example: "03:30 PM"
+
+        try {
+            // Parse the date and time strings from the Appointment object
+            String appointmentDateStr = appointment.getDate(); // "2024-01-27"
+            String appointmentTimeStr = appointment.getTime(); // "15:30"
+
+            Date appointmentDate = inputDateFormat.parse(appointmentDateStr);
+            Date appointmentTime = inputTimeFormat.parse(appointmentTimeStr);
+
+            // Format the Date objects to the desired format and set them to TextViews
+            holder.tvDate.setText(outputDateFormat.format(appointmentDate));
+            holder.tvTime.setText(outputTimeFormat.format(appointmentTime));
+
+        } catch (ParseException e) {
+            e.printStackTrace(); // Handle the exception if parsing fails
+            holder.tvDate.setText("Invalid Date");
+            holder.tvTime.setText("Invalid Time");
+        }
 
         // Handle item long press event
         holder.itemView.setOnLongClickListener(v -> {

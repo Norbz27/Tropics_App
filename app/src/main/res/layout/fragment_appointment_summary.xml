@@ -22,7 +22,9 @@
 
             <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:paddingTop="10dp">
                 <LinearLayout
                     android:id="@+id/accordionContainer"
                     android:layout_width="match_parent"
@@ -219,62 +221,53 @@
                         android:fontFamily="@font/manrope"
                         android:textColor="@color/white"
                         android:timePickerMode="spinner" />
-                    <!-- Push content to fill remaining space -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical" />
-
-                    <!-- Buttons at the bottom of the screen -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_gravity="bottom"
-                        android:layout_marginBottom="20dp">
-
-                        <!-- Total Price on the left side -->
-                        <TextView
-                            android:id="@+id/tvTotalPrice"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Total Price: ₱0.00"
-                            android:textColor="#B6B6B6"
-                            android:textSize="20sp"
-                            android:gravity="start" />
-
-                        <!-- Buttons on the right side -->
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-                            <Button
-                                android:id="@+id/btnBack"
-                                android:layout_width="100dp"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/custom_background_2"
-                                android:text="Back" />
-
-                            <Space
-                                android:layout_width="20dp"
-                                android:layout_height="wrap_content" />
-
-                            <Button
-                                android:id="@+id/btnSubmitAppointment"
-                                android:layout_width="100dp"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/custom_background_3"
-                                android:text="Submit" />
-
-                        </LinearLayout>
-                    </LinearLayout>
-
                 </LinearLayout>
             </ScrollView>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="20dp">
+
+                <!-- Total Price on the left side -->
+                <TextView
+                    android:id="@+id/tvTotalPrice"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Total Price: ₱0.00"
+                    android:textColor="#B6B6B6"
+                    android:textSize="20sp"
+                    android:gravity="start" />
+
+                <!-- Buttons on the right side -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnBack"
+                        android:layout_width="100dp"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/custom_background_2"
+                        android:text="Back" />
+
+                    <Space
+                        android:layout_width="20dp"
+                        android:layout_height="wrap_content" />
+
+                    <Button
+                        android:id="@+id/btnSubmitAppointment"
+                        android:layout_width="100dp"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/custom_background_3"
+                        android:text="Submit" />
+
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

@@ -3,20 +3,20 @@
     <item>
         <bitmap
             android:gravity="top|left"
-            android:tint="@android:color/holo_green_dark"
+            android:tint="#6F3904"
             android:src="@drawable/ic_dot" />
     </item>
     <item>
         <bitmap
             android:gravity="center"
-            android:tint="@android:color/holo_red_dark"
+            android:tint="@color/orange"
             android:src="@drawable/ic_dot" />
     </item>
 
     <item android:left="80dp">
         <bitmap
             android:gravity="right"
-            android:tint="@android:color/holo_blue_dark"
+            android:tint="@color/yellow"
             android:src="@drawable/ic_dot"/>
     </item>
 </layer-list>
