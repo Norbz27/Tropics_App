@@ -37,7 +37,7 @@
         android:id="@+id/btnAddProduct"
         android:layout_width="match_parent"
         android:layout_height="45dp"
-        android:text="Add Product"
+        android:text="SUBMIT"
         android:background="@drawable/custom_background_3"
         android:textColor="@android:color/white"
         android:layout_marginTop="16dp"/>

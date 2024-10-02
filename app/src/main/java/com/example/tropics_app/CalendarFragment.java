@@ -408,16 +408,29 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     private void showAppointmentOptionsDialog(Appointment appointment) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Options")
-                .setItems(new CharSequence[]{"Delete"}, (dialog, which) -> {
-                    switch (which) {
-                        case 0:
-                            deleteAppointment(appointment);
-                            break;
+                .setItems(new CharSequence[]{"Delete"}, (dialog, optionIndex) -> {
+                    if (optionIndex == 0) {
+                        // Create a confirmation dialog for deletion
+                        new AlertDialog.Builder(getActivity())
+                                .setTitle("Delete Appointment")
+                                .setMessage("Are you sure you want to delete this appointment?")
+                                .setPositiveButton("Yes", (confirmDialog, confirmIndex) -> {
+                                    // Call the delete action if user confirms
+                                    deleteAppointment(appointment);
+                                    Toast.makeText(getActivity(), "Appointment deleted successfully", Toast.LENGTH_SHORT).show();
+                                })
+                                .setNegativeButton("No", (confirmDialog, confirmIndex) -> {
+                                    // Dismiss the confirmation dialog if user cancels
+                                    confirmDialog.dismiss();
+                                })
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .show();
                     }
                 })
                 .create()
                 .show();
     }
+
     private void deleteAppointment(Appointment appointment) {
         db.collection("appointments").document(appointment.getId())
                 .delete()

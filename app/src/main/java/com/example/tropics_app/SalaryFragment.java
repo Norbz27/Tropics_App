@@ -2,6 +2,7 @@ package com.example.tropics_app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -167,41 +168,58 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             String commissionString = comsEditText.getText().toString().trim();
 
             if (!name.isEmpty() && !address.isEmpty() && !phone.isEmpty() && !email.isEmpty() && selectedImageUri != null) {
-                double salary = Double.parseDouble(salaryString);
-                double commission = Double.parseDouble(commissionString);
+                try {
+                    double salary = Double.parseDouble(salaryString);
+                    double commission = Double.parseDouble(commissionString);
 
-                Map<String, Object> employeeData = new HashMap<>();
-                employeeData.put("name", name);
-                employeeData.put("address", address);
-                employeeData.put("phone", phone);
-                employeeData.put("email", email);
-                employeeData.put("salary", salary);
-                employeeData.put("coms", commission);
+                    Map<String, Object> employeeData = new HashMap<>();
+                    employeeData.put("name", name);
+                    employeeData.put("address", address);
+                    employeeData.put("phone", phone);
+                    employeeData.put("email", email);
+                    employeeData.put("salary", salary);
+                    employeeData.put("coms", commission);
 
-                StorageReference storageRef = FirebaseStorage.getInstance().getReference().child("employee_images/" + UUID.randomUUID().toString());
-                storageRef.putFile(selectedImageUri)
-                        .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                            employeeData.put("image", uri.toString());
-                            db.collection("Employees").add(employeeData)
-                                    .addOnCompleteListener(task -> {
-                                        if (task.isSuccessful()) {
-                                            Toast.makeText(getActivity(), "Employee added", Toast.LENGTH_SHORT).show();
-                                            dialog.dismiss();
-                                            loadEmployeeData();
-                                        } else {
-                                            Log.e("Firestore Error", "Failed to add employee: " + task.getException().getMessage());
-                                            Toast.makeText(getActivity(), "Failed to add employee", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                        }))
-                        .addOnFailureListener(e -> {
-                            Toast.makeText(getActivity(), "Failed to upload image", Toast.LENGTH_SHORT).show();
-                            Log.e("Storage Error", "Failed to upload image: " + e.getMessage());
-                        });
+                    // Show ProgressDialog
+                    ProgressDialog progressDialog = new ProgressDialog(getActivity());
+                    progressDialog.setMessage("Uploading data...");
+                    progressDialog.setCancelable(false);
+                    progressDialog.show();
+
+                    StorageReference storageRef = FirebaseStorage.getInstance()
+                            .getReference().child("employee_images/" + UUID.randomUUID().toString());
+                    storageRef.putFile(selectedImageUri)
+                            .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                                employeeData.put("image", uri.toString());
+                                db.collection("Employees").add(employeeData)
+                                        .addOnCompleteListener(task -> {
+                                            if (task.isSuccessful()) {
+                                                Toast.makeText(getActivity(), "Employee added", Toast.LENGTH_SHORT).show();
+                                                dialog.dismiss();
+                                                loadEmployeeData();
+                                            } else {
+                                                Log.e("Firestore Error", "Failed to add employee: " + task.getException().getMessage());
+                                                Toast.makeText(getActivity(), "Failed to add employee", Toast.LENGTH_SHORT).show();
+                                            }
+                                            // Hide ProgressDialog
+                                            progressDialog.dismiss();
+                                        });
+                            }))
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(getActivity(), "Failed to upload image", Toast.LENGTH_SHORT).show();
+                                Log.e("Storage Error", "Failed to upload image: " + e.getMessage());
+                                // Hide ProgressDialog on failure
+                                progressDialog.dismiss();
+                            });
+                } catch (NumberFormatException e) {
+                    Toast.makeText(getActivity(), "Please enter valid salary and commission", Toast.LENGTH_SHORT).show();
+                    Log.e("Input Error", "Invalid salary or commission: " + e.getMessage());
+                }
             } else {
-                Toast.makeText(getActivity(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), "Please fill in all fields and select an image", Toast.LENGTH_SHORT).show();
             }
         });
+
     }
 
     @Override
@@ -412,10 +430,25 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 showEditEmployeeDialog(employee);
                 return true;
             } else if (id == R.id.action_delete) {
-                // Call the delete action
-                deleteEmployee(employee);
+                // Create a confirmation dialog
+                new AlertDialog.Builder(getActivity())
+                        .setTitle("Delete Employee")
+                        .setMessage("Are you sure you want to delete this employee?")
+                        .setPositiveButton("Yes", (dialog, which) -> {
+                            // Call the delete action if user confirms
+                            deleteEmployee(employee);
+                            Toast.makeText(getActivity(), "Employee deleted successfully", Toast.LENGTH_SHORT).show();
+                        })
+                        .setNegativeButton("No", (dialog, which) -> {
+                            // Dismiss the dialog if user cancels
+                            dialog.dismiss();
+                        })
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
+
                 return true;
-            } else {
+            }
+            else {
                 return false; // Unhandled item
             }
         });
@@ -481,6 +514,11 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                     updatedEmployeeData.put("salary", salary);
                     updatedEmployeeData.put("coms", commission);
 
+                    ProgressDialog progressDialog = new ProgressDialog(getActivity());
+                    progressDialog.setMessage("Updating data...");
+                    progressDialog.setCancelable(false);
+                    progressDialog.show();
+
                     if (selectedImageUri != null) {
                         // Upload image to Firebase Storage
                         StorageReference storageRef = FirebaseStorage.getInstance()
@@ -489,19 +527,22 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                                 .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                                     updatedEmployeeData.put("image", uri.toString());
                                     updateEmployee(employee.getId(), updatedEmployeeData);
-                                    dialog.dismiss();
+                                    // Dismiss the dialog once done
+                                    progressDialog.dismiss();
+                                    Toast.makeText(getActivity(), "Employee updated successfully", Toast.LENGTH_SHORT).show();
                                 }))
                                 .addOnFailureListener(e -> {
+                                    progressDialog.dismiss(); // Dismiss in case of failure
                                     Toast.makeText(getActivity(), "Failed to upload image", Toast.LENGTH_SHORT).show();
                                     Log.e("Storage Error", "Failed to upload image: " + e.getMessage());
                                 });
                     } else {
                         // Update employee without an image
                         updateEmployee(employee.getId(), updatedEmployeeData);
-                        dialog.dismiss();
+                        // Dismiss the dialog once done
+                        progressDialog.dismiss();
+                        Toast.makeText(getActivity(), "Employee updated successfully", Toast.LENGTH_SHORT).show();
                     }
-
-
 
                 } catch (NumberFormatException e) {
                     Toast.makeText(getActivity(), "Please enter valid salary and commission", Toast.LENGTH_SHORT).show();

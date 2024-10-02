@@ -12,6 +12,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -53,8 +54,16 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         String imageUrl = (String) item.get("imageUrl");
 
         holder.tvName.setText(name);
+        // Set the stock text
         holder.tvStocks.setText("Stocks: " + stocks);
-        holder.tvInUse.setText("In Use: " + in_use);
+
+        if (stocks.equals("0")) {
+            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark)); // Set to red
+        } else {
+            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.white)); // Set to default color (black in this case)
+        }
+
+        holder.tvInUse.setText("Used: " + in_use);
 
         // Load the image using Glide
         Glide.with(context)
