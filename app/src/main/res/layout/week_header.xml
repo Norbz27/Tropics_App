@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/gray">
+
+    <LinearLayout
+        android:id="@+id/week_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/week_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Week 1"
+            android:fontFamily="@font/manrope"
+            android:textSize="16sp"
+            android:textColor="@color/sub_text" />
+        <TextView
+            android:id="@+id/totalCommision"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Commission: "
+            android:textSize="16sp"
+            android:fontFamily="@font/manrope"
+            android:gravity="right"
+            android:textColor="@color/sub_text" />
+        <ImageView
+            android:id="@+id/ivExpandIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_arrow_down"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/services_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"> <!-- Initially hidden -->
+        <!-- Add views for services here -->
+    </LinearLayout>
+
+</LinearLayout>
+

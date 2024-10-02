@@ -96,7 +96,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         PopupMenu popupMenu = new PopupMenu(context, view);
 
         // Set the gravity to the right
-        popupMenu.setGravity(Gravity.END); // Use Gravity.RIGHT or Gravity.END based on your needs
+        popupMenu.setGravity(Gravity.END);
 
         MenuInflater inflater = popupMenu.getMenuInflater();
         inflater.inflate(R.menu.inventory_item_menu, popupMenu.getMenu());

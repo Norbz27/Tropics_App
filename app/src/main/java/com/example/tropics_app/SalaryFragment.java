@@ -2,6 +2,7 @@ package com.example.tropics_app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -12,31 +13,46 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.floatingactionbutton.FloatingActionButton; // Updated import
 
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.RelativeLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import android.content.Intent;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import android.widget.ImageView;
 import androidx.appcompat.widget.SearchView;
@@ -136,8 +152,10 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         dialog.show();
 
         imgEmp.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(intent, IMAGE_PICK_REQUEST);
+            Intent intent = new Intent();
+            intent.setType("image/*");
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
         });
 
         btnSubmit.setOnClickListener(v -> {
@@ -193,6 +211,13 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             selectedImageUri = data.getData();
             imgEmp.setImageURI(selectedImageUri);
         }
+        if (requestCode == PICK_IMAGE_REQUEST) {
+            getActivity();
+            if (resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
+                selectedImageUri = data.getData();
+                imgEmp.setImageURI(selectedImageUri); // Display the selected image
+            }
+        }
     }
 
     private void loadEmployeeData() {
@@ -241,10 +266,116 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(imgEmp);
 
+        Spinner monthSpinner = dialogView.findViewById(R.id.month_spinner);
+        RecyclerView assignedServicesRecyclerView = dialogView.findViewById(R.id.assigned_services_recycler_view);
+        assignedServicesRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        String[] months = {"January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"};
+
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_item, months);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        monthSpinner.setAdapter(adapter);
+
+        // Set the default selection to the current month
+        Calendar calendar = Calendar.getInstance();
+        monthSpinner.setSelection(calendar.get(Calendar.MONTH));
+
+        // Handle month selection
+        monthSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // Fetch assigned services for the selected month
+                fetchAssignedServicesByMonth(employee, position, assignedServicesRecyclerView);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
+    }
+
+    private void fetchAssignedServicesByMonth(Employee employee, int monthNumber, RecyclerView assignedServicesRecyclerView) {
+        CollectionReference appointmentsRef = db.collection("appointments");
+        Map<Integer, List<AssignedService>> weeklyServicesMap = new HashMap<>();
+        Map<Integer, Double> weeklyCommissionMap = new HashMap<>(); // To store total commission per week
+
+        appointmentsRef.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    List<Map<String, Object>> services = (List<Map<String, Object>>) document.get("services");
+
+                    for (Map<String, Object> service : services) {
+                        String assignedEmployee = (String) service.get("assignedEmployee");
+                        String serviceName = (String) service.get("serviceName");
+
+                        if (assignedEmployee != null && assignedEmployee.equals(employee.getName())) {
+                            String appointmentDate = document.getString("date");
+
+                            // Parse the appointment date and check if it matches the selected month
+                            try {
+                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                                Date date = sdf.parse(appointmentDate);
+                                Calendar calendar = Calendar.getInstance();
+                                calendar.setTime(date);
+
+                                // Check if the appointment is in the selected month
+                                if (calendar.get(Calendar.MONTH) == monthNumber) {
+                                    int weekNumber = calendar.get(Calendar.WEEK_OF_MONTH); // Get the week of the month
+
+                                    // Create AssignedService object
+                                    AssignedService assignedService = new AssignedService(serviceName, document.getString("fullName"), appointmentDate, weekNumber);
+
+                                    // Group by week
+                                    weeklyServicesMap.putIfAbsent(weekNumber, new ArrayList<>());
+                                    weeklyServicesMap.get(weekNumber).add(assignedService);
+
+                                    // Update commission for this week (assuming a fixed commission per service)
+                                    double commissionPerService = employee.getComs(); // Set your commission rate here
+                                    weeklyCommissionMap.put(weekNumber, weeklyCommissionMap.getOrDefault(weekNumber, 0.0) + commissionPerService);
+                                }
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+
+                // Prepare the data for RecyclerView
+                List<WeekServices> weekServicesList = new ArrayList<>();
+                for (Map.Entry<Integer, List<AssignedService>> entry : weeklyServicesMap.entrySet()) {
+                    int week = entry.getKey();
+                    List<AssignedService> services = entry.getValue();
+
+                    // Calculate total commission for this week
+                    double totalCommission = weeklyCommissionMap.getOrDefault(week, 0.0);
+
+                    // Only add the week if there are services for that week
+                    if (!services.isEmpty()) {
+                        weekServicesList.add(new WeekServices("Week " + week, services, totalCommission)); // Add week, services, and commission
+                    }
+                }
+
+                // Check if there are no services for the selected month
+                if (weekServicesList.isEmpty()) {
+                    weekServicesList.add(new WeekServices("No services available for this month", Collections.emptyList(), 0.0)); // Display a message if no services
+                }
+
+                // Set the adapter
+                AssignedServicesAdapter adapter = new AssignedServicesAdapter(getContext(), weekServicesList);
+                assignedServicesRecyclerView.setAdapter(adapter);
+            } else {
+                Log.e("Firestore", "Error getting documents: ", task.getException());
+            }
+        });
     }
 
 
@@ -305,14 +436,18 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         EditText comsEditText = dialogView.findViewById(R.id.comission);
         Button btnSubmit = dialogView.findViewById(R.id.empsub);
         imgEmp = dialogView.findViewById(R.id.imgemp);
-
+        Log.d("Employee", "Showing edit dialog for employee: " + employee.getImage());
+        // Pre-fill the fields with the current employee data
         empName.setText(employee.getName());
         empAddress.setText(employee.getAddress());
         empPhone.setText(employee.getPhone());
         empEmail.setText(employee.getEmail());
         empSal.setText(String.valueOf(employee.getSalary()));
         comsEditText.setText(String.valueOf(employee.getComs()));
-
+        Glide.with(getContext())
+                .load(employee.getImage())
+                .placeholder(R.drawable.ic_image_placeholder)
+                .into(imgEmp);
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
@@ -334,38 +469,50 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             String commissionString = comsEditText.getText().toString().trim();
 
             if (!name.isEmpty() && !address.isEmpty() && !phone.isEmpty() && !email.isEmpty()) {
-                double salary = Double.parseDouble(salaryString);
-                double commission = Double.parseDouble(commissionString);
+                try {
+                    double salary = Double.parseDouble(salaryString);
+                    double commission = Double.parseDouble(commissionString);
 
-                Map<String, Object> updatedEmployeeData = new HashMap<>();
-                updatedEmployeeData.put("name", name);
-                updatedEmployeeData.put("address", address);
-                updatedEmployeeData.put("phone", phone);
-                updatedEmployeeData.put("email", email);
-                updatedEmployeeData.put("salary", salary);
-                updatedEmployeeData.put("coms", commission);
+                    Map<String, Object> updatedEmployeeData = new HashMap<>();
+                    updatedEmployeeData.put("name", name);
+                    updatedEmployeeData.put("address", address);
+                    updatedEmployeeData.put("phone", phone);
+                    updatedEmployeeData.put("email", email);
+                    updatedEmployeeData.put("salary", salary);
+                    updatedEmployeeData.put("coms", commission);
 
-                if (selectedImageUri != null) {
-                    StorageReference storageRef = FirebaseStorage.getInstance().getReference().child("employee_images/" + UUID.randomUUID().toString());
-                    storageRef.putFile(selectedImageUri)
-                            .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                                updatedEmployeeData.put("image", uri.toString());
-                                updateEmployee(employee.getId(), updatedEmployeeData);
-                                dialog.dismiss();
-                            }))
-                            .addOnFailureListener(e -> {
-                                Toast.makeText(getActivity(), "Failed to upload image", Toast.LENGTH_SHORT).show();
-                                Log.e("Storage Error", "Failed to upload image: " + e.getMessage());
-                            });
-                } else {
-                    updateEmployee(employee.getId(), updatedEmployeeData);
-                    dialog.dismiss();
+                    if (selectedImageUri != null) {
+                        // Upload image to Firebase Storage
+                        StorageReference storageRef = FirebaseStorage.getInstance()
+                                .getReference().child("employee_images/" + UUID.randomUUID().toString());
+                        storageRef.putFile(selectedImageUri)
+                                .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                                    updatedEmployeeData.put("image", uri.toString());
+                                    updateEmployee(employee.getId(), updatedEmployeeData);
+                                    dialog.dismiss();
+                                }))
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(getActivity(), "Failed to upload image", Toast.LENGTH_SHORT).show();
+                                    Log.e("Storage Error", "Failed to upload image: " + e.getMessage());
+                                });
+                    } else {
+                        // Update employee without an image
+                        updateEmployee(employee.getId(), updatedEmployeeData);
+                        dialog.dismiss();
+                    }
+
+
+
+                } catch (NumberFormatException e) {
+                    Toast.makeText(getActivity(), "Please enter valid salary and commission", Toast.LENGTH_SHORT).show();
+                    Log.e("Input Error", "Invalid salary or commission: " + e.getMessage());
                 }
             } else {
                 Toast.makeText(getActivity(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
             }
         });
     }
+
 
     private void updateEmployee(String employeeId, Map<String, Object> updatedEmployeeData) {
         db.collection("Employees").document(employeeId).update(updatedEmployeeData)
