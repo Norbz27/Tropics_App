@@ -79,7 +79,7 @@
         android:text="Services"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:textColor="@color/white"
+        android:textColor="@color/orange"
         android:fontFamily="@font/manrope"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="8dp" />
@@ -88,7 +88,7 @@
         android:id="@+id/services"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/white"
+        android:textColor="@color/sub_text"
         android:fontFamily="@font/manrope"
         android:textSize="13sp"/>
 

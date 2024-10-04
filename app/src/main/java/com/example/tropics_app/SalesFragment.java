@@ -1,21 +1,29 @@
 package com.example.tropics_app;
 
+import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -33,6 +41,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -51,6 +60,7 @@ public class SalesFragment extends Fragment {
     private Calendar calendar;
     private int targetMonth, targetYear;
     private boolean isDaily = true;
+    private TableLayout tableLayout;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,7 +73,22 @@ public class SalesFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_sales, container, false);
-
+        EditText DatePicker = rootView.findViewById(R.id.date_picker);
+        tableLayout = rootView.findViewById(R.id.tblayout);
+        DatePicker.setOnClickListener(v -> showDatePickerDialog(DatePicker));
+        Date dateNow = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+        DatePicker.setText(dateFormat.format(dateNow));
+        filterDataByDate(dateFormat.format(dateNow));
+        DatePicker.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                DatePicker.clearFocus(); // To close the keyboard
+                String selectedDate = DatePicker.getText().toString();
+                if (!selectedDate.isEmpty()) {
+                    filterDataByDate(selectedDate);
+                }
+            }
+        });
         calendar = Calendar.getInstance();
         targetMonth = calendar.get(Calendar.MONTH); // Current month (0-indexed)
         targetYear = calendar.get(Calendar.YEAR);
@@ -169,6 +194,186 @@ public class SalesFragment extends Fragment {
         });
         return rootView;
     }
+    @SuppressLint("RtlHardcoded")
+    private void filterDataByDate(String selectedDate) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+        Calendar calendar = Calendar.getInstance();
+
+        try {
+            // Parse the selected date
+            Date date = dateFormat.parse(selectedDate);
+            if (date != null) {
+                calendar.setTime(date);
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
+                int month = calendar.get(Calendar.MONTH); // Month is 0-based
+                int year = calendar.get(Calendar.YEAR);
+                double totalSales = 0.0;
+                // Clear previous rows
+                tableLayout.removeViews(1, tableLayout.getChildCount() - 1); // Keep the header
+
+                // Filter appointments for the selected date
+                for (Appointment appointment : appointmentsList) {
+                    Date appointmentDate = appointment.getClientDateTimeAsDate();
+                    String appointmentTime = appointment.getTime();
+                    SimpleDateFormat sdf24 = new SimpleDateFormat("HH:mm");
+                    Date dateTime = sdf24.parse(appointmentTime);
+                    SimpleDateFormat sdf12 = new SimpleDateFormat("hh:mm a");
+                    String formattedTime = sdf12.format(dateTime);
+
+                    if (appointmentDate != null) {
+                        Calendar appointmentCalendar = Calendar.getInstance();
+                        appointmentCalendar.setTime(appointmentDate);
+                        if (appointmentCalendar.get(Calendar.DAY_OF_MONTH) == day &&
+                                appointmentCalendar.get(Calendar.MONTH) == month &&
+                                appointmentCalendar.get(Calendar.YEAR) == year) {
+
+                            String name = "";
+                            String time = "";
+
+                            // Check for and display sub-services
+                            List<Map<String, Object>> services = appointment.getServices();
+                            for (Map<String, Object> service : services) {
+                                TableRow row = new TableRow(getContext());
+                                row.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                                if(appointment.getFullName() != name && appointment.getTime() != time){
+                                    TextView timeTextView = new TextView(getContext());
+                                    timeTextView.setText(formattedTime);
+                                    timeTextView.setTextColor(Color.WHITE);
+                                    timeTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                                    timeTextView.setPadding(5, 5, 5, 5);
+                                    row.addView(timeTextView);
+
+                                    TextView nameTextView = new TextView(getContext());
+                                    nameTextView.setText(appointment.getFullName());
+                                    nameTextView.setTextColor(Color.WHITE);
+                                    nameTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                                    nameTextView.setPadding(5, 5, 5, 5);
+                                    row.addView(nameTextView);
+
+                                    name = appointment.getFullName();
+                                    time = appointment.getTime();
+                                }else {
+                                    TextView timeTextView = new TextView(getContext());
+                                    timeTextView.setText("");
+                                    timeTextView.setTextColor(Color.WHITE);
+                                    timeTextView.setPadding(5, 5, 5, 5);
+                                    row.addView(timeTextView);
+
+                                    TextView nameTextView = new TextView(getContext());
+                                    nameTextView.setText("");
+                                    nameTextView.setTextColor(Color.WHITE);
+                                    nameTextView.setPadding(5, 5, 5, 5);
+                                    row.addView(nameTextView);
+                                }
+
+                                TextView subServiceNameTextView = new TextView(getContext());
+                                subServiceNameTextView.setText((String) service.get("serviceName"));
+                                subServiceNameTextView.setTextColor(Color.LTGRAY);
+                                subServiceNameTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                                subServiceNameTextView.setPadding(10, 5, 5, 5);
+                                row.addView(subServiceNameTextView);
+
+                                // Assuming you already have a parentServiceName from the service map
+                                String subServiceName = (String) service.get("serviceName"); // Get the parent service name
+                                double totalPriceForParentService = (Double) service.get("servicePrice"); // Variable to hold total price for this parent service
+
+                                List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                                if (subServices != null) {
+                                    for (Map<String, Object> subService : subServices) {
+                                        // Get the sub-service name and price
+                                        Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+
+                                            totalPriceForParentService += subServicePrice;
+
+                                    }
+                                }
+
+                                TextView subServicePriceTextView = new TextView(getContext());
+                                subServicePriceTextView.setText(String.format("₱%.2f", totalPriceForParentService));
+                                subServicePriceTextView.setTextColor(Color.LTGRAY);
+                                subServicePriceTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                                subServicePriceTextView.setPadding(10, 5, 5, 5);
+                                row.addView(subServicePriceTextView);
+
+                                TextView HandlerTextView = new TextView(getContext());
+                                HandlerTextView.setText((String) service.get("assignedEmployee"));
+                                HandlerTextView.setTextColor(Color.LTGRAY);
+                                HandlerTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                                HandlerTextView.setPadding(10, 5, 5, 5);
+                                row.addView(HandlerTextView);
+                                totalSales += totalPriceForParentService;
+                                // Add the sub-service row to the TableLayout
+                                tableLayout.addView(row);
+                            }
+                        }
+                    }
+                }
+
+                TableRow rowTotal = new TableRow(getContext());
+                rowTotal.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                TextView tv1 = new TextView(getContext());
+                tv1.setText("");
+                tv1.setTextColor(Color.LTGRAY);
+                tv1.setPadding(10, 5, 5, 5);
+                rowTotal.addView(tv1);
+
+                TextView tv2 = new TextView(getContext());
+                tv2.setText("");
+                tv2.setTextColor(Color.LTGRAY);
+                tv2.setPadding(10, 5, 5, 5);
+                rowTotal.addView(tv2);
+
+                TextView tv3 = new TextView(getContext());
+                tv3.setText("Total Sales:");
+                tv3.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                tv3.setGravity(Gravity.RIGHT);
+                tv3.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+                tv3.setPadding(10, 5, 5, 5);
+                rowTotal.addView(tv3);
+
+                TextView tvTotal = new TextView(getContext());
+                tvTotal.setText(String.format("₱%.2f", totalSales));
+                tvTotal.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                tvTotal.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+                tvTotal.setPadding(10, 5, 5, 5);
+                rowTotal.addView(tvTotal);
+
+                tableLayout.addView(rowTotal);
+            }
+        } catch (ParseException e) {
+            Log.e("SalesFragment", "Error parsing date: ", e);
+        }
+    }
+
+    private void showDatePickerDialog(final EditText dateField) {
+        String dateString = dateField.getText().toString(); // Get the text from EditText
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // Define the date format
+        try {
+            Date date = sdf.parse(dateString);
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(date);
+
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+            DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
+                    R.style.datepicker,
+                    (view, year1, month1, dayOfMonth) -> {
+                        String selectedDate = String.format(Locale.getDefault(), "%02d/%02d/%d", month1 + 1, dayOfMonth, year1);
+                        dateField.setText(selectedDate);
+                        filterDataByDate(selectedDate);
+                    }, year, month, day);
+
+            datePickerDialog.show();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private int getMonthIndex(String monthName) {
         String[] months = getResources().getStringArray(R.array.months_array);

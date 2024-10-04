@@ -153,4 +153,13 @@ public class Appointment {
             return null; // Return null if parsing fails
         }
     }
+    public Date getClientDateTimeAsDate() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd"); // Adjust the format as needed
+        try {
+            return format.parse(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null; // Return null if parsing fails
+        }
+    }
 }

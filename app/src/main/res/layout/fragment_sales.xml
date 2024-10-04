@@ -10,126 +10,224 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <LinearLayout
-            android:id="@+id/l1"
+        <ScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/btnDaily"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:text="Daily"
-                android:background="@drawable/button_daily_checked"
-                android:padding="10dp"
-                android:layout_marginEnd="-1dp"/>
-
-            <Button
-                android:id="@+id/btnMonthly"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:text="Monthly"
-                android:background="@drawable/button_monthly"
-                android:padding="10dp"/>
-
-        </LinearLayout>
-        <LinearLayout
-            android:id="@+id/l3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:layout_marginTop="20dp"
-            android:layout_below="@id/l1"
-            android:gravity="center">
+            android:layout_marginHorizontal="16dp">
 
-            <Spinner
-                android:id="@+id/month_spinner"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <Spinner
-                android:id="@+id/year_spinner"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/l2"
-            android:layout_width="match_parent"
-            android:layout_height="500dp"
-            android:layout_above="@+id/relativeLayout"
-            android:layout_below="@id/l3"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginVertical="20dp"
-            android:layout_marginBottom="158dp"
-            android:background="@drawable/custom_background"
-            android:paddingHorizontal="15dp"
-            android:paddingVertical="15dp">
-
-            <com.github.mikephil.charting.charts.LineChart
-                android:id="@+id/lineChart"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-        </LinearLayout>
-
-        <RelativeLayout
-            android:id="@+id/relativeLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="25dp">
-
-            <TextView
-                android:id="@+id/tvHigh"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:fontFamily="@font/manrope"
-                android:text="Highest Sales: P1000.00"
-                android:textColor="@color/white"
-                android:textSize="14sp" />
+                android:orientation="vertical"
+                android:gravity="center">
 
-            <TextView
-                android:id="@+id/tvLow"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_toRightOf="@id/tvHigh"
-                android:fontFamily="@font/manrope"
-                android:gravity="right"
-                android:text="Lowest Sales: P1000.00"
-                android:textColor="@color/white"
-                android:textSize="14sp" />
+                <!-- Button Group -->
+                <LinearLayout
+                    android:id="@+id/l1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
 
-            <TextView
-                android:id="@+id/tvAverage"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/tvHigh"
-                android:layout_centerInParent="true"
-                android:layout_marginTop="30dp"
-                android:background="@drawable/custom_background"
-                android:fontFamily="@font/manrope_bold"
-                android:paddingHorizontal="30dp"
-                android:paddingVertical="10dp"
-                android:text="P1000.00"
-                android:textColor="@color/white"
-                android:textSize="28sp" />
+                    <Button
+                        android:id="@+id/btnDaily"
+                        android:layout_width="100dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="-1dp"
+                        android:background="@drawable/button_daily_checked"
+                        android:padding="10dp"
+                        android:text="Daily" />
 
-            <TextView
-                android:id="@+id/tvAveLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/tvAverage"
-                android:layout_centerInParent="true"
-                android:layout_marginTop="0dp"
-                android:fontFamily="@font/manrope_semibold"
-                android:text="Average Sales"
-                android:textColor="@color/white"
-                android:textSize="18sp" />
-        </RelativeLayout>
+                    <Button
+                        android:id="@+id/btnMonthly"
+                        android:layout_width="100dp"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/button_monthly"
+                        android:padding="10dp"
+                        android:text="Monthly" />
+                </LinearLayout>
+
+                <!-- Spinner Group -->
+                <LinearLayout
+                    android:id="@+id/l3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <Spinner
+                        android:id="@+id/month_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <Spinner
+                        android:id="@+id/year_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <!-- LineChart Section -->
+                <LinearLayout
+                    android:id="@+id/l2"
+                    android:layout_width="match_parent"
+                    android:layout_height="500dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginVertical="20dp"
+                    android:background="@drawable/custom_background"
+                    android:paddingHorizontal="15dp"
+                    android:paddingVertical="15dp"
+                    android:visibility="gone">
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/lineChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+                </LinearLayout>
+
+                <!-- Average Sales Section -->
+                <RelativeLayout
+                    android:id="@+id/relativeLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginBottom="25dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tvHigh"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:fontFamily="@font/manrope"
+                        android:text="Highest Sales: P1200.00"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvLow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:fontFamily="@font/manrope"
+                        android:gravity="right"
+                        android:text="Lowest Sales: P100.00"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvAverage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/tvHigh"
+                        android:layout_centerInParent="true"
+                        android:layout_marginTop="30dp"
+                        android:background="@drawable/custom_background"
+                        android:fontFamily="@font/manrope_bold"
+                        android:paddingHorizontal="30dp"
+                        android:paddingVertical="10dp"
+                        android:text="P500.00"
+                        android:textColor="@color/white"
+                        android:textSize="28sp" />
+
+                    <TextView
+                        android:id="@+id/tvAveLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/tvAverage"
+                        android:layout_centerInParent="true"
+                        android:layout_marginTop="0dp"
+                        android:fontFamily="@font/manrope_semibold"
+                        android:text="Average Sales"
+                        android:textColor="@color/white"
+                        android:textSize="18sp" />
+                </RelativeLayout>
+
+                <!-- Date Filter Section -->
+                <LinearLayout
+                    android:id="@+id/date_filter_section"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="10dp">
+
+                    <!-- Start Date Picker -->
+                    <EditText
+                        android:id="@+id/date_picker"
+                        android:layout_width="140dp"
+                        android:layout_height="30dp"
+                        android:paddingLeft="15dp"
+                        android:paddingRight="10dp"
+                        android:hint="06/02/2024"
+                        android:fontFamily="@font/manrope"
+                        android:drawableEnd="@drawable/ic_arrow_down"
+                        android:drawableTint="@color/sub_text"
+                        android:focusable="false"
+                        android:textColorHint="@color/sub_text"
+                        android:clickable="true"
+                        android:textColor="@color/sub_text"
+                        android:background="@drawable/custom_background"
+                        android:textSize="14sp"
+                        android:layout_marginEnd="10dp" />
+
+                    <!-- End Date Picker -->
+
+                    <!-- Filter Button -->
+                </LinearLayout>
+
+                <!-- Table for Sales Data -->
+                <TableLayout
+                    android:id="@+id/tblayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:stretchColumns="1">
+
+                    <!-- Table Header -->
+                    <TableRow android:background="@color/gray">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Time"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Name"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Services"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Rate"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Handler"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                    </TableRow>
+                </TableLayout>
+            </LinearLayout>
+        </ScrollView>
     </RelativeLayout>
 </FrameLayout>

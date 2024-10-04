@@ -35,7 +35,7 @@
                     app:headerLabelColor="@color/orange"
                     app:highlightedDaysLabelsColor="@color/orange"
                     app:pagesColor="@color/darkgray"
-                    app:todayLabelColor="@color/orange" />
+                    app:todayLabelColor="@color/white" />
             </LinearLayout>
             <ScrollView
                 android:id="@+id/scrollview"

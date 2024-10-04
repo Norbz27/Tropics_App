@@ -38,8 +38,7 @@
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:padding="20dp">
+                            android:orientation="vertical">
                             <LinearLayout
                                 android:id="@+id/accordionContainer"
                                 android:layout_width="match_parent"
@@ -53,9 +52,9 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:text="Client Information"
-                                        android:layout_marginTop="20dp"
+                                        android:layout_marginTop="10dp"
                                         android:fontFamily="@font/manrope"
-                                        android:textSize="15sp"
+                                        android:textSize="18sp"
                                         android:textColor="#B6B6B6"/>
 
                                     <LinearLayout
@@ -81,7 +80,7 @@
                                                     android:layout_height="wrap_content"
                                                     android:text="Full name:"
                                                     android:fontFamily="@font/manrope"
-                                                    android:textSize="11sp"
+                                                    android:textSize="13sp"
                                                     android:textColor="#B6B6B6" />
                                                 <TextView
                                                     android:id="@+id/tvFname"
@@ -90,7 +89,7 @@
                                                     android:layout_marginTop="5dp"
                                                     android:text="Norberto Bruzon"
                                                     android:fontFamily="@font/manrope"
-                                                    android:textSize="13sp"
+                                                    android:textSize="15sp"
                                                     android:textColor="#B6B6B6" />
                                             </LinearLayout>
 
@@ -109,7 +108,7 @@
                                                     android:layout_height="wrap_content"
                                                     android:text="Address:"
                                                     android:fontFamily="@font/manrope"
-                                                    android:textSize="11sp"
+                                                    android:textSize="13sp"
                                                     android:textColor="#B6B6B6" />
                                                 <TextView
                                                     android:id="@+id/tvAddress"
@@ -118,7 +117,7 @@
                                                     android:layout_marginTop="5dp"
                                                     android:text="Espina St. Mat-i Surigao City"
                                                     android:fontFamily="@font/manrope"
-                                                    android:textSize="13sp"
+                                                    android:textSize="15sp"
                                                     android:textColor="#B6B6B6" />
                                             </LinearLayout>
                                         </LinearLayout>
@@ -140,7 +139,7 @@
                                                     android:layout_height="wrap_content"
                                                     android:text="Phone:"
                                                     android:fontFamily="@font/manrope"
-                                                    android:textSize="11sp"
+                                                    android:textSize="13sp"
                                                     android:textColor="#B6B6B6" />
                                                 <TextView
                                                     android:id="@+id/tvPhone"
@@ -149,7 +148,7 @@
                                                     android:layout_marginTop="5dp"
                                                     android:text="0909090909"
                                                     android:fontFamily="@font/manrope"
-                                                    android:textSize="13sp"
+                                                    android:textSize="15sp"
                                                     android:textColor="#B6B6B6" />
                                             </LinearLayout>
 
@@ -168,7 +167,7 @@
                                                     android:layout_height="wrap_content"
                                                     android:text="Email:"
                                                     android:fontFamily="@font/manrope"
-                                                    android:textSize="11sp"
+                                                    android:textSize="13sp"
                                                     android:textColor="#B6B6B6" />
                                                 <TextView
                                                     android:id="@+id/tvEmail"
@@ -177,7 +176,7 @@
                                                     android:layout_marginTop="5dp"
                                                     android:text="email@gmail.com"
                                                     android:fontFamily="@font/manrope"
-                                                    android:textSize="13sp"
+                                                    android:textSize="15sp"
                                                     android:textColor="#B6B6B6" />
                                             </LinearLayout>
                                         </LinearLayout>
@@ -188,7 +187,7 @@
                                             android:text="Selected Services"
                                             android:layout_marginTop="20dp"
                                             android:fontFamily="@font/manrope"
-                                            android:textSize="15sp"
+                                            android:textSize="18sp"
                                             android:textColor="#B6B6B6"/>
                                         <LinearLayout
                                             android:id="@+id/summaryContainer"
@@ -206,15 +205,15 @@
                             android:layout_height="match_parent"
                             android:layout_weight="1"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:paddingHorizontal="20dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Date &amp; Time"
-                                android:layout_marginTop="20dp"
+                                android:layout_marginTop="10dp"
                                 android:fontFamily="@font/manrope"
-                                android:textSize="15sp"
+                                android:textSize="18sp"
                                 android:textColor="#B6B6B6"/>
 
                             <com.applandeo.materialcalendarview.CalendarView
@@ -256,7 +255,7 @@
                 android:gravity="center_vertical"
                 android:layout_gravity="bottom"
                 android:layout_marginBottom="20dp"
-                android:padding="20dp">
+                android:paddingVertical="20dp">
 
                 <!-- Total Price on the left side -->
                 <TextView
@@ -264,10 +263,10 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:fontFamily="@font/manrope_semibold"
                     android:text="Total Price: ₱0.00"
                     android:textColor="@color/white"
                     android:textSize="20sp"
-                    android:fontFamily="@font/manrope_semibold"
                     android:gravity="start" />
 
                 <!-- Buttons on the right side -->

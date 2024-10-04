@@ -238,6 +238,8 @@ public class AppointmentSummaryFragment extends Fragment {
         // Update summary and refresh calendar/time every time the fragment resumes
         updateSummary();
         refreshCalendarAndTime();
+        double totalPrice = viewModel.getTotalPrice();
+        tvTotalPrice.setText(String.format(Locale.getDefault(), "Total Price: ₱%.2f", totalPrice));
     }
 
     private void refreshCalendarAndTime() {

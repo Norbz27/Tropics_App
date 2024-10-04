@@ -19,6 +19,7 @@
             android:layout_weight="1"
             android:text="Service Name"
             android:textSize="18sp"
+            android:fontFamily="@font/manrope"
             android:textColor="@color/white" />
 
         <!-- Expand/Collapse Icon -->

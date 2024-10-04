@@ -12,6 +12,7 @@
         android:layout_weight="1"
         android:text="Sub-Sub-Service Name"
         android:textSize="14sp"
+        android:fontFamily="@font/manrope"
         android:textColor="@color/white"  />
 
     <!-- Price TextView -->
@@ -22,5 +23,6 @@
         android:text="₱0.00"
         android:textSize="14sp"
         android:textColor="@color/white"
+        android:fontFamily="@font/manrope"
         android:layout_marginEnd="8dp" />
 </LinearLayout>
