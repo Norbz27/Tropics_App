@@ -25,11 +25,13 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
     private final Context context;
     private List<Map<String, Object>> inventoryList;
+    private List<Map<String, Object>> filteredList; // Declare the filteredList here
     private OnItemLongClickListener longClickListener;
 
     public InventoryAdapter(Context context, List<Map<String, Object>> inventoryList) {
         this.context = context;
         this.inventoryList = new ArrayList<>(inventoryList);
+        this.filteredList = new ArrayList<>(inventoryList); // Initialize filteredList here
     }
 
     // Setter for the long click listener
@@ -47,31 +49,28 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
     @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull InventoryViewHolder holder, int position) {
-        Map<String, Object> item = inventoryList.get(position);
+        Map<String, Object> item = filteredList.get(position); // Use filteredList instead of inventoryList
         String name = (String) item.get("name");
         String stocks = (String) item.get("stocks");
         String in_use = (String) item.get("in_use");
         String imageUrl = (String) item.get("imageUrl");
 
         holder.tvName.setText(name);
-        // Set the stock text
         holder.tvStocks.setText("Stocks: " + stocks);
 
         if (stocks.equals("0")) {
-            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark)); // Set to red
+            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark));
         } else {
-            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.white)); // Set to default color (black in this case)
+            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.white));
         }
 
         holder.tvInUse.setText("Used: " + in_use);
 
-        // Load the image using Glide
         Glide.with(context)
                 .load(imageUrl)
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(holder.imgProduct);
 
-        // Set the long click listener for each item
         holder.itemView.setOnLongClickListener(v -> {
             showPopupMenu(v, holder.getAdapterPosition());
             return true;
@@ -80,11 +79,12 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
     @Override
     public int getItemCount() {
-        return inventoryList.size();
+        return filteredList.size(); // Return size of filteredList
     }
 
     public void updateList(List<Map<String, Object>> newList) {
-        inventoryList = new ArrayList<>(newList);
+        filteredList.clear();
+        filteredList.addAll(newList);
         notifyDataSetChanged();
     }
 
@@ -103,10 +103,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
     private void showPopupMenu(View view, int position) {
         PopupMenu popupMenu = new PopupMenu(context, view);
-
-        // Set the gravity to the right
         popupMenu.setGravity(Gravity.END);
-
         MenuInflater inflater = popupMenu.getMenuInflater();
         inflater.inflate(R.menu.inventory_item_menu, popupMenu.getMenu());
 
@@ -114,27 +111,23 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
             int id = menuItem.getItemId();
 
             if (id == R.id.action_edit) {
-                // Call the edit action
                 if (longClickListener != null) {
-                    longClickListener.onEditClick(inventoryList.get(position));
+                    longClickListener.onEditClick(filteredList.get(position)); // Use filteredList
                 }
                 return true;
             } else if (id == R.id.action_add) {
-                // add stocks
                 if (longClickListener != null) {
-                    longClickListener.onAddClick(inventoryList.get(position));
+                    longClickListener.onAddClick(filteredList.get(position)); // Use filteredList
                 }
                 return true;
-            }else if (id == R.id.action_subtract) {
-                // subtract stocks and add on in use
+            } else if (id == R.id.action_subtract) {
                 if (longClickListener != null) {
-                    longClickListener.onUseClick(inventoryList.get(position));
+                    longClickListener.onUseClick(filteredList.get(position)); // Use filteredList
                 }
                 return true;
             } else if (id == R.id.action_delete) {
-                // Call the delete action
                 if (longClickListener != null) {
-                    longClickListener.onDeleteClick(inventoryList.get(position));
+                    longClickListener.onDeleteClick(filteredList.get(position)); // Use filteredList
                 }
                 return true;
             } else {
@@ -144,7 +137,6 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
         popupMenu.show();
     }
-
 
     // Interface for handling long-clicks with edit and delete actions
     public interface OnItemLongClickListener {

@@ -23,6 +23,23 @@
             android:focusable="true"
             android:focusableInTouchMode="true" />
 
+        <EditText
+            android:id="@+id/date_picker"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="@drawable/custom_background"
+            android:clickable="true"
+            android:drawableEnd="@drawable/ic_arrow_down"
+            android:drawableTint="@color/sub_text"
+            android:focusable="false"
+            android:fontFamily="@font/manrope"
+            android:hint="Select Date"
+            android:paddingLeft="15dp"
+            android:paddingRight="10dp"
+            android:textColor="@color/sub_text"
+            android:textColorHint="@color/sub_text"
+            android:textSize="14sp" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvInventory"
             android:layout_width="match_parent"

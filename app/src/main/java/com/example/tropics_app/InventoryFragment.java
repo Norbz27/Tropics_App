@@ -3,6 +3,7 @@ package com.example.tropics_app;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -37,6 +39,8 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +53,7 @@ public class InventoryFragment extends Fragment {
     private List<Map<String, Object>> inventoryList;
     private List<Map<String, Object>> filteredList;
     private FloatingActionButton fabAdd;
+    private Calendar calendar;
     private SearchView searchView;
 
     private static final int PICK_IMAGE_REQUEST = 1;
@@ -74,6 +79,21 @@ public class InventoryFragment extends Fragment {
         filteredList = new ArrayList<>();
         adapter = new InventoryAdapter(getContext(), filteredList); // Use filteredList
         rvInventory.setAdapter(adapter);
+        EditText datePicker = view.findViewById(R.id.date_picker);
+        datePicker.setOnClickListener(v -> {
+            final Calendar calendar = Calendar.getInstance();
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+            DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(), (view1, year1, monthOfYear, dayOfMonth) -> {
+                String selectedDate = (monthOfYear + 1) + "/" + dayOfMonth + "/" + year1;
+                datePicker.setText(selectedDate);
+                loadUsedItemsForDate(selectedDate);
+
+            }, year, month, day);
+            datePickerDialog.show();
+        });
 
         adapter.setOnItemLongClickListener(new InventoryAdapter.OnItemLongClickListener() {
             @Override
@@ -171,10 +191,8 @@ public class InventoryFragment extends Fragment {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setView(dialogView);
-
         AlertDialog dialog = builder.create();
         dialog.show();
-
         EditText etProductQuantity = dialogView.findViewById(R.id.etProductQuantity);
         Button btnAddQuantity = dialogView.findViewById(R.id.btnAddProduct);
 
@@ -305,35 +323,97 @@ public class InventoryFragment extends Fragment {
             }
         });
     }
+    private void loadUsedItemsForDate(String selectedDate) {
+        // Parse the selected date to create a date range
+        Calendar calendar = Calendar.getInstance();
+        String[] dateParts = selectedDate.split("/");
 
+        if (dateParts.length != 3) {
+            Log.e("Date Error", "Selected date format is incorrect: " + selectedDate);
+            return; // Exit if the date format is incorrect
+        }
+
+        int month = Integer.parseInt(dateParts[0]) - 1; // Month is zero-based
+        int day = Integer.parseInt(dateParts[1]);
+        int year = Integer.parseInt(dateParts[2]);
+
+        // Set the start and end of the date range
+        calendar.set(year, month, day, 0, 0, 0);
+        Date startDate = calendar.getTime();
+
+        calendar.set(year, month, day, 23, 59, 59);
+        Date endDate = calendar.getTime();
+
+        // Convert the start and end dates to Firestore Timestamps
+        Timestamp startTimestamp = new Timestamp(startDate);
+        Timestamp endTimestamp = new Timestamp(endDate);
+
+        Log.d("Date Range", "Start: " + startTimestamp + ", End: " + endTimestamp);
+
+        // Clear the filtered list before fetching new data
+        filteredList.clear();
+
+        // Query Firestore for the records in the date range
+        db.collection("inventory")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            // Check the dailyRecords subcollection for the specified date
+                            document.getReference().collection("dailyRecords")
+                                    .whereGreaterThanOrEqualTo("date", startTimestamp)
+                                    .whereLessThanOrEqualTo("date", endTimestamp)
+                                    .get()
+                                    .addOnCompleteListener(innerTask -> {
+                                        if (innerTask.isSuccessful()) {
+                                            for (QueryDocumentSnapshot dailyDoc : innerTask.getResult()) {
+                                                Map<String, Object> data = new HashMap<>(document.getData());
+                                                data.put("id", document.getId()); // Add document ID to the item
+                                                data.put("quantity", dailyDoc.getLong("quantity")); // Add quantity from daily record
+                                                filteredList.add(data);
+                                                Log.d("Added Item", "ID: " + document.getId() + ", Quantity: " + dailyDoc.getLong("quantity"));
+                                            }
+                                            // Update the adapter with the new list and notify changes
+                                            adapter.updateList(filteredList);
+                                            adapter.notifyDataSetChanged(); // Notify the adapter to refresh the data
+                                        } else {
+                                            Log.e("Firestore Error", "Error fetching daily records: " + innerTask.getException());
+                                        }
+                                    });
+                        }
+                    } else {
+                        Log.e("Firestore Error", "Error fetching inventory: " + task.getException());
+                    }
+                });
+    }
     private void uploadImageToFirebase(String name, String stocks) {
         if (imageUri != null) {
             StorageReference ref = FirebaseStorage.getInstance().getReference("images/" + UUID.randomUUID().toString());
             UploadTask uploadTask = ref.putFile(imageUri);
 
-            Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
-                @Override
-                public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                    if (task.isSuccessful()) {
-                        return ref.getDownloadUrl();
-                    } else {
-                        throw task.getException(); // Throw the exception to be handled in the onComplete
-                    }
+            Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
+                if (task.isSuccessful()) {
+                    return ref.getDownloadUrl();
+                } else {
+                    throw task.getException();
                 }
-            }).addOnCompleteListener(new OnCompleteListener<Uri>() {
-                @Override
-                public void onComplete(@NonNull Task<Uri> task) {
-                    if (task.isSuccessful()) {
-                        Uri downloadUri = task.getResult();
-                        addProductToInventory(name, stocks, downloadUri.toString());
+            }).addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    Uri downloadUri = task.getResult();
+                    addProductToInventory(name, stocks, downloadUri.toString());
+                    if (isAdded()) {
                         Toast.makeText(getContext(), "Uploaded", Toast.LENGTH_SHORT).show();
-                    } else {
+                    }
+                } else {
+                    if (isAdded()) {
                         Toast.makeText(getContext(), "Upload failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 }
             });
         } else {
-            Toast.makeText(getContext(), "No image selected", Toast.LENGTH_SHORT).show();
+            if (isAdded()) {
+                Toast.makeText(getContext(), "No image selected", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -343,24 +423,41 @@ public class InventoryFragment extends Fragment {
         product.put("name", name);
         product.put("stocks", stocks);
         product.put("in_use", "0");
-        product.put("imageUrl", imageUrl); // Store the image URL
+        product.put("imageUrl", imageUrl);
 
         // Add product to Firestore
         db.collection("inventory")
                 .add(product)
-                .addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentReference> task) {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(getContext(), "Product added successfully", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Log.e("Firestore Error", "Failed to add product: " + task.getException().getMessage());
-                            Toast.makeText(getContext(), "Failed to add product", Toast.LENGTH_SHORT).show();
-                        }
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        String documentId = task.getResult().getId();
+                        Toast.makeText(getContext(), "Product added successfully", Toast.LENGTH_SHORT).show();
+                        addDailyRecord(documentId, Integer.parseInt(stocks), "Added");
+                    } else {
+                        Log.e("Firestore Error", "Failed to add product: " + task.getException().getMessage());
+                        Toast.makeText(getContext(), "Failed to add product", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
-    // Show a dialog to edit the product
+    private void addDailyRecord(String documentId, int quantity, String action) {
+        Map<String, Object> record = new HashMap<>();
+        record.put("date", new Timestamp(new Date())); // Store the current date as Timestamp
+        record.put("quantity", quantity);
+        record.put("action", action); // "Added" for adding quantity
+
+        db.collection("inventory").document(documentId)
+                .collection("dailyRecords")
+                .add(record)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("Firestore", "Daily record added");
+                    } else {
+                        Log.e("Firestore Error", "Failed to add daily record: " + task.getException().getMessage());
+                    }
+                });
+    }
+
+
     private void showEditProductDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_name_product, null);
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
