@@ -62,7 +62,7 @@ import androidx.appcompat.widget.SearchView;
 
 
 public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmployeeClickListener {
-    private FloatingActionButton fabAdd;
+    private FloatingActionButton fabAdd, fabFullReport;
     private RecyclerView rvSalary;
     private FirebaseFirestore db;
     private EmployeeAdapter adapter;
@@ -85,6 +85,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         searchView = view.findViewById(R.id.searchView);
         setupSearchView();
         fabAdd = view.findViewById(R.id.fabAdd);
+        fabFullReport = view.findViewById(R.id.fabFullReport);
         rvSalary = view.findViewById(R.id.rvSalary);
         rvSalary.setHasFixedSize(true);
         rvSalary.setLayoutManager(new LinearLayoutManager(getActivity()));
@@ -93,10 +94,14 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         loadEmployeeData();
 
         fabAdd.setOnClickListener(v -> showAddEmployeeDialog());
+        fabFullReport.setOnClickListener(v -> goToFull());
 
         return view;
     }
-
+    private void goToFull(){
+        Intent intent = new Intent(getActivity(), FullSalaryReportActivity.class);
+        startActivity(intent);
+    }
     private void setupSearchView() {
         searchView.setOnClickListener(v -> searchView.setIconified(false));
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -273,8 +278,8 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         empAddress.setText("Address: " + employee.getAddress());
         empPhone.setText("Phone: " + employee.getPhone());
         empEmail.setText("Email: " + employee.getEmail());
-        empSal.setText("Weekly Salary: ₱" + employee.getSalary());
-        empComm.setText("Commission %: " + employee.getComs());
+        empSal.setText("Daily Salary Rate: ₱" + employee.getSalary());
+        empComm.setText("Commission Rate %: " + employee.getComs());
 
         Glide.with(this)
                 .load(employee.getImage())
@@ -362,8 +367,14 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                                 if (calendar.get(Calendar.MONTH) == monthNumber) {
                                     int weekNumber = calendar.get(Calendar.WEEK_OF_MONTH); // Get the week of the month
 
-                                    // Create AssignedService object
-                                    AssignedService assignedService = new AssignedService(service.get("serviceName").toString(), document.getString("fullName"), appointmentDate, weekNumber);
+                                    // Create AssignedService object, passing the combined total price
+                                    AssignedService assignedService = new AssignedService(
+                                            service.get("serviceName").toString(),
+                                            document.getString("fullName"),
+                                            appointmentDate,
+                                            weekNumber,
+                                            combinedTotalPrice // Pass the price here
+                                    );
 
                                     // Group by week
                                     weeklyServicesMap.putIfAbsent(weekNumber, new ArrayList<>());
@@ -409,6 +420,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             }
         });
     }
+
 
 
     @Override

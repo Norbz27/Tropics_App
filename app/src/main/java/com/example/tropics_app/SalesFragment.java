@@ -4,8 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
@@ -14,6 +12,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
+import android.text.Editable;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -39,9 +38,6 @@ import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -71,6 +67,7 @@ public class SalesFragment extends Fragment {
     private List<Gcash> gcashList;
     private FloatingActionButton fabExpenses, fabGcash;
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,8 +86,6 @@ public class SalesFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_sales, container, false);
         fabExpenses = rootView.findViewById(R.id.fabExpenses);
         fabGcash = rootView.findViewById(R.id.fabGcash);
-        fabExpenses.setOnClickListener(v -> showExpensesDialog());
-        fabGcash.setOnClickListener(v -> showGcashDialog());
 
         EditText DatePicker = rootView.findViewById(R.id.date_picker);
         tableLayout = rootView.findViewById(R.id.tblayout);
@@ -101,6 +96,9 @@ public class SalesFragment extends Fragment {
         Date dateNow = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
         DatePicker.setText(dateFormat.format(dateNow));
+
+        fabExpenses.setOnClickListener(v -> showExpensesDialog(DatePicker.getText()));
+        fabGcash.setOnClickListener(v -> showGcashDialog(DatePicker.getText()));
 
         calendar = Calendar.getInstance();
         targetMonth = calendar.get(Calendar.MONTH); // Current month (0-indexed)
@@ -208,7 +206,7 @@ public class SalesFragment extends Fragment {
         return rootView;
     }
 
-    private void showExpensesDialog() {
+    private void showExpensesDialog(Editable selectedDate) {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_new_expenses, null);
 
@@ -254,6 +252,7 @@ public class SalesFragment extends Fragment {
                                 .addOnSuccessListener(documentReference -> {
                                     Toast.makeText(getActivity(), "Expense added successfully", Toast.LENGTH_SHORT).show();
                                     dialog.dismiss();  // Close the original dialog
+                                    loadExpensesData();
                                 })
                                 .addOnFailureListener(e -> {
                                     Toast.makeText(getActivity(), "Failed to add expense: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -264,7 +263,7 @@ public class SalesFragment extends Fragment {
         });
     }
 
-    private void showGcashDialog() {
+    private void showGcashDialog(Editable selectedDate) {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_gcash, null);
 
@@ -308,6 +307,7 @@ public class SalesFragment extends Fragment {
                                 .addOnSuccessListener(documentReference -> {
                                     Toast.makeText(getActivity(), "GCash payment added successfully", Toast.LENGTH_SHORT).show();
                                     dialog.dismiss();  // Close the original dialog
+                                    loadGcashData();
                                 })
                                 .addOnFailureListener(e -> {
                                     Toast.makeText(getActivity(), "Failed to add GCash payment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -324,7 +324,7 @@ public class SalesFragment extends Fragment {
         Calendar calendar = Calendar.getInstance();
         Map<String, Double> employeeSalesMap = new HashMap<>(); // To store sales by employee
         Map<String, Double> employeeCommissionMap = new HashMap<>(); // To store commission by employee
-
+        double totalSales = 0.0;
         try {
             Date date = dateFormat.parse(selectedDate);
             if (date != null) {
@@ -340,14 +340,10 @@ public class SalesFragment extends Fragment {
 
                 tvDayOfWeek.setText(dayOfWeekWord);
 
-                double totalSales = 0.0;
-                double totalExpenses = 0.0;
-                double totalGcash = 0.0;
                 // Clear previous rows
                 tableLayout.removeViews(1, tableLayout.getChildCount() - 1); // Keep header
                 tableLayout2.removeViews(1, tableLayout2.getChildCount() - 1); // Keep header
-                tableLayout3.removeViews(1, tableLayout3.getChildCount() - 1); // Keep header
-
+                tableLayout3.removeViews(1, tableLayout3.getChildCount() - 1);
                 // Filter appointments for the selected date
                 for (Appointment appointment : appointmentsList) {
                     Date appointmentDate = appointment.getClientDateTimeAsDate();
@@ -572,116 +568,160 @@ public class SalesFragment extends Fragment {
                 tableLayout2.addView(rowTotalCom);
                 tableLayout.addView(rowTotal);
 
-                List<Expenses> expensesList = getExpensesForDate(selectedDate); // Use the updated method
-                for (Expenses expense : expensesList) {
-                    TableRow expenseRow = new TableRow(getContext());
-                    expenseRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                    TextView reasonTextView = new TextView(getContext());
-                    reasonTextView.setText(expense.getReason());
-                    reasonTextView.setTextColor(Color.LTGRAY);
-                    reasonTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                    reasonTextView.setPadding(10, 5, 5, 5);
-                    expenseRow.addView(reasonTextView);
-
-                    TextView expenseAmountTextView = new TextView(getContext());
-                    expenseAmountTextView.setText(String.format("₱%.2f", expense.getAmount()));
-                    expenseAmountTextView.setTextColor(Color.LTGRAY);
-                    expenseAmountTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                    expenseAmountTextView.setPadding(10, 5, 5, 5);
-                    expenseRow.addView(expenseAmountTextView);
-
-                    tableLayout3.addView(expenseRow); // Display in tableLayout3 for expenses
-
-                    // Accumulate total expenses
-                    totalExpenses += expense.getAmount();
-                }
-
-                List<Gcash> gcashList = getGcashForDate(selectedDate); // Use the updated method
-                for (Gcash gcash : gcashList) {
-                    TableRow gcashRow = new TableRow(getContext());
-                    gcashRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                    TextView reasonTextView = new TextView(getContext());
-                    reasonTextView.setText("Gcash");
-                    reasonTextView.setTextColor(Color.LTGRAY);
-                    reasonTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                    reasonTextView.setPadding(10, 5, 5, 5);
-                    gcashRow.addView(reasonTextView);
-
-                    TextView expenseAmountTextView = new TextView(getContext());
-                    expenseAmountTextView.setText(String.format("₱%.2f", gcash.getAmount()));
-                    expenseAmountTextView.setTextColor(Color.LTGRAY);
-                    expenseAmountTextView.setPaintFlags(expenseAmountTextView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-                    expenseAmountTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                    expenseAmountTextView.setPadding(10, 5, 5, 5);
-                    gcashRow.addView(expenseAmountTextView);
-
-                    tableLayout3.addView(gcashRow); // Display in tableLayout3 for expenses
-
-                    // Accumulate total expenses
-                    totalGcash += gcash.getAmount();
-                }
-                double total = totalExpenses + totalGcash;
-                double balance = totalSales - total;
-                TableRow TotalRow = new TableRow(getContext());
-                TotalRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                TextView TextView = new TextView(getContext());
-                TextView.setText("");
-                TextView.setTextColor(Color.LTGRAY);
-                TextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                TextView.setPadding(10, 5, 5, 5);
-                TotalRow.addView(TextView);
-
-                TextView totalTextView = new TextView(getContext());
-                totalTextView.setText(String.format("₱%.2f", total));
-                totalTextView.setTextColor(Color.LTGRAY);
-                totalTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                totalTextView.setPadding(10, 5, 5, 5);
-                TotalRow.addView(totalTextView);
-                tableLayout3.addView(TotalRow);
-
-                TableRow TotalSalesRow = new TableRow(getContext());
-                TotalSalesRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                TextView TextView1 = new TextView(getContext());
-                TextView1.setText("Total Sales:");
-                TextView1.setTextColor(Color.LTGRAY);
-                TextView1.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                TextView1.setPadding(10, 5, 5, 5);
-                TotalSalesRow.addView(TextView1);
-
-                TextView totalSalesTextView = new TextView(getContext());
-                totalSalesTextView.setText(String.format("₱%.2f", totalSales));
-                totalSalesTextView.setTextColor(Color.LTGRAY);
-                totalSalesTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                totalSalesTextView.setPadding(10, 5, 5, 5);
-                totalSalesTextView.setPaintFlags(totalSalesTextView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-                TotalSalesRow.addView(totalSalesTextView);
-                tableLayout3.addView(TotalSalesRow);
-
-                TableRow balSalesRow = new TableRow(getContext());
-                balSalesRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                TextView TextView2 = new TextView(getContext());
-                TextView2.setText("");
-                TextView2.setTextColor(Color.LTGRAY);
-                TextView2.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                TextView2.setPadding(10, 5, 5, 5);
-                balSalesRow.addView(TextView2);
-
-                TextView balTextView = new TextView(getContext());
-                balTextView.setText(String.format("₱%.2f", balance));
-                balTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-                balTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
-                balTextView.setPadding(10, 5, 5, 5);
-                balSalesRow.addView(balTextView);
-                tableLayout3.addView(balSalesRow);
+                displayTotalSalesWithDeductions(selectedDate, totalSales);
             }
         } catch (ParseException e) {
             Log.e("SalesFragment", "Error parsing date: ", e);
         }
+    }
+    private void displayTotalSalesWithDeductions(String selectedDate, double totalSales) {
+        double totalExpenses = 0.0;
+        double totalGcash = 0.0;
+        List<Expenses> expensesList = getExpensesForDate(selectedDate);
+        List<Gcash> gcashList = getGcashForDate(selectedDate);
+        TextView tvTEGD = getActivity().findViewById(R.id.tvTEGD);
+        if(expensesList.size() == 0 && gcashList.size() == 0){
+            tableLayout3.setVisibility(View.GONE);
+            tvTEGD.setVisibility(View.GONE);
+            return;
+        }else {
+            tableLayout3.setVisibility(View.VISIBLE);
+            tvTEGD.setVisibility(View.VISIBLE);
+        }
+        for (Expenses expense : expensesList) {
+            TableRow expenseRow = new TableRow(getContext());
+            expenseRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+            TextView reasonTextView = new TextView(getContext());
+            reasonTextView.setText(expense.getReason());
+            reasonTextView.setTextColor(Color.LTGRAY);
+            reasonTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+            reasonTextView.setPadding(10, 5, 5, 5);
+            expenseRow.addView(reasonTextView);
+
+            TextView expenseAmountTextView = new TextView(getContext());
+            expenseAmountTextView.setText(String.format("₱%.2f", expense.getAmount()));
+            expenseAmountTextView.setTextColor(Color.LTGRAY);
+            expenseAmountTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+            expenseAmountTextView.setPadding(10, 5, 5, 5);
+            expenseRow.addView(expenseAmountTextView);
+
+            tableLayout3.addView(expenseRow); // Display in tableLayout3 for expenses
+
+            // Accumulate total expenses
+            totalExpenses += expense.getAmount();
+        }
+
+         // Use the updated method
+        for (Gcash gcash : gcashList) {
+            TableRow gcashRow = new TableRow(getContext());
+            gcashRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+            TextView reasonTextView = new TextView(getContext());
+            reasonTextView.setText("Gcash");
+            reasonTextView.setTextColor(Color.LTGRAY);
+            reasonTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+            reasonTextView.setPadding(10, 5, 5, 5);
+            gcashRow.addView(reasonTextView);
+
+            TextView expenseAmountTextView = new TextView(getContext());
+            expenseAmountTextView.setText(String.format("₱%.2f", gcash.getAmount()));
+            expenseAmountTextView.setTextColor(Color.LTGRAY);
+            expenseAmountTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+            expenseAmountTextView.setPadding(10, 5, 5, 5);
+            gcashRow.addView(expenseAmountTextView);
+
+            tableLayout3.addView(gcashRow); // Display in tableLayout3 for expenses
+            // Accumulate total expenses
+            totalGcash += gcash.getAmount();
+        }
+        TableRow UndeRow = new TableRow(getContext());
+        UndeRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
+
+        View line2 = new View(getContext());
+        line2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
+        line2.setBackgroundColor(Color.LTGRAY);
+
+        View line = new View(getContext());
+        line.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
+        line.setBackgroundColor(Color.LTGRAY);
+
+        UndeRow.addView(line);
+        UndeRow.addView(line2);
+
+        tableLayout3.addView(UndeRow);
+
+        double total = totalExpenses + totalGcash;
+        double balance = totalSales - total;
+        TableRow TotalRow = new TableRow(getContext());
+        TotalRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        TextView TextView = new TextView(getContext());
+        TextView.setText("");
+        TextView.setTextColor(Color.LTGRAY);
+        TextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        TextView.setPadding(10, 5, 5, 5);
+        TotalRow.addView(TextView);
+
+        TextView totalTextView = new TextView(getContext());
+        totalTextView.setText(String.format("₱%.2f", total));
+        totalTextView.setTextColor(Color.LTGRAY);
+        totalTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        totalTextView.setPadding(10, 5, 5, 5);
+        TotalRow.addView(totalTextView);
+        tableLayout3.addView(TotalRow);
+
+        TableRow TotalSalesRow = new TableRow(getContext());
+        TotalSalesRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        TextView TextView1 = new TextView(getContext());
+        TextView1.setText("Total Sales:");
+        TextView1.setTextColor(Color.LTGRAY);
+        TextView1.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        TextView1.setPadding(10, 5, 5, 5);
+        TotalSalesRow.addView(TextView1);
+
+        TextView totalSalesTextView = new TextView(getContext());
+        totalSalesTextView.setText(String.format("₱%.2f", totalSales));
+        totalSalesTextView.setTextColor(Color.LTGRAY);
+        totalSalesTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        totalSalesTextView.setPadding(10, 5, 5, 5);
+        TotalSalesRow.addView(totalSalesTextView);
+
+        tableLayout3.addView(TotalSalesRow);
+
+        TableRow UndeRow2 = new TableRow(getContext());
+        UndeRow2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
+
+        View line3 = new View(getContext());
+        line3.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
+        line3.setBackgroundColor(Color.LTGRAY);
+
+        View line4 = new View(getContext());
+        line4.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
+        line4.setBackgroundColor(Color.LTGRAY);
+        UndeRow2.addView(line4);
+        UndeRow2.addView(line3);
+
+        tableLayout3.addView(UndeRow2);
+
+        TableRow balSalesRow = new TableRow(getContext());
+        balSalesRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        TextView TextView2 = new TextView(getContext());
+        TextView2.setText("");
+        TextView2.setTextColor(Color.LTGRAY);
+        TextView2.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        TextView2.setPadding(10, 5, 5, 5);
+        balSalesRow.addView(TextView2);
+
+        TextView balTextView = new TextView(getContext());
+        balTextView.setText(String.format("₱%.2f", balance));
+        balTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+        balTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+        balTextView.setPadding(10, 5, 5, 5);
+        balSalesRow.addView(balTextView);
+        tableLayout3.addView(balSalesRow);
     }
     private Employee findEmployeeByName(String employeeName) {
         for (Employee employee : employeeList) {

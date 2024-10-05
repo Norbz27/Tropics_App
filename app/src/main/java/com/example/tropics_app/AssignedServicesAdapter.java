@@ -39,6 +39,7 @@ public class AssignedServicesAdapter extends RecyclerView.Adapter<AssignedServic
         holder.weekLabel.setText(weekServices.getWeekLabel());
         String formattedCommission = String.format(Locale.getDefault(), "₱%.2f", weekServices.getTotalCommission());
         holder.totalCommision.setText("Commission: " + formattedCommission);
+
         // Check if this week is expanded
         boolean isExpanded = expandedWeeks.contains(position);
         holder.servicesContainer.setVisibility(isExpanded ? View.VISIBLE : View.GONE);
@@ -46,15 +47,15 @@ public class AssignedServicesAdapter extends RecyclerView.Adapter<AssignedServic
         // Toggle sub-services visibility
         holder.ivExpandIcon.setOnClickListener(v -> {
             if (isExpanded) {
-                holder.ivExpandIcon.setImageResource(R.drawable.ic_arrow_down); // Expand icon
+                holder.ivExpandIcon.setImageResource(R.drawable.ic_arrow_up); // Expand icon
                 expandedWeeks.remove(position);
             } else {
-
-                holder.ivExpandIcon.setImageResource(R.drawable.ic_arrow_up); // Collapse icon
+                holder.ivExpandIcon.setImageResource(R.drawable.ic_arrow_down); // Collapse icon
                 expandedWeeks.add(position);
             }
             notifyItemChanged(position);
         });
+
         // Clear previous views
         holder.servicesContainer.removeAllViews();
 
@@ -62,31 +63,35 @@ public class AssignedServicesAdapter extends RecyclerView.Adapter<AssignedServic
         if (isExpanded) {
             for (AssignedService service : weekServices.getServices()) {
                 View serviceView = LayoutInflater.from(context).inflate(R.layout.item_assigned_service, holder.servicesContainer, false);
+
+                // Set service name and client name
                 ((TextView) serviceView.findViewById(R.id.service_name)).setText(service.getServiceName());
                 ((TextView) serviceView.findViewById(R.id.client_name)).setText(service.getClientName());
-                String appointmentDateString = service.getAppointmentDate(); // This returns a String
 
-                SimpleDateFormat originalFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()); // Adjust to match the format of your input date string
+                // Format and set the appointment date
+                String appointmentDateString = service.getAppointmentDate();
+                SimpleDateFormat originalFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()); // Input date format
                 SimpleDateFormat sdf2 = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()); // Desired output format
 
                 Date appointmentDate = null;
                 try {
-                    // Parse the string to Date
                     appointmentDate = originalFormat.parse(appointmentDateString);
                 } catch (ParseException e) {
-                    e.printStackTrace(); // Handle the exception
+                    e.printStackTrace();
                 }
 
                 if (appointmentDate != null) {
-                    // Format the date
                     String formattedDate = sdf2.format(appointmentDate);
-                    // Set the formatted date to the TextView
                     ((TextView) serviceView.findViewById(R.id.appointment_date)).setText(formattedDate);
                 } else {
-                    // Handle the case where the date could not be parsed
                     ((TextView) serviceView.findViewById(R.id.appointment_date)).setText("Invalid date");
                 }
 
+                // Display the total price of the service
+                String formattedPrice = String.format(Locale.getDefault(), "₱%.2f", service.getPrice());
+                ((TextView) serviceView.findViewById(R.id.service_price)).setText(formattedPrice);
+
+                // Add the service view to the container
                 holder.servicesContainer.addView(serviceView);
             }
         }
@@ -102,14 +107,13 @@ public class AssignedServicesAdapter extends RecyclerView.Adapter<AssignedServic
         });
     }
 
-
     @Override
     public int getItemCount() {
         return weekServicesList.size();
     }
 
     static class WeekViewHolder extends RecyclerView.ViewHolder {
-        TextView weekLabel, totalCommision;
+        TextView weekLabel, totalCommision, service_price;
         LinearLayout servicesContainer; // Container for services
         LinearLayout weekLayout; // Root layout for click events
         ImageView ivExpandIcon;
@@ -118,6 +122,7 @@ public class AssignedServicesAdapter extends RecyclerView.Adapter<AssignedServic
             ivExpandIcon = itemView.findViewById(R.id.ivExpandIcon);
             weekLabel = itemView.findViewById(R.id.week_label);
             totalCommision = itemView.findViewById(R.id.totalCommision);
+            service_price = itemView.findViewById(R.id.service_price);
             servicesContainer = itemView.findViewById(R.id.services_container);
             weekLayout = itemView.findViewById(R.id.week_layout); // Ensure you have this in your week_header.xml
         }

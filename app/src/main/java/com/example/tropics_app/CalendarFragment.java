@@ -171,6 +171,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     public void onItemClick(Appointment appointment) {
         showViewAppointmentDialog(appointment);
     }
+
     private void populateAppointmentDetails(Appointment appointment, View dialogView) {
         TextView fullnameTextView = dialogView.findViewById(R.id.tvName);
         TextView emailTextView = dialogView.findViewById(R.id.tvEmail);
@@ -180,43 +181,85 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         TextView serviceTextView = dialogView.findViewById(R.id.services);
         TextView totalPriceTextView = dialogView.findViewById(R.id.tvTotalPrice);
 
+        // Set appointment details
         fullnameTextView.setText(appointment.getFullName());
         emailTextView.setText("Email: " + appointment.getEmail());
 
-        // Date and time formatting (same as your original code)
+        // Assume these are the input formats of the strings
         SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat inputTimeFormat = new SimpleDateFormat("HH:mm");
+
+        // Desired output formats
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("MMM dd, yyyy");
         SimpleDateFormat outputTimeFormat = new SimpleDateFormat("hh:mm a");
 
         try {
-            Date appointmentDate = inputDateFormat.parse(appointment.getDate());
-            Date appointmentTime = inputTimeFormat.parse(appointment.getTime());
+            // Parse the date and time strings to Date objects
+            String appointmentDateStr = appointment.getDate(); // "2024-01-27"
+            String appointmentTimeStr = appointment.getTime(); // "15:30"
+
+            Date appointmentDate = inputDateFormat.parse(appointmentDateStr);
+            Date appointmentTime = inputTimeFormat.parse(appointmentTimeStr);
+
+            // Format the Date objects to the desired format
             dateTextView.setText("Date: " + outputDateFormat.format(appointmentDate));
             timeTextView.setText("Time: " + outputTimeFormat.format(appointmentTime));
+
         } catch (ParseException e) {
+            e.printStackTrace(); // Handle the exception if parsing fails
             dateTextView.setText("Date: Invalid");
             timeTextView.setText("Time: Invalid");
         }
-
         phoneNumberTextView.setText("Phone: " + appointment.getPhone());
 
-        // Populate services and total price (same as your original code)
+        // Format service details with indention and calculate total price
         StringBuilder serviceDetails = new StringBuilder();
         double totalPrice = 0.0;
+
         for (Map<String, Object> service : appointment.getServices()) {
+            // Safe casting to String and double
             String parentServiceName = (String) service.get("parentServiceName");
             String serviceName = (String) service.get("serviceName");
             String assignEmployee = (String) service.get("assignedEmployee");
-            Double servicePrice = (double) service.get("servicePrice");
+            Double servicePrice = service.get("servicePrice") != null ? (double) service.get("servicePrice") : 0.0;
 
-            serviceDetails.append(parentServiceName).append(": \n");
-            serviceDetails.append("\t").append(serviceName).append(" - ₱").append(servicePrice)
-                    .append("\n").append("\tAssigned Employee: " + assignEmployee + "\n");
+            // Append parent service name
+            if(!parentName.equals(parentServiceName)){
+                serviceDetails.append(parentServiceName).append(": \n");
+                parentName = parentServiceName;
+            }
 
-            totalPrice += servicePrice;
+            // Append service name
+            if(!servicePrice.equals(0.0)){
+                serviceDetails.append("\t").append(serviceName).append(" - ₱")
+                        .append(servicePrice).append("\n").append("\tAssigned Employee: "+assignEmployee + "\n");
+            }else {
+                serviceDetails.append("\t").append(serviceName).append("\n").append("\tAssigned Employee: "+assignEmployee + "\n");
+            }
+
+
+            totalPrice += servicePrice; // Accumulate total price
+
+            // Check for sub-sub-services
+            List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+            if (subServices != null) {
+                for (Map<String, Object> subService : subServices) {
+                    String subServiceName = (String) subService.get("serviceName");
+                    Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+
+                    if(!subServicePrice.equals(0.0)){
+                        serviceDetails.append("\t\t").append(subServiceName).append(" - ₱")
+                                .append(subServicePrice).append("\n");
+                    }else {
+                        serviceDetails.append("\t\t").append(subServiceName).append("\n");
+                    }
+
+                    totalPrice += subServicePrice;
+                }
+            }
         }
 
+        // Set the services and total price in the dialog
         serviceTextView.setText(serviceDetails.toString());
         totalPriceTextView.setText("₱" + totalPrice);
     }
@@ -325,9 +368,9 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                             })
                             .setNegativeButton("Cancel", (dialogInterface, which) -> dialogInterface.dismiss());
 
-                    // Show the assign dialog
-                    AlertDialog assignDialog = assignDialogBuilder.create();
-                    assignDialog.setOnShowListener(dialogInterface -> {
+                        // Show the assign dialog
+                        AlertDialog assignDialog = assignDialogBuilder.create();
+                        assignDialog.setOnShowListener(dialogInterface -> {
                         // Load the custom font
                         Typeface manrope = ResourcesCompat.getFont(getActivity(), R.font.manrope);
 
