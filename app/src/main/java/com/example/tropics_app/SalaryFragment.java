@@ -73,10 +73,6 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     private Uri selectedImageUri;
     private static final int PICK_IMAGE_REQUEST = 1;
 
-    public SalaryFragment() {
-        // Required empty public constructor
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -278,7 +274,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         empPhone.setText("Phone: " + employee.getPhone());
         empEmail.setText("Email: " + employee.getEmail());
         empSal.setText("Weekly Salary: ₱" + employee.getSalary());
-        empComm.setText("Commission: ₱" + employee.getComs());
+        empComm.setText("Commission %: " + employee.getComs());
 
         Glide.with(this)
                 .load(employee.getImage())
@@ -325,7 +321,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     private void fetchAssignedServicesByMonth(Employee employee, int monthNumber, RecyclerView assignedServicesRecyclerView) {
         CollectionReference appointmentsRef = db.collection("appointments");
         Map<Integer, List<AssignedService>> weeklyServicesMap = new HashMap<>();
-        Map<Integer, Double> weeklyCommissionMap = new HashMap<>(); // To store total commission per week
+        Map<Integer, Double> weeklyEarningsMap = new HashMap<>(); // To store total earnings per week
 
         appointmentsRef.get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
@@ -334,8 +330,24 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
 
                     for (Map<String, Object> service : services) {
                         String assignedEmployee = (String) service.get("assignedEmployee");
-                        String serviceName = (String) service.get("serviceName");
+                        double totalPriceForService = (Double) service.get("servicePrice"); // Get the primary service price
 
+                        // Initialize total price for sub-sub-services
+                        double totalSubServicePrice = 0.0;
+
+                        // If there are sub-services, calculate their total price
+                        List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                        if (subServices != null) {
+                            for (Map<String, Object> subService : subServices) {
+                                double subServicePrice = (Double) subService.get("servicePrice"); // Get sub-service price
+                                totalSubServicePrice += subServicePrice; // Accumulate the price
+                            }
+                        }
+
+                        // Combine the total price for the service and its sub-sub-services
+                        double combinedTotalPrice = totalPriceForService + totalSubServicePrice;
+
+                        // Check if the service is assigned to the current employee
                         if (assignedEmployee != null && assignedEmployee.equals(employee.getName())) {
                             String appointmentDate = document.getString("date");
 
@@ -351,15 +363,14 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                                     int weekNumber = calendar.get(Calendar.WEEK_OF_MONTH); // Get the week of the month
 
                                     // Create AssignedService object
-                                    AssignedService assignedService = new AssignedService(serviceName, document.getString("fullName"), appointmentDate, weekNumber);
+                                    AssignedService assignedService = new AssignedService(service.get("serviceName").toString(), document.getString("fullName"), appointmentDate, weekNumber);
 
                                     // Group by week
                                     weeklyServicesMap.putIfAbsent(weekNumber, new ArrayList<>());
                                     weeklyServicesMap.get(weekNumber).add(assignedService);
 
-                                    // Update commission for this week (assuming a fixed commission per service)
-                                    double commissionPerService = employee.getComs(); // Set your commission rate here
-                                    weeklyCommissionMap.put(weekNumber, weeklyCommissionMap.getOrDefault(weekNumber, 0.0) + commissionPerService);
+                                    // Update total earnings for this week
+                                    weeklyEarningsMap.put(weekNumber, weeklyEarningsMap.getOrDefault(weekNumber, 0.0) + combinedTotalPrice); // Use combinedTotalPrice here
                                 }
                             } catch (ParseException e) {
                                 e.printStackTrace();
@@ -374,8 +385,10 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                     int week = entry.getKey();
                     List<AssignedService> services = entry.getValue();
 
-                    // Calculate total commission for this week
-                    double totalCommission = weeklyCommissionMap.getOrDefault(week, 0.0);
+                    // Calculate total earnings and commission for this week
+                    double totalEarnings = weeklyEarningsMap.getOrDefault(week, 0.0);
+                    double commissionRate = employee.getComs(); // Get the commission rate as a percentage
+                    double totalCommission = (totalEarnings * commissionRate) / 100; // Calculate total commission based on total earnings
 
                     // Only add the week if there are services for that week
                     if (!services.isEmpty()) {
@@ -388,7 +401,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                     weekServicesList.add(new WeekServices("No services available for this month", Collections.emptyList(), 0.0)); // Display a message if no services
                 }
 
-                // Set the adapter
+                // Set the adapter for the RecyclerView
                 AssignedServicesAdapter adapter = new AssignedServicesAdapter(getContext(), weekServicesList);
                 assignedServicesRecyclerView.setAdapter(adapter);
             } else {

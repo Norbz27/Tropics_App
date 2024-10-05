@@ -60,6 +60,6 @@
     android:layout_margin="30dp"
     app:srcCompat="@android:drawable/ic_input_add"
     android:backgroundTint="@color/orange"
-    android:tint="@color/darkgray"
+    android:tint="@color/white"
     app:fabSize="normal" />
 </FrameLayout>

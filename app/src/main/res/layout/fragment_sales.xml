@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#121315"
     tools:context=".SalesFragment">
 
@@ -174,6 +175,31 @@
                         </TableRow>
                     </TableLayout>
                 </HorizontalScrollView>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope_bold"
+                    android:text="Total with Expenses &amp; Gcash"
+                    android:textColor="@color/orange"
+                    android:layout_marginBottom="10dp"
+                    android:textSize="16sp" />
+
+                <HorizontalScrollView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="horizontal">
+                    <!-- Table for Sales Data -->
+                    <TableLayout
+                        android:id="@+id/tblayout3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="50dp">
+                        <!-- Table Header -->
+                        <TableRow android:background="@color/gray">
+
+                        </TableRow>
+                    </TableLayout>
+                </HorizontalScrollView>
                 <!-- Button Group -->
                 <TextView
                     android:layout_width="wrap_content"
@@ -311,4 +337,27 @@
             </LinearLayout>
         </ScrollView>
     </RelativeLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabGcash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginRight="30dp"
+        android:layout_marginBottom="100dp"
+        android:backgroundTint="@color/orange"
+        app:fabSize="normal"
+        app:maxImageSize="45dp"
+        app:srcCompat="@drawable/icons8_gcash" />
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabExpenses"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="30dp"
+        app:srcCompat="@drawable/outline_horizontal_rule_24"
+        android:backgroundTint="@color/orange"
+        app:maxImageSize="30dp"
+        android:tint="@color/white"
+        app:fabSize="normal" />
 </FrameLayout>

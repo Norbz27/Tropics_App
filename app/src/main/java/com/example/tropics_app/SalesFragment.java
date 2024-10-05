@@ -1,8 +1,10 @@
 package com.example.tropics_app;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -36,8 +38,10 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -61,8 +65,11 @@ public class SalesFragment extends Fragment {
     private Calendar calendar;
     private int targetMonth, targetYear;
     private boolean isDaily = true;
-    private TableLayout tableLayout, tableLayout2;
+    private TableLayout tableLayout, tableLayout2, tableLayout3;
     private List<Employee> employeeList;
+    private List<Expenses> expensesList;
+    private List<Gcash> gcashList;
+    private FloatingActionButton fabExpenses, fabGcash;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -70,6 +77,8 @@ public class SalesFragment extends Fragment {
         db = FirebaseFirestore.getInstance();
         appointmentsList = new ArrayList<>();
         employeeList = new ArrayList<>();
+        expensesList = new ArrayList<>();
+        gcashList = new ArrayList<>();
         loadEmployeeData();
     }
 
@@ -78,9 +87,15 @@ public class SalesFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_sales, container, false);
+        fabExpenses = rootView.findViewById(R.id.fabExpenses);
+        fabGcash = rootView.findViewById(R.id.fabGcash);
+        fabExpenses.setOnClickListener(v -> showExpensesDialog());
+        fabGcash.setOnClickListener(v -> showGcashDialog());
+
         EditText DatePicker = rootView.findViewById(R.id.date_picker);
         tableLayout = rootView.findViewById(R.id.tblayout);
         tableLayout2 = rootView.findViewById(R.id.tblayout2);
+        tableLayout3 = rootView.findViewById(R.id.tblayout3);
         tvDayOfWeek = rootView.findViewById(R.id.day_of_Week);
         DatePicker.setOnClickListener(v -> showDatePickerDialog(DatePicker));
         Date dateNow = new Date();
@@ -126,7 +141,7 @@ public class SalesFragment extends Fragment {
         yearSpinner.setSelection(years.indexOf(String.valueOf(currentYear))); // Set to current year
         // Fetch data from Firestore
 
-        fetchAppointmentData();
+
         btnDaily.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -193,6 +208,116 @@ public class SalesFragment extends Fragment {
         return rootView;
     }
 
+    private void showExpensesDialog() {
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_new_expenses, null);
+
+        EditText edAmount = dialogView.findViewById(R.id.etAmount);
+        EditText edReason = dialogView.findViewById(R.id.etReason);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+        // Create an instance of Firebase Firestore
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        dialogBuilder.setView(dialogView);
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
+
+        btnSubmit.setOnClickListener(v -> {
+            // Get input values
+            String amount = edAmount.getText().toString().trim();
+            String reason = edReason.getText().toString().trim();
+
+            // Validate input
+            if (amount.isEmpty() || reason.isEmpty()) {
+                Toast.makeText(getActivity(), "Please enter both amount and reason", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Show confirmation warning
+            new AlertDialog.Builder(getActivity())
+                    .setTitle("Confirm Submission")
+                    .setMessage("Once submitted, this expense cannot be erased. Do you want to continue?")
+                    .setPositiveButton("Yes", (dialogInterface, i) -> {
+                        // Submit expense
+                        Date dateNow = new Date();
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                        Map<String, Object> expense = new HashMap<>();
+                        expense.put("amount", Double.parseDouble(amount));  // Store amount as a number
+                        expense.put("reason", reason);
+                        expense.put("timestamp", dateFormat.format(dateNow)); // Add a timestamp
+
+                        // Submit the expense to Firestore
+                        db.collection("expenses")
+                                .add(expense)
+                                .addOnSuccessListener(documentReference -> {
+                                    Toast.makeText(getActivity(), "Expense added successfully", Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();  // Close the original dialog
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(getActivity(), "Failed to add expense: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
+                    })
+                    .setNegativeButton("No", null)  // Dismiss the confirmation dialog if 'No' is clicked
+                    .show();
+        });
+    }
+
+    private void showGcashDialog() {
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_gcash, null);
+
+        EditText edAmount = dialogView.findViewById(R.id.etAmount);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+        // Create an instance of Firebase Firestore
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        dialogBuilder.setView(dialogView);
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
+
+        btnSubmit.setOnClickListener(v -> {
+            // Get input values
+            String amount = edAmount.getText().toString().trim();
+
+            // Validate input
+            if (amount.isEmpty()) {
+                Toast.makeText(getActivity(), "Please enter the GCash amount", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Show confirmation warning
+            new AlertDialog.Builder(getActivity())
+                    .setTitle("Confirm Submission")
+                    .setMessage("Once submitted, this GCash payment cannot be erased. Do you want to continue?")
+                    .setPositiveButton("Yes", (dialogInterface, i) -> {
+                        // Submit GCash payment
+                        Date dateNow = new Date();
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                        Map<String, Object> gcashPayment = new HashMap<>();
+                        gcashPayment.put("amount", Double.parseDouble(amount));  // Store amount as a number
+                        gcashPayment.put("paymentMethod", "GCash");
+                        gcashPayment.put("timestamp", dateFormat.format(dateNow));  // Add a timestamp
+
+                        // Submit the GCash payment to Firestore
+                        db.collection("gcash_payments")
+                                .add(gcashPayment)
+                                .addOnSuccessListener(documentReference -> {
+                                    Toast.makeText(getActivity(), "GCash payment added successfully", Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();  // Close the original dialog
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(getActivity(), "Failed to add GCash payment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
+                    })
+                    .setNegativeButton("No", null)  // Dismiss the confirmation dialog if 'No' is clicked
+                    .show();
+        });
+    }
+
     @SuppressLint("RtlHardcoded")
     private void filterDataByDate(String selectedDate) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
@@ -216,10 +341,12 @@ public class SalesFragment extends Fragment {
                 tvDayOfWeek.setText(dayOfWeekWord);
 
                 double totalSales = 0.0;
-
+                double totalExpenses = 0.0;
+                double totalGcash = 0.0;
                 // Clear previous rows
                 tableLayout.removeViews(1, tableLayout.getChildCount() - 1); // Keep header
                 tableLayout2.removeViews(1, tableLayout2.getChildCount() - 1); // Keep header
+                tableLayout3.removeViews(1, tableLayout3.getChildCount() - 1); // Keep header
 
                 // Filter appointments for the selected date
                 for (Appointment appointment : appointmentsList) {
@@ -445,7 +572,112 @@ public class SalesFragment extends Fragment {
                 tableLayout2.addView(rowTotalCom);
                 tableLayout.addView(rowTotal);
 
+                List<Expenses> expensesList = getExpensesForDate(selectedDate); // Use the updated method
+                for (Expenses expense : expensesList) {
+                    TableRow expenseRow = new TableRow(getContext());
+                    expenseRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
+                    TextView reasonTextView = new TextView(getContext());
+                    reasonTextView.setText(expense.getReason());
+                    reasonTextView.setTextColor(Color.LTGRAY);
+                    reasonTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                    reasonTextView.setPadding(10, 5, 5, 5);
+                    expenseRow.addView(reasonTextView);
+
+                    TextView expenseAmountTextView = new TextView(getContext());
+                    expenseAmountTextView.setText(String.format("₱%.2f", expense.getAmount()));
+                    expenseAmountTextView.setTextColor(Color.LTGRAY);
+                    expenseAmountTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                    expenseAmountTextView.setPadding(10, 5, 5, 5);
+                    expenseRow.addView(expenseAmountTextView);
+
+                    tableLayout3.addView(expenseRow); // Display in tableLayout3 for expenses
+
+                    // Accumulate total expenses
+                    totalExpenses += expense.getAmount();
+                }
+
+                List<Gcash> gcashList = getGcashForDate(selectedDate); // Use the updated method
+                for (Gcash gcash : gcashList) {
+                    TableRow gcashRow = new TableRow(getContext());
+                    gcashRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                    TextView reasonTextView = new TextView(getContext());
+                    reasonTextView.setText("Gcash");
+                    reasonTextView.setTextColor(Color.LTGRAY);
+                    reasonTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                    reasonTextView.setPadding(10, 5, 5, 5);
+                    gcashRow.addView(reasonTextView);
+
+                    TextView expenseAmountTextView = new TextView(getContext());
+                    expenseAmountTextView.setText(String.format("₱%.2f", gcash.getAmount()));
+                    expenseAmountTextView.setTextColor(Color.LTGRAY);
+                    expenseAmountTextView.setPaintFlags(expenseAmountTextView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+                    expenseAmountTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                    expenseAmountTextView.setPadding(10, 5, 5, 5);
+                    gcashRow.addView(expenseAmountTextView);
+
+                    tableLayout3.addView(gcashRow); // Display in tableLayout3 for expenses
+
+                    // Accumulate total expenses
+                    totalGcash += gcash.getAmount();
+                }
+                double total = totalExpenses + totalGcash;
+                double balance = totalSales - total;
+                TableRow TotalRow = new TableRow(getContext());
+                TotalRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                TextView TextView = new TextView(getContext());
+                TextView.setText("");
+                TextView.setTextColor(Color.LTGRAY);
+                TextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                TextView.setPadding(10, 5, 5, 5);
+                TotalRow.addView(TextView);
+
+                TextView totalTextView = new TextView(getContext());
+                totalTextView.setText(String.format("₱%.2f", total));
+                totalTextView.setTextColor(Color.LTGRAY);
+                totalTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                totalTextView.setPadding(10, 5, 5, 5);
+                TotalRow.addView(totalTextView);
+                tableLayout3.addView(TotalRow);
+
+                TableRow TotalSalesRow = new TableRow(getContext());
+                TotalSalesRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                TextView TextView1 = new TextView(getContext());
+                TextView1.setText("Total Sales:");
+                TextView1.setTextColor(Color.LTGRAY);
+                TextView1.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                TextView1.setPadding(10, 5, 5, 5);
+                TotalSalesRow.addView(TextView1);
+
+                TextView totalSalesTextView = new TextView(getContext());
+                totalSalesTextView.setText(String.format("₱%.2f", totalSales));
+                totalSalesTextView.setTextColor(Color.LTGRAY);
+                totalSalesTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                totalSalesTextView.setPadding(10, 5, 5, 5);
+                totalSalesTextView.setPaintFlags(totalSalesTextView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+                TotalSalesRow.addView(totalSalesTextView);
+                tableLayout3.addView(TotalSalesRow);
+
+                TableRow balSalesRow = new TableRow(getContext());
+                balSalesRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                TextView TextView2 = new TextView(getContext());
+                TextView2.setText("");
+                TextView2.setTextColor(Color.LTGRAY);
+                TextView2.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                TextView2.setPadding(10, 5, 5, 5);
+                balSalesRow.addView(TextView2);
+
+                TextView balTextView = new TextView(getContext());
+                balTextView.setText(String.format("₱%.2f", balance));
+                balTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                balTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+                balTextView.setPadding(10, 5, 5, 5);
+                balSalesRow.addView(balTextView);
+                tableLayout3.addView(balSalesRow);
             }
         } catch (ParseException e) {
             Log.e("SalesFragment", "Error parsing date: ", e);
@@ -459,8 +691,24 @@ public class SalesFragment extends Fragment {
         }
         return null; // If no match found, return null
     }
-
-
+    private List<Expenses> getExpensesForDate(String selectedDate) {
+        List<Expenses> matchingExpenses = new ArrayList<>();
+        for (Expenses expense : expensesList) {
+            if (expense.getTimestamp().equals(selectedDate)) {
+                matchingExpenses.add(expense); // Add matching expense to the list
+            }
+        }
+        return matchingExpenses; // Return the list of matching expenses
+    }
+    private List<Gcash> getGcashForDate(String selectedDate) {
+        List<Gcash> matchingGcash = new ArrayList<>();
+        for (Gcash gcash : gcashList) {
+            if (gcash.getTimestamp().equals(selectedDate)) {
+                matchingGcash.add(gcash); // Add matching expense to the list
+            }
+        }
+        return matchingGcash; // Return the list of matching expenses
+    }
     private void loadEmployeeData() {
         db.collection("Employees").get()
                 .addOnCompleteListener(task -> {
@@ -471,13 +719,46 @@ public class SalesFragment extends Fragment {
                             employee.setId(document.getId());
                             employeeList.add(employee);
                         }
-                        // Notify adapter or update UI if necessary
+                        fetchAppointmentData();
+                        loadExpensesData();
+                        loadGcashData();
                     } else {
                         Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
-
+    private void loadExpensesData() {
+        db.collection("expenses").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        expensesList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Expenses expenses = document.toObject(Expenses.class);
+                            expenses.setId(document.getId());
+                            expensesList.add(expenses);
+                        }
+                        fetchAppointmentData();
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+    private void loadGcashData() {
+        db.collection("gcash_payments").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        gcashList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Gcash gcash = document.toObject(Gcash.class);
+                            gcash.setId(document.getId());
+                            gcashList.add(gcash);
+                        }
+                        fetchAppointmentData();
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
     private void showDatePickerDialog(final EditText dateField) {
         String dateString = dateField.getText().toString(); // Get the text from EditText
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // Define the date format
