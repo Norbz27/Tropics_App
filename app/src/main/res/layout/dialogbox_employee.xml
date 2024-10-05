@@ -179,7 +179,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fontFamily="@font/manrope_bold"
-        android:text="Commission:"
+        android:text="Commission %:"
         android:textColor="#B6B6B6" />
 
     <com.google.android.material.textfield.TextInputLayout
@@ -197,7 +197,7 @@
             android:layout_height="60dp"
             android:background="@drawable/custom_input"
             android:fontFamily="@font/manrope_medium"
-            android:hint="Commission"
+            android:hint="Commission %"
             android:inputType="numberDecimal"
             android:paddingHorizontal="12dp"
             android:textColorHint="#B6B6B6"

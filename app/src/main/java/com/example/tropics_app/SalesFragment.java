@@ -25,6 +25,7 @@ import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -60,12 +61,15 @@ public class SalesFragment extends Fragment {
     private Calendar calendar;
     private int targetMonth, targetYear;
     private boolean isDaily = true;
-    private TableLayout tableLayout;
+    private TableLayout tableLayout, tableLayout2;
+    private List<Employee> employeeList;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         db = FirebaseFirestore.getInstance();
-        appointmentsList = new ArrayList<>(); // Initialize here to avoid NullPointerException
+        appointmentsList = new ArrayList<>();
+        employeeList = new ArrayList<>();
     }
 
     @Override
@@ -75,20 +79,12 @@ public class SalesFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_sales, container, false);
         EditText DatePicker = rootView.findViewById(R.id.date_picker);
         tableLayout = rootView.findViewById(R.id.tblayout);
+        tableLayout2 = rootView.findViewById(R.id.tblayout2);
         DatePicker.setOnClickListener(v -> showDatePickerDialog(DatePicker));
         Date dateNow = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
         DatePicker.setText(dateFormat.format(dateNow));
-        filterDataByDate(dateFormat.format(dateNow));
-        DatePicker.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                DatePicker.clearFocus(); // To close the keyboard
-                String selectedDate = DatePicker.getText().toString();
-                if (!selectedDate.isEmpty()) {
-                    filterDataByDate(selectedDate);
-                }
-            }
-        });
+
         calendar = Calendar.getInstance();
         targetMonth = calendar.get(Calendar.MONTH); // Current month (0-indexed)
         targetYear = calendar.get(Calendar.YEAR);
@@ -126,11 +122,9 @@ public class SalesFragment extends Fragment {
 
         monthSpinner.setSelection(currentMonth); // Set to current month
         yearSpinner.setSelection(years.indexOf(String.valueOf(currentYear))); // Set to current year
-
-
         // Fetch data from Firestore
         fetchAppointmentData();
-
+        loadEmployeeData();
         btnDaily.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -192,24 +186,30 @@ public class SalesFragment extends Fragment {
 
             }
         });
+
+
         return rootView;
     }
+
     @SuppressLint("RtlHardcoded")
     private void filterDataByDate(String selectedDate) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
         Calendar calendar = Calendar.getInstance();
+        Map<String, Double> employeeSalesMap = new HashMap<>(); // To store sales by employee
+        Map<String, Double> employeeCommissionMap = new HashMap<>(); // To store commission by employee
 
         try {
-            // Parse the selected date
             Date date = dateFormat.parse(selectedDate);
             if (date != null) {
                 calendar.setTime(date);
                 int day = calendar.get(Calendar.DAY_OF_MONTH);
-                int month = calendar.get(Calendar.MONTH); // Month is 0-based
+                int month = calendar.get(Calendar.MONTH); // 0-based
                 int year = calendar.get(Calendar.YEAR);
                 double totalSales = 0.0;
+
                 // Clear previous rows
-                tableLayout.removeViews(1, tableLayout.getChildCount() - 1); // Keep the header
+                tableLayout.removeViews(1, tableLayout.getChildCount() - 1); // Keep header
+                tableLayout2.removeViews(1, tableLayout2.getChildCount() - 1); // Keep header
 
                 // Filter appointments for the selected date
                 for (Appointment appointment : appointmentsList) {
@@ -223,11 +223,12 @@ public class SalesFragment extends Fragment {
                     if (appointmentDate != null) {
                         Calendar appointmentCalendar = Calendar.getInstance();
                         appointmentCalendar.setTime(appointmentDate);
+
                         if (appointmentCalendar.get(Calendar.DAY_OF_MONTH) == day &&
                                 appointmentCalendar.get(Calendar.MONTH) == month &&
                                 appointmentCalendar.get(Calendar.YEAR) == year) {
-
                             String name = "";
+
                             String time = "";
 
                             // Check for and display sub-services
@@ -274,8 +275,7 @@ public class SalesFragment extends Fragment {
                                 subServiceNameTextView.setPadding(10, 5, 5, 5);
                                 row.addView(subServiceNameTextView);
 
-                                // Assuming you already have a parentServiceName from the service map
-                                String subServiceName = (String) service.get("serviceName"); // Get the parent service name
+
                                 double totalPriceForParentService = (Double) service.get("servicePrice"); // Variable to hold total price for this parent service
 
                                 List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
@@ -284,7 +284,7 @@ public class SalesFragment extends Fragment {
                                         // Get the sub-service name and price
                                         Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
 
-                                            totalPriceForParentService += subServicePrice;
+                                        totalPriceForParentService += subServicePrice;
 
                                     }
                                 }
@@ -303,13 +303,81 @@ public class SalesFragment extends Fragment {
                                 HandlerTextView.setPadding(10, 5, 5, 5);
                                 row.addView(HandlerTextView);
                                 totalSales += totalPriceForParentService;
-                                // Add the sub-service row to the TableLayout
+
                                 tableLayout.addView(row);
+                            }
+
+                            List<Map<String, Object>> services2 = appointment.getServices();
+                            for (Map<String, Object> service : services2) {
+                                String employee = service.get("assignedEmployee").toString();
+                                double totalPriceForService = (Double) service.get("servicePrice");
+
+                                List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                                if (subServices != null) {
+                                    for (Map<String, Object> subService : subServices) {
+                                        Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                        totalPriceForService += subServicePrice;
+                                    }
+                                }
+
+                                // Update employee sales
+                                if (employeeSalesMap.containsKey(employee)) {
+                                    employeeSalesMap.put(employee, employeeSalesMap.get(employee) + totalPriceForService);
+                                } else {
+                                    employeeSalesMap.put(employee, totalPriceForService);
+                                }
                             }
                         }
                     }
                 }
 
+                // Assuming employeeSalesMap contains employee names and their corresponding sales
+                for (Map.Entry<String, Double> entry : employeeSalesMap.entrySet()) {
+                    String employeeName = entry.getKey();
+                    double sales = entry.getValue();
+
+                    // Find the employee by name
+                    Employee employee = findEmployeeByName(employeeName);
+                    if (employee != null) {
+                        // Retrieve the commission rate from the employee's data
+                        double commissionRate = employee.getComs(); // Get the 'coms' value from Employee object
+                        double employeeCommission = (sales * commissionRate) / 100.0; // Calculate commission
+
+                        // Store the calculated commission in the employeeCommissionMap (if needed)
+                        employeeCommissionMap.put(employeeName, employeeCommission);
+
+                        // Create a new table row for the employee's commission
+                        TableRow rowCommission = new TableRow(getContext());
+                        rowCommission.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                        // Add the employee's name to the row
+                        TextView nameTextView = new TextView(getContext());
+                        nameTextView.setText(employeeName);
+                        nameTextView.setTextColor(Color.WHITE);
+                        nameTextView.setPadding(5, 5, 5, 5);
+                        rowCommission.addView(nameTextView);
+
+                        // Add the total sales to the row
+                        TextView salesTextView = new TextView(getContext());
+                        salesTextView.setText(String.format("₱%.2f", sales));
+                        salesTextView.setTextColor(Color.WHITE);
+                        salesTextView.setPadding(5, 5, 5, 5);
+                        rowCommission.addView(salesTextView);
+
+                        // Add the calculated commission to the row
+                        TextView commissionTextView = new TextView(getContext());
+                        commissionTextView.setText(String.format("₱%.2f", employeeCommission));
+                        commissionTextView.setTextColor(Color.WHITE);
+                        commissionTextView.setPadding(5, 5, 5, 5);
+                        rowCommission.addView(commissionTextView);
+
+                        // Add the row to the commission table layout (tableLayout2)
+                        tableLayout2.addView(rowCommission);
+                    }
+                }
+
+
+                // Display total sales
                 TableRow rowTotal = new TableRow(getContext());
                 rowTotal.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
@@ -345,6 +413,32 @@ public class SalesFragment extends Fragment {
         } catch (ParseException e) {
             Log.e("SalesFragment", "Error parsing date: ", e);
         }
+    }
+    private Employee findEmployeeByName(String employeeName) {
+        for (Employee employee : employeeList) {
+            if (employee.getName().equalsIgnoreCase(employeeName)) {
+                return employee; // Return the matching employee object
+            }
+        }
+        return null; // If no match found, return null
+    }
+
+
+    private void loadEmployeeData() {
+        db.collection("Employees").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        employeeList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Employee employee = document.toObject(Employee.class);
+                            employee.setId(document.getId());
+                            employeeList.add(employee);
+                        }
+                        // Notify adapter or update UI if necessary
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void showDatePickerDialog(final EditText dateField) {
@@ -399,6 +493,9 @@ public class SalesFragment extends Fragment {
                                 appointmentsList.add(appointment);
                             }
                             setDailyData(appointmentsList, targetMonth, targetYear);
+                            Date dateNow = new Date();
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                            filterDataByDate(dateFormat.format(dateNow));
                         } else {
                             Log.e("SalesFragment", "Error fetching appointments: ", task.getException());
                         }
@@ -420,10 +517,10 @@ public class SalesFragment extends Fragment {
         // Group appointments by day of the target month and sum the sales
         Calendar calendar = Calendar.getInstance(); // Initialize calendar
         for (Appointment appointment : appointmentsList) {
-            Date date = appointment.getCreatedDateTimeAsDate(); // Use the updated method
+            Date date = appointment.getClientDateTimeAsDate(); // Use the updated method
             if (date != null) {
                 calendar.setTime(date);
-                int month = calendar.get(Calendar.MONTH) + 1; // Months are zero-based in Calendar
+                int month = calendar.get(Calendar.MONTH); // Months are zero-based in Calendar
                 int year = calendar.get(Calendar.YEAR);
                 int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
 
@@ -531,7 +628,7 @@ public class SalesFragment extends Fragment {
         // Group appointments by month and sum the sales only for the selected year
         Calendar calendar = Calendar.getInstance();
         for (Appointment appointment : appointmentsList) {
-            Date date = appointment.getCreatedDateTimeAsDate(); // Use the updated method
+            Date date = appointment.getClientDateTimeAsDate(); // Use the updated method
             if (date != null) {
                 calendar.setTime(date);
                 int year = calendar.get(Calendar.YEAR); // Get the year of the appointment

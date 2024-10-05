@@ -28,8 +28,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:orientation="horizontal"
-                    android:visibility="gone">
+                    android:orientation="horizontal">
 
                     <Button
                         android:id="@+id/btnDaily"
@@ -56,8 +55,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
                     android:gravity="center"
-                    android:orientation="horizontal"
-                    android:visibility="gone">
+                    android:orientation="horizontal">
 
                     <Spinner
                         android:id="@+id/month_spinner"
@@ -75,12 +73,10 @@
                     android:id="@+id/l2"
                     android:layout_width="match_parent"
                     android:layout_height="500dp"
-                    android:layout_marginHorizontal="20dp"
                     android:layout_marginVertical="20dp"
                     android:background="@drawable/custom_background"
                     android:paddingHorizontal="15dp"
-                    android:paddingVertical="15dp"
-                    android:visibility="gone">
+                    android:paddingVertical="15dp">
 
                     <com.github.mikephil.charting.charts.LineChart
                         android:id="@+id/lineChart"
@@ -94,8 +90,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="20dp"
-                    android:layout_marginBottom="25dp"
-                    android:visibility="gone">
+                    android:layout_marginBottom="25dp">
 
                     <TextView
                         android:id="@+id/tvHigh"
@@ -152,12 +147,19 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
-                    android:layout_marginHorizontal="20dp"
-                    android:orientation="horizontal"
+                    android:orientation="vertical"
                     android:gravity="center"
                     android:layout_marginBottom="10dp">
 
-                    <!-- Start Date Picker -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/manrope_bold"
+                        android:text="Daily Sales Report Table"
+                        android:textColor="@color/orange"
+                        android:layout_marginBottom="10dp"
+                        android:textSize="18sp"/>
+
                     <EditText
                         android:id="@+id/date_picker"
                         android:layout_width="140dp"
@@ -173,60 +175,108 @@
                         android:clickable="true"
                         android:textColor="@color/sub_text"
                         android:background="@drawable/custom_background"
-                        android:textSize="14sp"
-                        android:layout_marginEnd="10dp" />
-
-                    <!-- End Date Picker -->
-
-                    <!-- Filter Button -->
+                        android:textSize="14sp" />
                 </LinearLayout>
 
-                <!-- Table for Sales Data -->
-                <TableLayout
-                    android:id="@+id/tblayout"
+                <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:stretchColumns="1">
+                    android:scrollbars="horizontal">
+                    <!-- Table for Sales Data -->
+                    <TableLayout
+                        android:id="@+id/tblayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="50dp"
+                        android:stretchColumns="1">
 
-                    <!-- Table Header -->
-                    <TableRow android:background="@color/gray">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Time"
-                            android:textColor="@android:color/white"
-                            android:padding="5dp"
-                            android:fontFamily="@font/manrope_bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Name"
-                            android:textColor="@android:color/white"
-                            android:padding="5dp"
-                            android:fontFamily="@font/manrope_bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Services"
-                            android:textColor="@android:color/white"
-                            android:padding="5dp"
-                            android:fontFamily="@font/manrope_bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Rate"
-                            android:textColor="@android:color/white"
-                            android:padding="5dp"
-                            android:fontFamily="@font/manrope_bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Handler"
-                            android:textColor="@android:color/white"
-                            android:padding="5dp"
-                            android:fontFamily="@font/manrope_bold" />
-                    </TableRow>
-                </TableLayout>
+                        <!-- Table Header -->
+                        <TableRow android:background="@color/gray">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Time"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Name"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Services"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Rate"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Handler"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                        </TableRow>
+                    </TableLayout>
+                </HorizontalScrollView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope_bold"
+                    android:text="Commission"
+                    android:textColor="@color/orange"
+                    android:layout_marginBottom="10dp"
+                    android:textSize="16sp"/>
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="horizontal">
+                    <!-- Table for Sales Data -->
+                    <TableLayout
+                        android:id="@+id/tblayout2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="50dp"
+                        android:stretchColumns="0">
+                        <!-- Table Header -->
+                        <TableRow android:background="@color/gray">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Employee Name"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Sales"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Commission"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                        </TableRow>
+                    </TableLayout>
+                </HorizontalScrollView>
             </LinearLayout>
         </ScrollView>
     </RelativeLayout>

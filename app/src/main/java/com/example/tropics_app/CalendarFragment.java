@@ -359,7 +359,8 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         for (Map<String, Object> service : appointment.getServices()) {
             // Safe casting to String and double
             String parentServiceName = (String) service.get("parentServiceName");
-            String serviceName = (String) service.get("serviceName"); // Check for sub-services
+            String serviceName = (String) service.get("serviceName");
+            String assignEmployee = (String) service.get("assignedEmployee");
             Double servicePrice = service.get("servicePrice") != null ? (double) service.get("servicePrice") : 0.0;
 
             // Append parent service name
@@ -371,9 +372,9 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
             // Append service name
             if(!servicePrice.equals(0.0)){
                 serviceDetails.append("\t").append(serviceName).append(" - ₱")
-                        .append(servicePrice).append("\n");
+                        .append(servicePrice).append("\n").append("\tAssigned Employee: "+assignEmployee + "\n");
             }else {
-                serviceDetails.append("\t").append(serviceName).append("\n");
+                serviceDetails.append("\t").append(serviceName).append("\n").append("\tAssigned Employee: "+assignEmployee + "\n");
             }
 
 
