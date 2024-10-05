@@ -303,7 +303,6 @@ public class InventoryFragment extends Fragment {
         Button btnAddProduct = dialogView.findViewById(R.id.btnAddProduct);
 
         imgProduct.setOnClickListener(v -> {
-            // Open gallery to select an image
             Intent intent = new Intent();
             intent.setType("image/*");
             intent.setAction(Intent.ACTION_GET_CONTENT);
