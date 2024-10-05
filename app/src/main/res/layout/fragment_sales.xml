@@ -22,138 +22,10 @@
                 android:orientation="vertical"
                 android:gravity="center">
 
-                <!-- Button Group -->
-                <LinearLayout
-                    android:id="@+id/l1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnDaily"
-                        android:layout_width="100dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="-1dp"
-                        android:background="@drawable/button_daily_checked"
-                        android:padding="10dp"
-                        android:text="Daily" />
-
-                    <Button
-                        android:id="@+id/btnMonthly"
-                        android:layout_width="100dp"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/button_monthly"
-                        android:padding="10dp"
-                        android:text="Monthly" />
-                </LinearLayout>
-
-                <!-- Spinner Group -->
-                <LinearLayout
-                    android:id="@+id/l3"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:gravity="center"
-                    android:orientation="horizontal">
-
-                    <Spinner
-                        android:id="@+id/month_spinner"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-
-                    <Spinner
-                        android:id="@+id/year_spinner"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <!-- LineChart Section -->
-                <LinearLayout
-                    android:id="@+id/l2"
-                    android:layout_width="match_parent"
-                    android:layout_height="500dp"
-                    android:layout_marginVertical="20dp"
-                    android:background="@drawable/custom_background"
-                    android:paddingHorizontal="15dp"
-                    android:paddingVertical="15dp">
-
-                    <com.github.mikephil.charting.charts.LineChart
-                        android:id="@+id/lineChart"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
-                    <Switch
-                        android:id="@+id/switch1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Switch" />
-                </LinearLayout>
-
-                <!-- Average Sales Section -->
-                <RelativeLayout
-                    android:id="@+id/relativeLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="20dp"
-                    android:layout_marginBottom="25dp">
-
-                    <TextView
-                        android:id="@+id/tvHigh"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentLeft="true"
-                        android:fontFamily="@font/manrope"
-                        android:text="Highest Sales: P1200.00"
-                        android:textColor="@color/white"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvLow"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentRight="true"
-                        android:fontFamily="@font/manrope"
-                        android:gravity="right"
-                        android:text="Lowest Sales: P100.00"
-                        android:textColor="@color/white"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvAverage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_below="@id/tvHigh"
-                        android:layout_centerInParent="true"
-                        android:layout_marginTop="30dp"
-                        android:background="@drawable/custom_background"
-                        android:fontFamily="@font/manrope_bold"
-                        android:paddingHorizontal="30dp"
-                        android:paddingVertical="10dp"
-                        android:text="P500.00"
-                        android:textColor="@color/white"
-                        android:textSize="28sp" />
-
-                    <TextView
-                        android:id="@+id/tvAveLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_below="@id/tvAverage"
-                        android:layout_centerInParent="true"
-                        android:layout_marginTop="0dp"
-                        android:fontFamily="@font/manrope_semibold"
-                        android:text="Average Sales"
-                        android:textColor="@color/white"
-                        android:textSize="18sp" />
-                </RelativeLayout>
-
-                <!-- Date Filter Section -->
                 <LinearLayout
                     android:id="@+id/date_filter_section"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
                     android:orientation="vertical"
                     android:gravity="center"
                     android:layout_marginBottom="10dp">
@@ -166,23 +38,41 @@
                         android:textColor="@color/orange"
                         android:layout_marginBottom="10dp"
                         android:textSize="18sp"/>
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <EditText
+                            android:id="@+id/date_picker"
+                            android:layout_width="140dp"
+                            android:layout_height="30dp"
+                            android:paddingLeft="15dp"
+                            android:paddingRight="10dp"
+                            android:hint="06/02/2024"
+                            android:fontFamily="@font/manrope"
+                            android:drawableEnd="@drawable/ic_arrow_down"
+                            android:drawableTint="@color/sub_text"
+                            android:focusable="false"
+                            android:textColorHint="@color/sub_text"
+                            android:clickable="true"
+                            android:textColor="@color/sub_text"
+                            android:background="@drawable/custom_background"
+                            android:textSize="14sp" />
 
-                    <EditText
-                        android:id="@+id/date_picker"
-                        android:layout_width="140dp"
-                        android:layout_height="30dp"
-                        android:paddingLeft="15dp"
-                        android:paddingRight="10dp"
-                        android:hint="06/02/2024"
-                        android:fontFamily="@font/manrope"
-                        android:drawableEnd="@drawable/ic_arrow_down"
-                        android:drawableTint="@color/sub_text"
-                        android:focusable="false"
-                        android:textColorHint="@color/sub_text"
-                        android:clickable="true"
-                        android:textColor="@color/sub_text"
-                        android:background="@drawable/custom_background"
-                        android:textSize="14sp" />
+                        <TextView
+                            android:id="@+id/day_of_Week"
+                            android:layout_width="140dp"
+                            android:layout_height="30dp"
+                            android:hint="N/A"
+                            android:gravity="center"
+                            android:layout_alignParentRight="true"
+                            android:layout_gravity="right"
+                            android:fontFamily="@font/manrope"
+                            android:drawableTint="@color/sub_text"
+                            android:textColorHint="@color/sub_text"
+                            android:textColor="@color/sub_text"
+                            android:background="@drawable/custom_background"
+                            android:textSize="14sp" />
+                    </RelativeLayout>
                 </LinearLayout>
 
                 <HorizontalScrollView
@@ -284,6 +174,140 @@
                         </TableRow>
                     </TableLayout>
                 </HorizontalScrollView>
+                <!-- Button Group -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope_bold"
+                    android:text="Sales Chart"
+                    android:textColor="@color/orange"
+                    android:layout_marginBottom="10dp"
+                    android:textSize="16sp"/>
+                <LinearLayout
+                    android:id="@+id/l1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnDaily"
+                        android:layout_width="100dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="-1dp"
+                        android:background="@drawable/button_daily_checked"
+                        android:padding="10dp"
+                        android:text="Daily" />
+
+                    <Button
+                        android:id="@+id/btnMonthly"
+                        android:layout_width="100dp"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/button_monthly"
+                        android:padding="10dp"
+                        android:text="Monthly" />
+                </LinearLayout>
+
+                <!-- Spinner Group -->
+                <LinearLayout
+                    android:id="@+id/l3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <Spinner
+                        android:id="@+id/month_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <Spinner
+                        android:id="@+id/year_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <!-- LineChart Section -->
+                <LinearLayout
+                    android:id="@+id/l2"
+                    android:layout_width="match_parent"
+                    android:layout_height="500dp"
+                    android:layout_marginVertical="20dp"
+                    android:background="@drawable/custom_background"
+                    android:paddingHorizontal="15dp"
+                    android:paddingVertical="15dp"
+                    android:orientation="vertical">
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/lineChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                    <Switch
+                        android:id="@+id/switch1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Switch" />
+                </LinearLayout>
+
+                <!-- Average Sales Section -->
+                <RelativeLayout
+                    android:id="@+id/relativeLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginBottom="25dp">
+
+                    <TextView
+                        android:id="@+id/tvHigh"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:fontFamily="@font/manrope"
+                        android:text="Highest Sales: P1200.00"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvLow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:fontFamily="@font/manrope"
+                        android:gravity="right"
+                        android:text="Lowest Sales: P100.00"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvAverage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/tvHigh"
+                        android:layout_centerInParent="true"
+                        android:layout_marginTop="30dp"
+                        android:background="@drawable/custom_background"
+                        android:fontFamily="@font/manrope_bold"
+                        android:paddingHorizontal="30dp"
+                        android:paddingVertical="10dp"
+                        android:text="P500.00"
+                        android:textColor="@color/white"
+                        android:textSize="28sp" />
+
+                    <TextView
+                        android:id="@+id/tvAveLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/tvAverage"
+                        android:layout_centerInParent="true"
+                        android:layout_marginTop="0dp"
+                        android:fontFamily="@font/manrope_semibold"
+                        android:text="Average Sales"
+                        android:textColor="@color/white"
+                        android:textSize="18sp" />
+                </RelativeLayout>
             </LinearLayout>
         </ScrollView>
     </RelativeLayout>

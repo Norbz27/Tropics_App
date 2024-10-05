@@ -53,7 +53,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public class SalesFragment extends Fragment {
-    private TextView tvAverage, tvHigh, tvLow;
+    private TextView tvAverage, tvHigh, tvLow,tvDayOfWeek;
     private LineChart lineChart;
     private FirebaseFirestore db;
     private List<Appointment> appointmentsList; // List to store appointments
@@ -70,6 +70,7 @@ public class SalesFragment extends Fragment {
         db = FirebaseFirestore.getInstance();
         appointmentsList = new ArrayList<>();
         employeeList = new ArrayList<>();
+        loadEmployeeData();
     }
 
     @Override
@@ -80,6 +81,7 @@ public class SalesFragment extends Fragment {
         EditText DatePicker = rootView.findViewById(R.id.date_picker);
         tableLayout = rootView.findViewById(R.id.tblayout);
         tableLayout2 = rootView.findViewById(R.id.tblayout2);
+        tvDayOfWeek = rootView.findViewById(R.id.day_of_Week);
         DatePicker.setOnClickListener(v -> showDatePickerDialog(DatePicker));
         Date dateNow = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
@@ -123,8 +125,8 @@ public class SalesFragment extends Fragment {
         monthSpinner.setSelection(currentMonth); // Set to current month
         yearSpinner.setSelection(years.indexOf(String.valueOf(currentYear))); // Set to current year
         // Fetch data from Firestore
+
         fetchAppointmentData();
-        loadEmployeeData();
         btnDaily.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -205,6 +207,14 @@ public class SalesFragment extends Fragment {
                 int day = calendar.get(Calendar.DAY_OF_MONTH);
                 int month = calendar.get(Calendar.MONTH); // 0-based
                 int year = calendar.get(Calendar.YEAR);
+                int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+
+                // Format the day of the week to a word
+                SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE"); // "EEEE" for full name
+                String dayOfWeekWord = dayFormat.format(date);
+
+                tvDayOfWeek.setText(dayOfWeekWord);
+
                 double totalSales = 0.0;
 
                 // Clear previous rows
@@ -330,7 +340,7 @@ public class SalesFragment extends Fragment {
                         }
                     }
                 }
-
+                double totalCommission = 0.0;
                 // Assuming employeeSalesMap contains employee names and their corresponding sales
                 for (Map.Entry<String, Double> entry : employeeSalesMap.entrySet()) {
                     String employeeName = entry.getKey();
@@ -342,7 +352,7 @@ public class SalesFragment extends Fragment {
                         // Retrieve the commission rate from the employee's data
                         double commissionRate = employee.getComs();
                         double employeeCommission = (sales * commissionRate) / 100.0;
-
+                        totalCommission += employeeCommission;
                         // Store the calculated commission in the employeeCommissionMap (if needed)
                         employeeCommissionMap.put(employeeName, employeeCommission);
 
@@ -408,7 +418,34 @@ public class SalesFragment extends Fragment {
                 tvTotal.setPadding(10, 5, 5, 5);
                 rowTotal.addView(tvTotal);
 
+                TableRow rowTotalCom = new TableRow(getContext());
+                rowTotalCom.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                TextView tv1Com = new TextView(getContext());
+                tv1Com.setText("");
+                tv1Com.setTextColor(Color.LTGRAY);
+                tv1Com.setPadding(10, 5, 5, 5);
+                rowTotalCom.addView(tv1Com);
+
+                TextView tv3Com = new TextView(getContext());
+                tv3Com.setText("Total Commission:");
+                tv3Com.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                tv3Com.setGravity(Gravity.RIGHT);
+                tv3Com.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+                tv3Com.setPadding(10, 5, 5, 5);
+                rowTotalCom.addView(tv3Com);
+
+                TextView tvTotalCom = new TextView(getContext());
+                tvTotalCom.setText(String.format("₱%.2f", totalCommission));
+                tvTotalCom.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                tvTotalCom.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+                tvTotalCom.setPadding(10, 5, 5, 5);
+                rowTotalCom.addView(tvTotalCom);
+
+                tableLayout2.addView(rowTotalCom);
                 tableLayout.addView(rowTotal);
+
+
             }
         } catch (ParseException e) {
             Log.e("SalesFragment", "Error parsing date: ", e);
@@ -495,6 +532,7 @@ public class SalesFragment extends Fragment {
                             setDailyData(appointmentsList, targetMonth, targetYear);
                             Date dateNow = new Date();
                             SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+
                             filterDataByDate(dateFormat.format(dateNow));
                         } else {
                             Log.e("SalesFragment", "Error fetching appointments: ", task.getException());
@@ -514,6 +552,12 @@ public class SalesFragment extends Fragment {
         float highestSales = Float.MIN_VALUE;
         float lowestSales = Float.MAX_VALUE;
 
+        // Get the current date
+        Calendar today = Calendar.getInstance();
+        int currentDay = today.get(Calendar.DAY_OF_MONTH);
+        int currentMonth = today.get(Calendar.MONTH);
+        int currentYear = today.get(Calendar.YEAR);
+
         // Group appointments by day of the target month and sum the sales
         Calendar calendar = Calendar.getInstance(); // Initialize calendar
         for (Appointment appointment : appointmentsList) {
@@ -524,8 +568,11 @@ public class SalesFragment extends Fragment {
                 int year = calendar.get(Calendar.YEAR);
                 int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
 
-                // Only consider sales from the current month and year
-                if (month == targetMonth && year == targetYear) {
+                // Only consider sales from the past and today of the current month and year
+                if (month == targetMonth && year == targetYear &&
+                        (year < currentYear || (year == currentYear && month < currentMonth) ||
+                                (year == currentYear && month == currentMonth && dayOfMonth <= currentDay))) {
+
                     float sales = dailySales.getOrDefault(dayOfMonth, 0f);
                     float newSales = sales + (float) appointment.getTotalPrice(); // Convert double to float
                     dailySales.put(dayOfMonth, newSales); // Update sales for the day
@@ -577,7 +624,6 @@ public class SalesFragment extends Fragment {
         lineChart.getLegend().setEnabled(false);
         lineChart.getDescription().setEnabled(false);
 
-        // Set X-axis labels to display each day of the month
         // Set X-axis labels to display in mm-dd format
         XAxis xAxis = lineChart.getXAxis();
         xAxis.setValueFormatter(new ValueFormatter() {
@@ -585,19 +631,18 @@ public class SalesFragment extends Fragment {
             public String getFormattedValue(float value) {
                 int day = (int) value;
                 // Format the date as mm-dd
-                String formattedDate = String.format("%02d-%02d", targetMonth, day);
+                String formattedDate = String.format("%02d-%02d", targetMonth + 1, day); // Add 1 to month for display
                 return formattedDate; // Return the formatted date string
             }
         });
-
 
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setGranularity(1f);
         xAxis.setLabelCount(calendar.getActualMaximum(Calendar.DAY_OF_MONTH)); // Ensure all month labels are displayed
         xAxis.setDrawLabels(true); // Enable drawing labels
         xAxis.setTextColor(Color.WHITE); // Set X-axis text color to white
-        xAxis.setAxisMinimum(1f); // Set the minimum value of X-axis to 1 (January)
-        xAxis.setAxisMaximum(calendar.getActualMaximum(Calendar.DAY_OF_MONTH)); // Set the maximum value of X-axis to 12 (December)
+        xAxis.setAxisMinimum(1f); // Set the minimum value of X-axis to 1 (first day of the month)
+        xAxis.setAxisMaximum(calendar.getActualMaximum(Calendar.DAY_OF_MONTH)); // Set the maximum value of X-axis
 
         // Customize Y-axis
         YAxis leftAxis = lineChart.getAxisLeft();
@@ -606,7 +651,6 @@ public class SalesFragment extends Fragment {
 
         lineChart.invalidate(); // Refresh the chart
     }
-
 
 
     private void setMonthlyData(List<Appointment> appointmentsList, int selectedYear) {
@@ -620,9 +664,14 @@ public class SalesFragment extends Fragment {
         float highestSales = Float.MIN_VALUE;
         float lowestSales = Float.MAX_VALUE;
 
+        // Get the current date
+        Calendar today = Calendar.getInstance();
+        int currentMonth = today.get(Calendar.MONTH) + 1; // Calendar.MONTH is zero-based
+        int currentYear = today.get(Calendar.YEAR);
+
         // Initialize sales for all 12 months
         for (int month = 1; month <= 12; month++) {
-            monthlySales.put(month, 0f);
+            monthlySales.put(month, 0f); // Initialize all months to 0 sales
         }
 
         // Group appointments by month and sum the sales only for the selected year
@@ -632,8 +681,10 @@ public class SalesFragment extends Fragment {
             if (date != null) {
                 calendar.setTime(date);
                 int year = calendar.get(Calendar.YEAR); // Get the year of the appointment
-                if (year == selectedYear) { // Only include appointments from the selected year
-                    int month = calendar.get(Calendar.MONTH) + 1; // Calendar.MONTH is zero-based
+                int month = calendar.get(Calendar.MONTH) + 1; // Calendar.MONTH is zero-based
+
+                // Only include appointments from the selected year and up to the current month
+                if (year == selectedYear) {
                     float sales = monthlySales.get(month);
                     float newSales = sales + (float) appointment.getTotalPrice(); // Convert double to float
                     monthlySales.put(month, newSales); // Update sales for the month
@@ -649,7 +700,9 @@ public class SalesFragment extends Fragment {
 
         // Convert monthly sales map to chart entries
         for (int month = 1; month <= 12; month++) {
-            monthlyEntries.add(new Entry(month, monthlySales.get(month)));
+            // Add sales values to entries, using 0 for future months
+            float salesValue = (month <= currentMonth || selectedYear < currentYear) ? monthlySales.get(month) : 0f;
+            monthlyEntries.add(new Entry(month, salesValue));
         }
 
         float averageSales = (monthsWithSales > 0) ? totalSales / monthsWithSales : 0f;
@@ -715,6 +768,7 @@ public class SalesFragment extends Fragment {
 
         lineChart.invalidate(); // Refresh the chart
     }
+
 
 
 }
