@@ -55,7 +55,7 @@ public class InventoryFragment extends Fragment {
     private List<Map<String, Object>> inventoryList;
     private List<Map<String, Object>> filteredList;
     private FloatingActionButton fabAdd;
-    private Calendar calendar;
+
     private SearchView searchView;
 
     private static final int PICK_IMAGE_REQUEST = 1;
