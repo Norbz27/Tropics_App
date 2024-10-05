@@ -171,12 +171,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     public void onItemClick(Appointment appointment) {
         showViewAppointmentDialog(appointment);
     }
-
-    private void showViewAppointmentDialog(Appointment appointment) {
-        LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.view_appointment1, null);
-        parentName = "";
-        // Find TextViews
+    private void populateAppointmentDetails(Appointment appointment, View dialogView) {
         TextView fullnameTextView = dialogView.findViewById(R.id.tvName);
         TextView emailTextView = dialogView.findViewById(R.id.tvEmail);
         TextView dateTextView = dialogView.findViewById(R.id.tvdate);
@@ -184,6 +179,53 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         TextView phoneNumberTextView = dialogView.findViewById(R.id.tvPhoneNumber);
         TextView serviceTextView = dialogView.findViewById(R.id.services);
         TextView totalPriceTextView = dialogView.findViewById(R.id.tvTotalPrice);
+
+        fullnameTextView.setText(appointment.getFullName());
+        emailTextView.setText("Email: " + appointment.getEmail());
+
+        // Date and time formatting (same as your original code)
+        SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat inputTimeFormat = new SimpleDateFormat("HH:mm");
+        SimpleDateFormat outputDateFormat = new SimpleDateFormat("MMM dd, yyyy");
+        SimpleDateFormat outputTimeFormat = new SimpleDateFormat("hh:mm a");
+
+        try {
+            Date appointmentDate = inputDateFormat.parse(appointment.getDate());
+            Date appointmentTime = inputTimeFormat.parse(appointment.getTime());
+            dateTextView.setText("Date: " + outputDateFormat.format(appointmentDate));
+            timeTextView.setText("Time: " + outputTimeFormat.format(appointmentTime));
+        } catch (ParseException e) {
+            dateTextView.setText("Date: Invalid");
+            timeTextView.setText("Time: Invalid");
+        }
+
+        phoneNumberTextView.setText("Phone: " + appointment.getPhone());
+
+        // Populate services and total price (same as your original code)
+        StringBuilder serviceDetails = new StringBuilder();
+        double totalPrice = 0.0;
+        for (Map<String, Object> service : appointment.getServices()) {
+            String parentServiceName = (String) service.get("parentServiceName");
+            String serviceName = (String) service.get("serviceName");
+            String assignEmployee = (String) service.get("assignedEmployee");
+            Double servicePrice = (double) service.get("servicePrice");
+
+            serviceDetails.append(parentServiceName).append(": \n");
+            serviceDetails.append("\t").append(serviceName).append(" - ₱").append(servicePrice)
+                    .append("\n").append("\tAssigned Employee: " + assignEmployee + "\n");
+
+            totalPrice += servicePrice;
+        }
+
+        serviceTextView.setText(serviceDetails.toString());
+        totalPriceTextView.setText("₱" + totalPrice);
+    }
+
+    private void showViewAppointmentDialog(Appointment appointment) {
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.view_appointment1, null);
+        parentName = "";
+
         Button btnClose = dialogView.findViewById(R.id.btnClose);
         Button btnAssign = dialogView.findViewById(R.id.btnAssign);
         btnAssign.setOnClickListener(v -> {
@@ -267,14 +309,18 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                                         }
                                     }
 
-                                    // Update the document in Firestore
+                                    // Update Firestore document
                                     appointmentRef.update("services", services)
                                             .addOnSuccessListener(aVoid -> {
                                                 Log.d("Firestore", "Employee assigned successfully.");
+
+                                                // Refresh the data in the dialog
+                                                populateAppointmentDetails(appointment, dialogView); // Refresh the dialog content
                                             })
                                             .addOnFailureListener(e -> {
                                                 Log.w("Firestore", "Error updating document", e);
                                             });
+
                                 }
                             })
                             .setNegativeButton("Cancel", (dialogInterface, which) -> dialogInterface.dismiss());
@@ -312,38 +358,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
             });
         });
 
-
-        // Set appointment details
-        fullnameTextView.setText(appointment.getFullName());
-        emailTextView.setText("Email: " + appointment.getEmail());
-
-        // Assume these are the input formats of the strings
-        SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        SimpleDateFormat inputTimeFormat = new SimpleDateFormat("HH:mm");
-
-        // Desired output formats
-        SimpleDateFormat outputDateFormat = new SimpleDateFormat("MMM dd, yyyy");
-        SimpleDateFormat outputTimeFormat = new SimpleDateFormat("hh:mm a");
-
-        try {
-            // Parse the date and time strings to Date objects
-            String appointmentDateStr = appointment.getDate(); // "2024-01-27"
-            String appointmentTimeStr = appointment.getTime(); // "15:30"
-
-            Date appointmentDate = inputDateFormat.parse(appointmentDateStr);
-            Date appointmentTime = inputTimeFormat.parse(appointmentTimeStr);
-
-            // Format the Date objects to the desired format
-            dateTextView.setText("Date: " + outputDateFormat.format(appointmentDate));
-            timeTextView.setText("Time: " + outputTimeFormat.format(appointmentTime));
-
-        } catch (ParseException e) {
-            e.printStackTrace(); // Handle the exception if parsing fails
-            dateTextView.setText("Date: Invalid");
-            timeTextView.setText("Time: Invalid");
-        }
-        phoneNumberTextView.setText("Phone: " + appointment.getPhone());
-
+        populateAppointmentDetails(appointment, dialogView);
         // Close the dialog
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
         dialogBuilder.setView(dialogView);
@@ -351,57 +366,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         dialog.show();
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
-
-        // Format service details with indention and calculate total price
-        StringBuilder serviceDetails = new StringBuilder();
-        double totalPrice = 0.0;
-
-        for (Map<String, Object> service : appointment.getServices()) {
-            // Safe casting to String and double
-            String parentServiceName = (String) service.get("parentServiceName");
-            String serviceName = (String) service.get("serviceName");
-            String assignEmployee = (String) service.get("assignedEmployee");
-            Double servicePrice = service.get("servicePrice") != null ? (double) service.get("servicePrice") : 0.0;
-
-            // Append parent service name
-            if(!parentName.equals(parentServiceName)){
-                serviceDetails.append(parentServiceName).append(": \n");
-                parentName = parentServiceName;
-            }
-
-            // Append service name
-            if(!servicePrice.equals(0.0)){
-                serviceDetails.append("\t").append(serviceName).append(" - ₱")
-                        .append(servicePrice).append("\n").append("\tAssigned Employee: "+assignEmployee + "\n");
-            }else {
-                serviceDetails.append("\t").append(serviceName).append("\n").append("\tAssigned Employee: "+assignEmployee + "\n");
-            }
-
-
-            totalPrice += servicePrice; // Accumulate total price
-
-            // Check for sub-sub-services
-            List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
-            if (subServices != null) {
-                for (Map<String, Object> subService : subServices) {
-                    String subServiceName = (String) subService.get("serviceName");
-                    Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
-
-                    if(!subServicePrice.equals(0.0)){
-                        serviceDetails.append("\t\t").append(subServiceName).append(" - ₱")
-                                .append(subServicePrice).append("\n");
-                    }else {
-                        serviceDetails.append("\t\t").append(subServiceName).append("\n");
-                    }
-
-                    totalPrice += subServicePrice;
-                }
-            }
-        }
-
-        // Set the services and total price in the dialog
-        serviceTextView.setText(serviceDetails.toString());
-        totalPriceTextView.setText("₱" + totalPrice);
     }
 
 

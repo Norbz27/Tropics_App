@@ -340,8 +340,8 @@ public class SalesFragment extends Fragment {
                     Employee employee = findEmployeeByName(employeeName);
                     if (employee != null) {
                         // Retrieve the commission rate from the employee's data
-                        double commissionRate = employee.getComs(); // Get the 'coms' value from Employee object
-                        double employeeCommission = (sales * commissionRate) / 100.0; // Calculate commission
+                        double commissionRate = employee.getComs();
+                        double employeeCommission = (sales * commissionRate) / 100.0;
 
                         // Store the calculated commission in the employeeCommissionMap (if needed)
                         employeeCommissionMap.put(employeeName, employeeCommission);
