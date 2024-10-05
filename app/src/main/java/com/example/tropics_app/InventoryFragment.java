@@ -350,7 +350,7 @@ public class InventoryFragment extends Fragment {
         product.put("name", name);
         product.put("stocks", stocks);
         product.put("in_use", "0");
-        product.put("imageUrl", imageUrl); // Store the image URL
+        product.put("imageUrl", imageUrl);
 
         // Add product to Firestore
         db.collection("inventory")
@@ -360,6 +360,7 @@ public class InventoryFragment extends Fragment {
                     public void onComplete(@NonNull Task<DocumentReference> task) {
                         if (task.isSuccessful()) {
                             DocumentReference productRef = task.getResult();
+                            // Initialize today's usage
                             initializeUsageForToday(productRef);
                             Toast.makeText(getContext(), "Product added successfully", Toast.LENGTH_SHORT).show();
                         } else {
@@ -371,27 +372,40 @@ public class InventoryFragment extends Fragment {
     }
 
     private void initializeUsageForToday(DocumentReference productRef) {
-        // Get today's date in the required format
-        String todayDate = getTodayDate(); // Make sure you have a method to get today's date in "MM/dd/yyyy"
+        // Get today's date in the format you need
+        String today = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
 
-        // Create a map to store today's usage
-        Map<String, Object> usage = new HashMap<>();
-        usage.put(todayDate, "0"); // Initialize today's usage to "0"
+        // Create a map for today's usage
+        Map<String, Object> dailyUsage = new HashMap<>();
+        dailyUsage.put("date", today);
+        dailyUsage.put("used", "0"); // Initial usage is 0
 
-        // Add usage to the sub-collection
-        productRef.collection("usage")
-                .document(todayDate) // Using the date as document ID
-                .set(usage)
+        // Save today's usage in a sub-collection
+        productRef.collection("dailyUsage")
+                .document(today)
+                .set(dailyUsage)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()) {
-                            Log.d("Firestore", "Usage initialized for today successfully.");
+                            // Reset the "in_use" field at the end of the day
+                            resetDailyUsage(productRef);
                         } else {
-                            Log.e("Firestore Error", "Failed to initialize usage: " + task.getException().getMessage());
+                            Log.e("Firestore Error", "Failed to initialize daily usage: " + task.getException().getMessage());
                         }
                     }
                 });
+    }
+    private void resetDailyUsage(DocumentReference productRef) {
+        // Call this method to reset at the end of the day
+        productRef.update("in_use", "0").addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (!task.isSuccessful()) {
+                    Log.e("Firestore Error", "Failed to reset daily usage: " + task.getException().getMessage());
+                }
+            }
+        });
     }
 
     private void updateProductUsage(DocumentReference productRef) {
