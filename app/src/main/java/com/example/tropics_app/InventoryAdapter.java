@@ -71,11 +71,14 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(holder.imgProduct);
 
+        // Check the canEdit property to enable/disable the edit button
+
         holder.itemView.setOnLongClickListener(v -> {
             showPopupMenu(v, holder.getAdapterPosition());
             return true;
         });
     }
+
 
     @Override
     public int getItemCount() {
