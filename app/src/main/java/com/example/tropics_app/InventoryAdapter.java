@@ -2,6 +2,7 @@ package com.example.tropics_app;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -16,6 +17,9 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,31 +52,57 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
     @SuppressLint("SetTextI18n")
     @Override
+
     public void onBindViewHolder(@NonNull InventoryViewHolder holder, int position) {
-        Map<String, Object> item = filteredList.get(position); // Use filteredList instead of inventoryList
+        Map<String, Object> item = filteredList.get(position);
         String name = (String) item.get("name");
-        String stocks = (String) item.get("stocks");
-        String in_use = (String) item.get("in_use");
+        String stocksString = (String) item.get("stocks"); // Getting stocks as a string
         String imageUrl = (String) item.get("imageUrl");
-
         holder.tvName.setText(name);
-        holder.tvStocks.setText("Stocks: " + stocks);
-
-        if (stocks.equals("0")) {
-            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark));
+        holder.tvStocks.setText("Stocks: " + stocksString);
+        int stocks = Integer.parseInt(stocksString);
+        if (stocks < 5) {
+            holder.tvStocks.setTextColor(Color.RED);
         } else {
-            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.white));
+            holder.tvStocks.setTextColor(Color.WHITE);
         }
-
-        holder.tvInUse.setText("Used: " + in_use);
-
+        // Load the product image using Glide
         Glide.with(context)
                 .load(imageUrl)
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(holder.imgProduct);
+        // Fetch the Firestore document to retrieve the latest in_use value from the sub-collection
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("inventory")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        DocumentSnapshot document = task.getResult().getDocuments().get(position);
+                        String documentId = document.getId(); // Get the document ID from Firestore
 
-        // Check the canEdit property to enable/disable the edit button
+                        // Now query the usedproducts sub-collection using the document ID
+                        db.collection("inventory").document(documentId)
+                                .collection("usedproducts")
+                                .orderBy("date", Query.Direction.DESCENDING)
+                                .limit(1) // Get the latest record
+                                .get()
+                                .addOnCompleteListener(subTask -> {
+                                    if (subTask.isSuccessful() && subTask.getResult() != null && !subTask.getResult().isEmpty()) {
+                                        // Get the latest in_use value from the sub-collection
+                                        DocumentSnapshot usedProductDoc = subTask.getResult().getDocuments().get(0);
+                                        String inUse = usedProductDoc.getString("in_use");
 
+                                        // Display the used count
+                                        holder.tvInUse.setText("Used: " + (inUse != null ? inUse : "0"));
+                                    } else {
+                                        // Default to 0 if no data is found
+                                        holder.tvInUse.setText("Used: 0");
+                                    }
+                                });
+                    }
+                });
+
+        // Long-click listener for item options
         holder.itemView.setOnLongClickListener(v -> {
             showPopupMenu(v, holder.getAdapterPosition());
             return true;
