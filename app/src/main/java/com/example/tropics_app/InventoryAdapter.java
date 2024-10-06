@@ -55,32 +55,38 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
         holder.tvName.setText(name);
 
-        // Set the stock text with null check
+// Set the stock text with null check
         holder.tvStocks.setText("Stocks: " + (stocks != null ? stocks : "N/A"));
 
-        // Set color based on stocks value
-        if ("0".equals(stocks)) {
-            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark)); // Set to red
+// Set color based on stocks value
+        if (stocks != null) {
+            int stockValue = Integer.parseInt(stocks); // Convert stocks to integer for comparison
+
+            if (stockValue < 5) {
+                holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark)); // Set to red if stock is below 5
+            } else {
+                holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.white)); // Set to default color
+            }
         } else {
-            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.white)); // Set to default color
+            holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.white)); // Default color if stocks is null
         }
 
-        // Set the in_use text with null check
+// Set the in_use text with null check
         holder.tvInUse.setText("Used: " + (in_use != null ? in_use : "N/A"));
 
-        // Load the image using Glide with null check for imageUrl
+// Load the image using Glide with null check for imageUrl
         Glide.with(context)
                 .load(imageUrl)
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(holder.imgProduct);
 
-        // Set the long click listener for each item
+// Set the long click listener for each item
         holder.itemView.setOnLongClickListener(v -> {
             showPopupMenu(v, holder.getAdapterPosition());
             return true;
         });
     }
-    @Override
+        @Override
     public int getItemCount() {
         return inventoryList.size();
     }

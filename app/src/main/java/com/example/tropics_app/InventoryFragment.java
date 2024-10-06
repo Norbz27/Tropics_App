@@ -1,6 +1,7 @@
 package com.example.tropics_app;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -491,6 +492,9 @@ public class InventoryFragment extends Fragment {
             selectedDate = getTodayDate();
         }
 
+        // Declare selectedDate as final
+        final String dateToUse = selectedDate;
+
         // Clear the filtered list before fetching new data
         filteredList.clear();
 
@@ -516,11 +520,10 @@ public class InventoryFragment extends Fragment {
                                                 @Override
                                                 public void onComplete(@NonNull Task<QuerySnapshot> innerTask) {
                                                     if (innerTask.isSuccessful()) {
-                                                        // Track if there are records for the current inventory item
                                                         boolean hasRecords = false;
 
                                                         for (QueryDocumentSnapshot dailyDoc : innerTask.getResult()) {
-                                                            hasRecords = true; // Set flag to true if any records are found
+                                                            hasRecords = true;
 
                                                             // Add quantity from daily record
                                                             totalsMap.put("totalStocks", totalsMap.get("totalStocks") + (dailyDoc.getLong("stockAdded") != null ? dailyDoc.getLong("stockAdded") : 0));
@@ -529,9 +532,12 @@ public class InventoryFragment extends Fragment {
 
                                                         // Prepare combined data for the inventory item
                                                         Map<String, Object> combinedData = new HashMap<>(document.getData());
-                                                        combinedData.put("id", document.getId()); // Add document ID to the item
-                                                        combinedData.put("quantity", totalsMap.get("totalStocks")); // Combined total stocks
-                                                        combinedData.put("used", totalsMap.get("totalUsed")); // Combined total used items
+                                                        combinedData.put("id", document.getId());
+                                                        combinedData.put("quantity", totalsMap.get("totalStocks"));
+                                                        combinedData.put("used", totalsMap.get("totalUsed"));
+                                                        combinedData.put("date", dateToUse); // Use the final variable here
+
+                                                        // Add the combined data to the filtered list
                                                         filteredList.add(combinedData);
 
                                                         // Log item status
@@ -555,9 +561,30 @@ public class InventoryFragment extends Fragment {
             filterInventoryByDate(selectedDate);
         }
     }
-    private void filterInventoryByDate(String selectedDate) {
-    }
 
+
+    private void filterInventoryByDate(String selectedDate) {
+        // Here you can filter the inventory based on the selected date
+        // For example, you can filter filteredList to show only items from the selectedDate
+        List<Map<String, Object>> filteredByDate = new ArrayList<>();
+
+        for (Map<String, Object> item : filteredList) {
+            if (item.get("date").equals(selectedDate)) {
+                filteredByDate.add(item);
+            }
+        }
+
+        // Sort the filtered items, if needed
+        // If you want today's items to appear on top, you can modify this sorting logic as needed
+        Collections.sort(filteredByDate, (a, b) -> {
+            // Replace this with your preferred sorting logic
+            return 0; // Currently does not sort; implement as needed
+        });
+
+        // Update the adapter with the filtered items
+        adapter.updateList(filteredByDate);
+        adapter.notifyDataSetChanged();
+    }
 
 
 
