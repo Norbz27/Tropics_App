@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/gray">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Employee Attendance &amp; Deduction"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/orange"
+        android:fontFamily="@font/manrope_bold"
+        android:layout_gravity="center"
+        android:paddingBottom="16dp" />
+
+    <!-- Table Layout for Employees -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TableLayout
+            android:id="@+id/employeeTable"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stretchColumns="1,2,3"
+            android:padding="8dp">
+
+        <!-- Table Header -->
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Employee"
+                android:textColor="@android:color/white"
+                android:padding="8dp"
+                android:fontFamily="@font/manrope_bold"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Days \nPresent"
+                android:textColor="@android:color/white"
+                android:padding="8dp"
+                android:fontFamily="@font/manrope_bold"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Late/UT \nDeduction"
+                android:textColor="@android:color/white"
+                android:padding="8dp"
+                android:fontFamily="@font/manrope_bold"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="CA \nDeduction"
+                android:textColor="@android:color/white"
+                android:padding="8dp"
+                android:fontFamily="@font/manrope_bold"
+                android:textSize="16sp" />
+        </TableRow>
+    </TableLayout>
+</ScrollView>
+
+    <!-- Submit Button -->
+    <Button
+    android:id="@+id/btnSubmit"
+    android:layout_width="match_parent"
+    android:layout_height="45dp"
+    android:text="Submit"
+    android:textColor="@android:color/white"
+    android:background="@drawable/custom_background_3"
+    android:layout_marginTop="16dp" />
+
+</LinearLayout>
