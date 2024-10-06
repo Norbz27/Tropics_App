@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class InventoryFragment extends Fragment {
     private RecyclerView rvInventory;
@@ -578,65 +579,73 @@ public class InventoryFragment extends Fragment {
         }
     }
     private void loadUsedItemsForDate(String selectedDate) {
-        // Log the selected date for debugging
-        Log.d("Selected Date", "Selected Date: " + selectedDate);
+        // Check if the selectedDate is valid
+        String effectiveDate; // Create a new variable to hold the effective date
 
-        // Clear the filtered list before fetching new data
-        filteredList.clear();
+        if (selectedDate == null || selectedDate.trim().isEmpty()) {
+            // If selectedDate is invalid, set it to today's date
+            effectiveDate = getCurrentDate(); // Default to today
+            Log.e("Load Items", "Selected date is invalid. Defaulting to today's date: " + effectiveDate);
+        } else {
+            effectiveDate = selectedDate; // Use the provided selected date
+            Log.d("Selected Date", "Selected Date: " + effectiveDate);
+        }
 
-        // Query Firestore for the inventory collection
+        filteredList.clear(); // Clear previous results
+
+        // Fetch all documents from the inventory collection
         db.collection("inventory")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         Log.d("Firestore Data", "Total Inventory Documents: " + task.getResult().size());
+                        int totalDocuments = task.getResult().size();
+                        AtomicInteger completedTasks = new AtomicInteger(0);
 
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            // Log the document ID for debugging
-                            Log.d("Document ID", "Document ID: " + document.getId());
+                            // Create a data map for the item
+                            Map<String, Object> itemData = new HashMap<>(document.getData());
+                            itemData.put("id", document.getId());
+                            itemData.put("product", document.getString("product")); // Assuming "product" is a field in your inventory
+                            itemData.put("stocks", document.getString("stocks")); // Assuming stocks is a string
 
-                            // Reference the usedproducts sub-collection
+                            // Fetch used products from the sub-collection for all dates
                             document.getReference().collection("usedproducts")
-                                    .get() // Get all documents in the usedproducts sub-collection
+                                    .get()
                                     .addOnCompleteListener(innerTask -> {
                                         if (innerTask.isSuccessful()) {
-                                            boolean foundDate = false; // Flag to check if the date is found
+                                            int totalInUse = 0; // To sum used items
+
+                                            // Sum up the used items for dates up to and including the selected date
                                             for (QueryDocumentSnapshot usedProductDoc : innerTask.getResult()) {
-                                                String date = usedProductDoc.getString("date"); // Fetch the date as a string
-                                                Log.d("Fetched Date", "Fetched Date: " + date);
-                                                Log.d("Used Product Data", "Data: " + usedProductDoc.getData());
+                                                String usedDate = usedProductDoc.getString("date");
+                                                String inUse = usedProductDoc.getString("in_use");
 
-                                                // Log date comparison
-                                                Log.d("Date Comparison", "Selected Date: " + selectedDate + ", Fetched Date: " + date);
-
-                                                // Compare the fetched date with the selected date
-                                                if (date != null && !date.isEmpty() && date.trim().equals(selectedDate.trim())) {
-                                                    foundDate = true; // Set flag if date is found
-
-                                                    // Extract relevant fields from the usedproducts document
-                                                    String inUse = usedProductDoc.getString("in_use");
-                                                    String productName = usedProductDoc.getString("product");
-                                                    String stocks = document.getString("stocks");
-                                                    // Create a data map for the filtered item
-                                                    Map<String, Object> data = new HashMap<>(document.getData());
-                                                    data.put("id", document.getId()); // Add document ID to the item
-                                                    data.put("product", productName);
-                                                    data.put("in_use", inUse != null ? inUse : "0"); // Default to "0" if not found
-                                                    data.put("stocks", stocks);
-                                                    data.put("date", selectedDate); // Add date
-
-                                                    // Add the item to the filtered list
-                                                    filteredList.add(data);
+                                                // Only sum for valid dates
+                                                if (usedDate != null && inUse != null) {
+                                                    try {
+                                                        // Only sum if usedDate is less than or equal to effectiveDate
+                                                        if (usedDate.compareTo(effectiveDate) <= 0) {
+                                                            totalInUse += Integer.parseInt(inUse); // Ensure inUse can be parsed safely
+                                                        }
+                                                    } catch (NumberFormatException e) {
+                                                        Log.e("Number Format Error", "Error parsing in_use: " + inUse, e);
+                                                    }
                                                 }
                                             }
 
-                                            if (!foundDate) {
-                                                Log.d("No Data", "No records found for the selected date: " + selectedDate);
-                                            }
-                                            adapter.updateList(filteredList);
-                                            adapter.notifyDataSetChanged();
+                                            // Add summed data to the item data
+                                            itemData.put("in_use", String.valueOf(totalInUse)); // Set the total in_use count as a string
+                                            filteredList.add(itemData); // Add the item to the filtered list
+
                                         } else {
                                             Log.e("Firestore Error", "Error fetching used products: " + innerTask.getException());
+                                        }
+
+                                        // Check if all tasks have completed
+                                        if (completedTasks.incrementAndGet() == totalDocuments) {
+                                            adapter.updateList(filteredList);
+                                            adapter.notifyDataSetChanged();
                                         }
                                     });
                         }
@@ -645,6 +654,14 @@ public class InventoryFragment extends Fragment {
                     }
                 });
     }
+
+
+    // Method to get the current date in the required format (modify as needed)
+    private String getCurrentDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+        return sdf.format(new Date());
+    }
+
 
     private String getYesterdayDate() {
         Calendar calendar = Calendar.getInstance();

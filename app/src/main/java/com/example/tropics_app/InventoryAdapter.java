@@ -52,55 +52,28 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
     @SuppressLint("SetTextI18n")
     @Override
-
     public void onBindViewHolder(@NonNull InventoryViewHolder holder, int position) {
         Map<String, Object> item = filteredList.get(position);
         String name = (String) item.get("name");
         String stocksString = (String) item.get("stocks"); // Getting stocks as a string
         String imageUrl = (String) item.get("imageUrl");
+        String inUse = (String) item.get("in_use"); // Get in_use directly from filteredList
         holder.tvName.setText(name);
         holder.tvStocks.setText("Stocks: " + stocksString);
+        holder.tvInUse.setText("Used: " + (inUse != null ? inUse : "0")); // Display in_use from filteredList
+
         int stocks = Integer.parseInt(stocksString);
         if (stocks < 5) {
             holder.tvStocks.setTextColor(Color.RED);
         } else {
             holder.tvStocks.setTextColor(Color.WHITE);
         }
+
         // Load the product image using Glide
         Glide.with(context)
                 .load(imageUrl)
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(holder.imgProduct);
-        // Fetch the Firestore document to retrieve the latest in_use value from the sub-collection
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("inventory")
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        DocumentSnapshot document = task.getResult().getDocuments().get(position);
-                        String documentId = document.getId(); // Get the document ID from Firestore
-
-                        // Now query the usedproducts sub-collection using the document ID
-                        db.collection("inventory").document(documentId)
-                                .collection("usedproducts")
-                                .orderBy("date", Query.Direction.DESCENDING)
-                                .limit(1) // Get the latest record
-                                .get()
-                                .addOnCompleteListener(subTask -> {
-                                    if (subTask.isSuccessful() && subTask.getResult() != null && !subTask.getResult().isEmpty()) {
-                                        // Get the latest in_use value from the sub-collection
-                                        DocumentSnapshot usedProductDoc = subTask.getResult().getDocuments().get(0);
-                                        String inUse = usedProductDoc.getString("in_use");
-
-                                        // Display the used count
-                                        holder.tvInUse.setText("Used: " + (inUse != null ? inUse : "0"));
-                                    } else {
-                                        // Default to 0 if no data is found
-                                        holder.tvInUse.setText("Used: 0");
-                                    }
-                                });
-                    }
-                });
 
         // Long-click listener for item options
         holder.itemView.setOnLongClickListener(v -> {
