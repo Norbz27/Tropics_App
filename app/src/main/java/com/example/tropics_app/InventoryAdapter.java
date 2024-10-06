@@ -3,6 +3,7 @@ package com.example.tropics_app;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -53,35 +54,38 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
     @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull InventoryViewHolder holder, int position) {
-        Map<String, Object> item = filteredList.get(position);
-        String name = (String) item.get("name");
-        String stocksString = (String) item.get("stocks"); // Getting stocks as a string
-        String imageUrl = (String) item.get("imageUrl");
-        String inUse = (String) item.get("in_use"); // Get in_use directly from filteredList
-        holder.tvName.setText(name);
-        holder.tvStocks.setText("Stocks: " + stocksString);
-        holder.tvInUse.setText("Used: " + (inUse != null ? inUse : "0")); // Display in_use from filteredList
+            Map<String, Object> item = filteredList.get(position);
+            String name = (String) item.get("name");
+            String stocksString = (String) item.get("stocks"); // Getting stocks as a string
+            String imageUrl = (String) item.get("imageUrl");
+            String inUse = (String) item.get("in_use"); // Get in_use directly from filteredList
 
-        int stocks = Integer.parseInt(stocksString);
-        if (stocks < 5) {
-            holder.tvStocks.setTextColor(Color.RED);
-        } else {
-            holder.tvStocks.setTextColor(Color.WHITE);
+            // Log in_use value
+            Log.d("In Use Value", "in_use for " + name + ": " + inUse);
+
+            holder.tvName.setText(name);
+            holder.tvStocks.setText("Stocks: " + stocksString);
+            holder.tvInUse.setText("Used: " + (inUse != null ? inUse : "0")); // Display in_use from filteredList
+
+            int stocks = Integer.parseInt(stocksString);
+            if (stocks < 5) {
+                holder.tvStocks.setTextColor(Color.RED);
+            } else {
+                holder.tvStocks.setTextColor(Color.WHITE);
+            }
+
+            // Load the product image using Glide
+            Glide.with(context)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.ic_image_placeholder)
+                    .into(holder.imgProduct);
+
+            // Long-click listener for item options
+            holder.itemView.setOnLongClickListener(v -> {
+                showPopupMenu(v, holder.getAdapterPosition());
+                return true;
+            });
         }
-
-        // Load the product image using Glide
-        Glide.with(context)
-                .load(imageUrl)
-                .placeholder(R.drawable.ic_image_placeholder)
-                .into(holder.imgProduct);
-
-        // Long-click listener for item options
-        holder.itemView.setOnLongClickListener(v -> {
-            showPopupMenu(v, holder.getAdapterPosition());
-            return true;
-        });
-    }
-
 
     @Override
     public int getItemCount() {

@@ -190,26 +190,46 @@ public class InventoryFragment extends Fragment {
     }
 
     private void loadUsageRecords(String productId, Map<String, Object> data) {
-        db.collection("inventory").document(productId).collection("usage")
+        db.collection("inventory").document(productId).collection("usedproducts")
                 .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            List<Map<String, Object>> usageRecords = new ArrayList<>();
-                            for (QueryDocumentSnapshot doc : task.getResult()) {
-                                Map<String, Object> usageData = doc.getData();
-                                usageRecords.add(usageData);
-                                Log.d("Usage Record", "Loaded: " + usageData);
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        int totalInUse = 0; // Variable to hold total in_use
+                        List<Map<String, Object>> usageRecords = new ArrayList<>();
+                        for (QueryDocumentSnapshot doc : task.getResult()) {
+                            Map<String, Object> usageData = doc.getData();
+                            usageRecords.add(usageData);
+                            Log.d("Usage Record", "Loaded: " + usageData);
+
+                            // Sum the in_use values
+                            String inUse = usageData.get("in_use") != null ? usageData.get("in_use").toString() : "0";
+                            try {
+                                totalInUse += Integer.parseInt(inUse);
+                            } catch (NumberFormatException e) {
+                                Log.e("Number Format Error", "Error parsing in_use: " + inUse, e);
                             }
-                            // Add usage records to the product data
-                            data.put("usageRecords", usageRecords);
-                        } else {
-                            Log.e("Firestore Error", "Error fetching usage records: " + task.getException().getMessage());
                         }
+                        // Log total in_use for debugging
+                        Log.d("Total In Use", "Total in_use for product " + productId + ": " + totalInUse);
+
+                        // Add usage records and total in_use to the product data
+                        data.put("usageRecords", usageRecords);
+                        data.put("in_use", String.valueOf(totalInUse)); // Update total in_use in the product data
+                        // After updating data, also add to filteredList if it's not already added
+                        if (!filteredList.contains(data)) {
+                            filteredList.add(data);
+                        }
+
+                    } else {
+                        Log.e("Firestore Error", "Error fetching usage records: " + task.getException().getMessage());
                     }
+                    // Ensure UI update happens after all tasks are completed
+                    adapter.updateList(filteredList);
+                    adapter.notifyDataSetChanged();
                 });
     }
+
+
     private void showAddQuantityDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
@@ -579,12 +599,11 @@ public class InventoryFragment extends Fragment {
         }
     }
     private void loadUsedItemsForDate(String selectedDate) {
-        // Check if the selectedDate is valid
         String effectiveDate; // Create a new variable to hold the effective date
 
+        // Determine the effective date
         if (selectedDate == null || selectedDate.trim().isEmpty()) {
-            // If selectedDate is invalid, set it to today's date
-            effectiveDate = getCurrentDate(); // Default to today
+            effectiveDate = getCurrentDate(); // Default to today's date
             Log.e("Load Items", "Selected date is invalid. Defaulting to today's date: " + effectiveDate);
         } else {
             effectiveDate = selectedDate; // Use the provided selected date
@@ -603,20 +622,18 @@ public class InventoryFragment extends Fragment {
                         AtomicInteger completedTasks = new AtomicInteger(0);
 
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            // Create a data map for the item
                             Map<String, Object> itemData = new HashMap<>(document.getData());
                             itemData.put("id", document.getId());
-                            itemData.put("product", document.getString("product")); // Assuming "product" is a field in your inventory
-                            itemData.put("stocks", document.getString("stocks")); // Assuming stocks is a string
+                            itemData.put("product", document.getString("product"));
+                            itemData.put("stocks", document.getString("stocks"));
 
-                            // Fetch used products from the sub-collection for all dates
+                            // Fetch used products from the sub-collection
                             document.getReference().collection("usedproducts")
                                     .get()
                                     .addOnCompleteListener(innerTask -> {
                                         if (innerTask.isSuccessful()) {
                                             int totalInUse = 0; // To sum used items
 
-                                            // Sum up the used items for dates up to and including the selected date
                                             for (QueryDocumentSnapshot usedProductDoc : innerTask.getResult()) {
                                                 String usedDate = usedProductDoc.getString("date");
                                                 String inUse = usedProductDoc.getString("in_use");
@@ -626,7 +643,8 @@ public class InventoryFragment extends Fragment {
                                                     try {
                                                         // Only sum if usedDate is less than or equal to effectiveDate
                                                         if (usedDate.compareTo(effectiveDate) <= 0) {
-                                                            totalInUse += Integer.parseInt(inUse); // Ensure inUse can be parsed safely
+                                                            totalInUse += Integer.parseInt(inUse); // Parse safely
+                                                            Log.d("Summed In Use", "Used on " + usedDate + ": " + inUse);
                                                         }
                                                     } catch (NumberFormatException e) {
                                                         Log.e("Number Format Error", "Error parsing in_use: " + inUse, e);
@@ -634,9 +652,10 @@ public class InventoryFragment extends Fragment {
                                                 }
                                             }
 
-                                            // Add summed data to the item data
-                                            itemData.put("in_use", String.valueOf(totalInUse)); // Set the total in_use count as a string
-                                            filteredList.add(itemData); // Add the item to the filtered list
+                                            Log.d("Total In Use", "Total in_use for " + itemData.get("product") + ": " + totalInUse);
+                                            // Update itemData with total in_use
+                                            itemData.put("in_use", String.valueOf(totalInUse));
+                                            filteredList.add(itemData); // Add to filteredList
 
                                         } else {
                                             Log.e("Firestore Error", "Error fetching used products: " + innerTask.getException());
@@ -656,7 +675,7 @@ public class InventoryFragment extends Fragment {
     }
 
 
-    // Method to get the current date in the required format (modify as needed)
+
     private String getCurrentDate() {
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
         return sdf.format(new Date());
@@ -665,12 +684,12 @@ public class InventoryFragment extends Fragment {
 
     private String getYesterdayDate() {
         Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_YEAR, -1); // Subtract one day
+        calendar.add(Calendar.DAY_OF_YEAR, -1);
         int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH) + 1; // Months are 0-indexed
+        int month = calendar.get(Calendar.MONTH) + 1;
         int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-        return String.format("%02d/%02d/%04d", month, day, year); // Format: MM/dd/yyyy
+        return String.format("%02d/%02d/%04d", month, day, year);
     }
 
 
