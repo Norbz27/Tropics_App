@@ -261,6 +261,7 @@ public class InventoryFragment extends Fragment {
                             Toast.makeText(getContext(), "Stock updated successfully", Toast.LENGTH_SHORT).show();
                             // Optionally refresh the inventory list
                           //  loadInventoryData();
+                            loadUsedItemsForDate(getTodayDate());
                         } else {
                             Toast.makeText(getContext(), "Failed to update stock: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -286,6 +287,7 @@ public class InventoryFragment extends Fragment {
                             Toast.makeText(getContext(), "Quantity added successfully", Toast.LENGTH_SHORT).show();
                             // Optionally refresh the inventory list
                             //loadInventoryData();
+                            loadUsedItemsForDate(getTodayDate());
                         } else {
                             Toast.makeText(getContext(), "Failed to add quantity: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -431,6 +433,7 @@ public class InventoryFragment extends Fragment {
                         if (task.isSuccessful()) {
                             Toast.makeText(getContext(), "Product name updated successfully", Toast.LENGTH_SHORT).show();
                             //loadInventoryData(); // Refresh the inventory list if needed
+                            loadUsedItemsForDate(getTodayDate());
                         } else {
                             Toast.makeText(getContext(), "Failed to update name: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -466,6 +469,7 @@ public class InventoryFragment extends Fragment {
                             Toast.makeText(getContext(), "Deleted: " + item.get("name"), Toast.LENGTH_SHORT).show();
                             // Optionally refresh the inventory list
                             //loadInventoryData();
+                            loadUsedItemsForDate(getTodayDate());
                         } else {
                             Toast.makeText(getContext(), "Failed to delete: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
