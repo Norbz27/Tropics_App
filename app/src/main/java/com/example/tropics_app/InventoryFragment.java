@@ -1,5 +1,7 @@
 package com.example.tropics_app;
-
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -119,7 +121,8 @@ public class InventoryFragment extends Fragment {
         });
 
         setupSearchView();
-        loadInventoryData();
+       // loadInventoryData();
+        loadUsedItemsForDate(getTodayDate());
         return view;
     }
 
@@ -155,7 +158,7 @@ public class InventoryFragment extends Fragment {
         adapter.notifyDataSetChanged();
     }
 
-    private void loadInventoryData() {
+   /* private void loadInventoryData() {
         db.collection("inventory")
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @SuppressLint("NotifyDataSetChanged")
@@ -186,6 +189,8 @@ public class InventoryFragment extends Fragment {
                     }
                 });
     }
+
+    */
     private void showAddQuantityDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
@@ -255,7 +260,7 @@ public class InventoryFragment extends Fragment {
                         if (task.isSuccessful()) {
                             Toast.makeText(getContext(), "Stock updated successfully", Toast.LENGTH_SHORT).show();
                             // Optionally refresh the inventory list
-                            loadInventoryData();
+                          //  loadInventoryData();
                         } else {
                             Toast.makeText(getContext(), "Failed to update stock: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -280,7 +285,7 @@ public class InventoryFragment extends Fragment {
                         if (task.isSuccessful()) {
                             Toast.makeText(getContext(), "Quantity added successfully", Toast.LENGTH_SHORT).show();
                             // Optionally refresh the inventory list
-                            loadInventoryData();
+                            //loadInventoryData();
                         } else {
                             Toast.makeText(getContext(), "Failed to add quantity: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -425,7 +430,7 @@ public class InventoryFragment extends Fragment {
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
                             Toast.makeText(getContext(), "Product name updated successfully", Toast.LENGTH_SHORT).show();
-                            loadInventoryData(); // Refresh the inventory list if needed
+                            //loadInventoryData(); // Refresh the inventory list if needed
                         } else {
                             Toast.makeText(getContext(), "Failed to update name: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -460,7 +465,7 @@ public class InventoryFragment extends Fragment {
                         if (task.isSuccessful()) {
                             Toast.makeText(getContext(), "Deleted: " + item.get("name"), Toast.LENGTH_SHORT).show();
                             // Optionally refresh the inventory list
-                            loadInventoryData();
+                            //loadInventoryData();
                         } else {
                             Toast.makeText(getContext(), "Failed to delete: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -471,7 +476,17 @@ public class InventoryFragment extends Fragment {
     }
     private boolean isInventoryDataLoaded = false; // Flag to control inventory loading
 
+    private String getTodayDate() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy"); // Adjust the format as needed
+        return dateFormat.format(Calendar.getInstance().getTime());
+    }
+
     private void loadUsedItemsForDate(String selectedDate) {
+        // If selectedDate is null or empty, use today's date
+        if (selectedDate == null || selectedDate.isEmpty()) {
+            selectedDate = getTodayDate();
+        }
+
         // Clear the filtered list before fetching new data
         filteredList.clear();
 
@@ -533,15 +548,10 @@ public class InventoryFragment extends Fragment {
                         }
                     });
         } else {
-            // If inventory data is already loaded, proceed to filter by date
             filterInventoryByDate(selectedDate);
         }
     }
-
-    // Example method to filter the already loaded inventory by the selected date
     private void filterInventoryByDate(String selectedDate) {
-        // Implement your date filtering logic here
-        // Do not call loadInventoryData() again
     }
 
 
