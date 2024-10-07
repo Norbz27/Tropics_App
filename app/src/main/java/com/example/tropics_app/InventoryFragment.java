@@ -257,6 +257,12 @@ public class InventoryFragment extends Fragment {
         String todayDate = getTodayDate();
         String yesterdayDate = getYesterdayDate();
 
+        // Disable the ability to update for any date that is not today
+        if (!todayDate.equals(getTodayDate())) {
+            Toast.makeText(getContext(), "You can only update stocks for today", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         final int[] yesterdayStocks = {0};
         final int[] yesterdayInUse = {0};
         final int[] todayStocks = {0};
@@ -286,9 +292,9 @@ public class InventoryFragment extends Fragment {
                                             return;
                                         }
 
-                                        // Update today's stock and in_use without double counting
+                                        // Update today's stock and in_use
                                         int newTodayStocks = todayStocks[0] - quantityToUpdate;
-                                        int newInUse = todayInUse[0] + quantityToUpdate; // Just add today's usage
+                                        int newInUse = todayInUse[0] + quantityToUpdate;
 
                                         Map<String, Object> updateFields = new HashMap<>();
                                         updateFields.put("stocks", newTodayStocks);
@@ -308,7 +314,7 @@ public class InventoryFragment extends Fragment {
                                     } else {
                                         // If no today record, create a new one using yesterday's data
                                         int newStocks = Math.max(0, yesterdayStocks[0] - quantityToUpdate);
-                                        int newInUse = yesterdayInUse[0] + quantityToUpdate; // Combine yesterday's in_use and add today's usage
+                                        int newInUse = yesterdayInUse[0] + quantityToUpdate;
 
                                         Map<String, Object> newRecord = new HashMap<>();
                                         newRecord.put("date", todayDate);
@@ -466,6 +472,7 @@ public class InventoryFragment extends Fragment {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         Toast.makeText(getContext(), "Addition recorded successfully", Toast.LENGTH_SHORT).show();
+                        loadUsedItemsForDate(getTodayDate());
                     } else {
                         Toast.makeText(getContext(), "Failed to record addition: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
@@ -516,7 +523,7 @@ public class InventoryFragment extends Fragment {
                     public void onComplete(@NonNull Task<DocumentReference> task) {
                         if (task.isSuccessful()) {
                             DocumentReference productRef = task.getResult();
-
+                            loadUsedItemsForDate(getTodayDate());
                             // Track the initial stocks in the dailyRecords collection
                             Map<String, Object> dailyRecord = new HashMap<>();
                             dailyRecord.put("date", getTodayDate());
@@ -720,6 +727,8 @@ public class InventoryFragment extends Fragment {
                     // Add to the filtered list
                     filteredList.add(combinedData);
                     Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
+
+                    // Check stocks and update the UI
                     adapter.updateList(filteredList);
                     adapter.notifyDataSetChanged();
                 } else {
@@ -734,6 +743,7 @@ public class InventoryFragment extends Fragment {
             }
         });
     }
+
 
     // Method to get the previous date based on the provided date
     private String getPreviousDate(String currentDate) {
