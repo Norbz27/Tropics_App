@@ -6,416 +6,413 @@
     android:layout_height="match_parent"
     android:background="@color/darkgray"
     tools:context=".FullSalaryReportActivity">
-    <ScrollView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-        <LinearLayout
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="20dp"
-            android:orientation="vertical">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="WEEKLY SALARY COMPUTATION"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/manrope"
-                android:textColor="@color/orange"
-                android:layout_gravity="center"
-                android:paddingBottom="16dp"/>
-
+            android:layout_height="56dp"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Dark"
+            android:layout_gravity="top" />
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
             <LinearLayout
-                android:id="@+id/l3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <Spinner
-                    android:id="@+id/month_spinner"
+                android:paddingHorizontal="20dp"
+                android:orientation="vertical"
+                android:paddingBottom="100dp">
+                <TextView
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:text="WEEKLY SALARY COMPUTATION"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/manrope"
+                    android:textColor="@color/orange"
+                    android:layout_gravity="center"
+                    android:paddingBottom="16dp"/>
 
-                <Spinner
-                    android:id="@+id/year_spinner"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                <LinearLayout
+                    android:id="@+id/l3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center"
+                    android:layout_marginBottom="10dp"
+                    android:orientation="horizontal">
 
-                <Spinner
-                    android:id="@+id/week_num"
+                    <Spinner
+                        android:id="@+id/month_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <Spinner
+                        android:id="@+id/year_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <Spinner
+                        android:id="@+id/week_num"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <TextView
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="8dp"
+                    android:text="DAILY SALES AND COMMISSION"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/manrope"
+                    android:textStyle="bold" />
+
+                <!-- Wrap the table in a HorizontalScrollView -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="horizontal">
+
+                    <TableLayout
+                        android:id="@+id/daily_table"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:stretchColumns="0">
+
+                        <TableRow android:background="@color/gray">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:text="NAME"
+                                android:fontFamily="@font/manrope_bold"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:text="MONDAY\n(Sales)"
+                                android:fontFamily="@font/manrope_bold"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="MONDAY\n(Comm)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="TUESDAY\n(Sales)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="TUESDAY\n(Comm)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="WEDNESDAY\n(Sales)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="WEDNESDAY\n(Comm)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="THURSDAY\n(Sales)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="THURSDAY\n(Comm)"
+                                android:textColor="@color/white" />
+                        </TableRow>
+                    </TableLayout>
+                </HorizontalScrollView>
+
+                <!-- Wrap the second table in a HorizontalScrollView -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp">
+
+                    <TableLayout
+                        android:id="@+id/weekend_table"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:stretchColumns="0">
+
+                        <TableRow android:background="@color/gray">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="NAME"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="FRIDAY\n(Sales)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="FRIDAY\n(Comm)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="SATURDAY\n(Sales)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="SATURDAY\n(Comm)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="SUNDAY\n(Sales)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="SUNDAY\n(Comm)"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="Total Sale"
+                                android:textColor="@color/orange" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="Total Commission"
+                                android:textColor="@color/orange" />
+                        </TableRow>
+                    </TableLayout>
+                </HorizontalScrollView>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp"
+                    android:text="FINAL SALARY COMPUTATION"
+                    android:textColor="@color/white"
+                    android:fontFamily="@font/manrope"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <TableLayout
+                        android:id="@+id/final_salary_table"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:stretchColumns="1">
+
+                        <TableRow android:background="@color/gray">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="NAME"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="Per Day"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="No. of Days"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="Week Salary"
+                                android:textColor="@color/white" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="Late/UT or \nComm Deduction"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="Deducted Salary"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="Comm"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="Total Salary"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="CA Deduction"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="10dp"
+                                android:fontFamily="@font/manrope_bold"
+                                android:text="Overall Salary"
+                                android:textColor="@color/orange" />
+                        </TableRow>
+                    </TableLayout>
+                </HorizontalScrollView>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="BREAKDOWN:"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/manrope"
+                    android:textColor="@color/white"
+                    android:paddingTop="16dp"/>
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp">
+
+                    <TableLayout
+                        android:id="@+id/breakdown_table"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:stretchColumns="0">
+                        <TableRow android:background="@color/gray">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/manrope"
+                                android:text="Date"
+                                android:textColor="@color/white"
+                                android:paddingTop="8dp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/manrope"
+                                android:text="Price"
+                                android:textColor="@color/white"
+                                android:paddingTop="4dp"/>
+                        </TableRow>
+                        <TableRow>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/manrope"
+                                android:text="DATE: 9/13/2024"
+                                android:textColor="@color/white"
+                                android:paddingTop="8dp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/manrope"
+                                android:text="6,500.00"
+                                android:textColor="@color/white"
+                                android:paddingTop="4dp"/>
+                        </TableRow>
+                    </TableLayout>
+                </HorizontalScrollView>
+
             </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingBottom="8dp"
-                android:text="DAILY SALES AND COMMISSION"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:fontFamily="@font/manrope"
-                android:textStyle="bold" />
-
-            <!-- Wrap the table in a HorizontalScrollView -->
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:scrollbars="horizontal">
-
-                <TableLayout
-                    android:id="@+id/daily_table"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:stretchColumns="0">
-
-                    <TableRow android:background="@color/gray">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:text="NAME"
-                            android:fontFamily="@font/manrope_bold"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:text="MONDAY\n(Sales)"
-                            android:fontFamily="@font/manrope_bold"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="MONDAY\n(Comm)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="TUESDAY\n(Sales)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="TUESDAY\n(Comm)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="WEDNESDAY\n(Sales)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="WEDNESDAY\n(Comm)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="THURSDAY\n(Sales)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="THURSDAY\n(Comm)"
-                            android:textColor="@color/white" />
-                    </TableRow>
-                </TableLayout>
-            </HorizontalScrollView>
-
-            <!-- Wrap the second table in a HorizontalScrollView -->
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
-
-                <TableLayout
-                    android:id="@+id/weekend_table"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:stretchColumns="0">
-
-                    <TableRow android:background="@color/gray">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="NAME"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="FRIDAY\n(Sales)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="FRIDAY\n(Comm)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="SATURDAY\n(Sales)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="SATURDAY\n(Comm)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="SUNDAY\n(Sales)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="SUNDAY\n(Comm)"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Total Sale"
-                            android:textColor="@color/orange" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Total Commission"
-                            android:textColor="@color/orange" />
-                    </TableRow>
-                </TableLayout>
-            </HorizontalScrollView>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="16dp"
-                android:paddingBottom="8dp"
-                android:text="FINAL SALARY COMPUTATION"
-                android:textColor="@color/white"
-                android:fontFamily="@font/manrope"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <TableLayout
-                    android:id="@+id/final_salary_table"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:stretchColumns="1">
-
-                    <TableRow android:background="@color/gray">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="NAME"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Per Day"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="No. of Days"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Week Salary"
-                            android:textColor="@color/white" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Late/UT or \nComm Deduction"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Deducted Salary"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Comm"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Total Salary"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="CA Deduction"
-                            android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Overall Salary"
-                            android:textColor="@color/orange" />
-                    </TableRow>
-                </TableLayout>
-            </HorizontalScrollView>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="BREAKDOWN:"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/manrope"
-                android:textColor="@color/white"
-                android:paddingTop="16dp"/>
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
-
-                <TableLayout
-                    android:id="@+id/breakdown_table"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:stretchColumns="0">
-                    <TableRow android:background="@color/gray">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/manrope"
-                            android:text="Date"
-                            android:textColor="@color/white"
-                            android:paddingTop="8dp"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/manrope"
-                            android:text="Price"
-                            android:textColor="@color/white"
-                            android:paddingTop="4dp"/>
-                    </TableRow>
-                    <TableRow>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/manrope"
-                            android:text="DATE: 9/13/2024"
-                            android:textColor="@color/white"
-                            android:paddingTop="8dp"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/manrope"
-                            android:text="6,500.00"
-                            android:textColor="@color/white"
-                            android:paddingTop="4dp"/>
-                    </TableRow>
-                </TableLayout>
-            </HorizontalScrollView>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
-                android:text="Total   12,373.30"
-                android:textColor="@color/white"
-                android:paddingTop="4dp"
-                android:textStyle="bold"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
-                android:text="Overall Total Salary   7,248.45"
-                android:textColor="@color/white"
-                android:paddingTop="8dp"
-                android:textStyle="bold"/>
-        </LinearLayout>
-    </ScrollView>
+        </ScrollView>
+    </LinearLayout>
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabCompFiSal"
         android:layout_width="wrap_content"

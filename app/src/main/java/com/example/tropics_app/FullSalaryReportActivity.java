@@ -8,6 +8,7 @@ import android.os.PersistableBundle;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -24,6 +25,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -48,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 public class FullSalaryReportActivity extends AppCompatActivity {
@@ -60,7 +63,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     private List<Gcash> gcashList;
     private TableLayout daily_table, weekend_table, finalSalaryTable, breakdown_table;
     private Spinner month_spinner, year_spinner, week_num;
-
+    private double totalSalesFtS = 0.0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,6 +84,11 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         salaryDetailsList = new ArrayList<>();
         expensesList = new ArrayList<>();
         gcashList = new ArrayList<>();
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         loadExpensesData();
         loadGcashData();
@@ -457,6 +465,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             daily_table.removeViews(1, daily_table.getChildCount() - 1); // Keep header
             weekend_table.removeViews(1, weekend_table.getChildCount() - 1); // Keep header
             finalSalaryTable.removeViews(1, finalSalaryTable.getChildCount() - 1);
+            breakdown_table.removeViews(1, breakdown_table.getChildCount() - 1);
 
             // Create a header row for dates (only for Monday to Thursday)
             TableRow dateRow = new TableRow(this);
@@ -501,6 +510,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     TextView3.setTextColor(Color.WHITE);
                     TextView3.setPadding(10, 10, 10, 10);
                     dateRowWeekend.addView(TextView3);
+                    filterDataByDate(dateStr);
                 }else {
                     TextView dateTextView = new TextView(this);
                     String dateStr = sdf.format(displayCalendar.getTime());
@@ -517,8 +527,6 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     TextView3.setTextColor(Color.WHITE);
                     TextView3.setPadding(10, 10, 10, 10);
                     dateRow.addView(TextView3);
-
-                    filterDataByDate(dateStr);
                 }
             }
 
@@ -672,7 +680,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     return emp1.getEmployeeId().compareToIgnoreCase(emp2.getEmployeeId());
                 }
             });
-
+            double overAllTotalSalary = 0.0;
             for (EmployeeSalaryDetails emp : EmployeeSalList) {
                 Employee employee = findEmployeeByName(emp.getEmployeeId());
                 TableRow tableRow = new TableRow(this);
@@ -699,7 +707,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 // Calculate total salary including commission and deductions
                 double totalSalary = deductedWeekSal + totalCommissionPerEmp;
                 double totalSalaryDeducted = totalSalary - Double.parseDouble(emp.getCaDeduction());
-
+                overAllTotalSalary += totalSalaryDeducted;
                 // Create TextViews for displaying employee details
                 TextView name = createTextView(emp.getEmployeeId());
                 TextView perDay = createTextView(String.format("₱%.2f", employee.getSalary()));
@@ -731,11 +739,56 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 // Add the row to the final salary table
                 finalSalaryTable.addView(tableRow);
             }
+            TableRow tableRow4 = new TableRow(this);
+            for(int i = 0; i < 8; i++){
+                TextView TextView5 = createTextView("");
+                tableRow4.addView(TextView5);
+            }
 
+            TextView dateTextView4 = createTextView("Overall Salary");
+            dateTextView4.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+            dateTextView4.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+            TextView ovSal1 = createTextView(String.format("₱%.2f", overAllTotalSalary));
+            ovSal1.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+            ovSal1.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+            tableRow4.addView(dateTextView4);
+            tableRow4.addView(ovSal1);
+            finalSalaryTable.addView(tableRow4);
+
+            double remainingBal = totalSalesFtS - overAllTotalSalary;
+            TableRow tableRow = new TableRow(this);
+            tableRow.setBackgroundResource(R.color.gray);
+            // Set the formatted date to TextView
+            TextView dateTextView = createTextView("Total");
+            TextView bal = createTextView(String.format("₱%.2f", totalSalesFtS));
+
+
+            tableRow.addView(dateTextView);
+            tableRow.addView(bal);
+
+            TableRow tableRow2 = new TableRow(this);
+            TextView dateTextView2 = createTextView("Overall Salary");
+            TextView ovSal = createTextView(String.format("-₱%.2f", overAllTotalSalary));
+            tableRow2.addView(dateTextView2);
+            tableRow2.addView(ovSal);
+
+            TableRow tableRow3 = new TableRow(this);
+            tableRow3.setBackgroundResource(R.color.gray);
+            TextView dateTextView3 = createTextView("");
+            TextView Rbal = createTextView(String.format("₱%.2f", remainingBal));
+            Rbal.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+            Rbal.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+            Rbal.setTextSize(20);
+            tableRow3.addView(dateTextView3);
+            tableRow3.addView(Rbal);
+            breakdown_table.addView(tableRow);
+            breakdown_table.addView(tableRow2);
+            breakdown_table.addView(tableRow3);
         } catch (Exception e) {
             Log.e("SalesFragment", "Error filtering data: ", e);
         }
     }
+
     private void filterDataByDate(String selectedDate) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
         Calendar calendar = Calendar.getInstance();
@@ -815,11 +868,26 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         double total = totalExpenses + totalGcash;
         double balance = totalSales - total;
         TableRow tableRow = new TableRow(this);
-        TextView date = createTextView(selectedDate);
-        TextView bal = createTextView(String.format("₱%.2f", balance));
 
-        tableRow.addView(date);
-        tableRow.addView(bal);
+        SimpleDateFormat parser = new SimpleDateFormat("MM/dd/yyyy"); // Adjust this format to match your input date format
+
+        try {
+            // Parse the String to Date
+            Date date2 = parser.parse(selectedDate);
+
+            // Format the date as MM/dd/yyyy with day of the week
+            SimpleDateFormat dateFormat2 = new SimpleDateFormat("MM/dd/yyyy EEEE"); // EEEE gives the full day name
+            String formattedDate = dateFormat2.format(date2);
+
+            // Set the formatted date to TextView
+            TextView dateTextView = createTextView(formattedDate);
+            TextView bal = createTextView(String.format("₱%.2f", balance));
+            totalSalesFtS += balance;
+            tableRow.addView(dateTextView);
+            tableRow.addView(bal);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // Add the row to the final salary table
         breakdown_table.addView(tableRow);
@@ -945,5 +1013,15 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                         }
                     }
                 });
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }
