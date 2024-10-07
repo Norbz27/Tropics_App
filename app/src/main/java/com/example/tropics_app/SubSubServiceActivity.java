@@ -3,16 +3,19 @@ package com.example.tropics_app;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -43,7 +46,11 @@ public class SubSubServiceActivity extends AppCompatActivity implements SubServi
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sub_sub_service);
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Window window = getWindow();
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.darkgray));
+            window.setNavigationBarColor(ContextCompat.getColor(this, R.color.darkgray));
+        }
         serviceId = getIntent().getStringExtra("service_id");
         String serviceName = getIntent().getStringExtra("service_name");
         rvService = findViewById(R.id.rvService);

@@ -3,6 +3,7 @@ package com.example.tropics_app;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.text.InputType;
@@ -11,6 +12,7 @@ import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -26,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -68,6 +71,11 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_full_salary_report);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Window window = getWindow();
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.darkgray));
+            window.setNavigationBarColor(ContextCompat.getColor(this, R.color.darkgray));
+        }
         db = FirebaseFirestore.getInstance();
         daily_table = findViewById(R.id.daily_table);
         weekend_table = findViewById(R.id.weekend_table);

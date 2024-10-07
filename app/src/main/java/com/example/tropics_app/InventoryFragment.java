@@ -105,7 +105,7 @@ public class InventoryFragment extends Fragment {
             int month = calendar.get(Calendar.MONTH);
             int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-            DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(), (view1, year1, monthOfYear, dayOfMonth) -> {
+            DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(), R.style.datepicker, (view1, year1, monthOfYear, dayOfMonth) -> {
                 String selectedDate = (monthOfYear + 1) + "/" + dayOfMonth + "/" + year1;
                 datePicker.setText(selectedDate);
                 loadUsedItemsForDate(selectedDate);
