@@ -379,7 +379,7 @@
                                 android:fontFamily="@font/manrope"
                                 android:text="Date"
                                 android:textColor="@color/white"
-                                android:paddingTop="8dp"/>
+                                android:padding="10dp"/>
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -387,7 +387,7 @@
                                 android:fontFamily="@font/manrope"
                                 android:text="Price"
                                 android:textColor="@color/white"
-                                android:paddingTop="4dp"/>
+                                android:padding="10dp"/>
                         </TableRow>
                         <TableRow>
 
