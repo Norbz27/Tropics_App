@@ -297,8 +297,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
     private void spinnerSetup() {
         String[] months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-        String[] years = new String[10]; // For example, the next 10 years
-
+        List<String> years = new ArrayList<>();
         // Get the current date
         Calendar calendar = Calendar.getInstance();
         calendar.setFirstDayOfWeek(Calendar.MONDAY); // Set the first day of the week to Monday
@@ -310,8 +309,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         int currentWeek = getCurrentWeekOfMonth(calendar);
 
         // Populate the years array with the current year and the next 9 years
-        for (int i = 0; i < 10; i++) {
-            years[i] = String.valueOf(currentYear + i);
+
+        for (int year = 2024; year <= currentYear; year++) {
+            years.add(String.valueOf(year));
         }
 
         // Set up the spinners with adapters
@@ -349,10 +349,10 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         year_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                int selectedYear = Integer.parseInt(years[position]);
+                int selectedYear = Integer.parseInt(parentView.getItemAtPosition(position).toString());
                 int selectedMonth = month_spinner.getSelectedItemPosition();
                 updateWeekSpinner(selectedYear, selectedMonth, currentWeek); // Update the week spinner based on the new year
-                filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), years[position], week_num.getSelectedItem().toString());
+                filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), String.valueOf(selectedYear), week_num.getSelectedItem().toString());
             }
 
             @Override

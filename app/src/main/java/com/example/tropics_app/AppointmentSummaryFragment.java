@@ -246,11 +246,7 @@ public class AppointmentSummaryFragment extends Fragment {
         // Clear previous events
         disCalendar.setEvents(new ArrayList<>());
 
-        // Display current date with custom background
-        Calendar calendarnow = Calendar.getInstance();
-        EventDay todayEvent = new EventDay(calendarnow, R.drawable.custom_selector2);
         List<EventDay> events = new ArrayList<>();
-        events.add(todayEvent);
 
         // Get the selected date from ViewModel
         String selectedDate = viewModel.getSelectedDate();
