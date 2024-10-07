@@ -367,6 +367,11 @@ public class SalesFragment extends Fragment {
                             // Check for and display sub-services
                             List<Map<String, Object>> services = appointment.getServices();
                             for (Map<String, Object> service : services) {
+                                // Skip the service if "assignedEmployee" is null
+                                String assignedEmployee = (String) service.get("assignedEmployee");
+                                if (assignedEmployee == null) {
+                                    continue;
+                                }
                                 TableRow row = new TableRow(getContext());
                                 row.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
@@ -442,6 +447,10 @@ public class SalesFragment extends Fragment {
 
                             List<Map<String, Object>> services2 = appointment.getServices();
                             for (Map<String, Object> service : services2) {
+                                String assignedEmployee = (String) service.get("assignedEmployee");
+                                if (assignedEmployee == null) {
+                                    continue;
+                                }
                                 String employee = service.get("assignedEmployee").toString();
                                 double totalPriceForService = (Double) service.get("servicePrice");
 
