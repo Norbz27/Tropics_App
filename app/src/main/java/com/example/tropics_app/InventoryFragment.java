@@ -226,7 +226,7 @@ public class InventoryFragment extends Fragment {
            }
        });
    }
-
+//
     private void showUpdateQuantityDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
