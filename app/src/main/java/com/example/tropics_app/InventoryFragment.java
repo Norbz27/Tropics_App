@@ -621,25 +621,35 @@ public class InventoryFragment extends Fragment {
     }
 
     private void deleteProductFromFirestore(Map<String, Object> item) {
-        String documentId = (String) item.get("id"); // Get the document ID
-
+        String documentId = (String) item.get("id");
         if (documentId != null) {
-            db.collection("inventory").document(documentId)
-                    .delete()
+            db.collection("inventory").document(documentId).collection("dailyRecords")
+                    .get()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
-                            Toast.makeText(getContext(), "Deleted: " + item.get("name"), Toast.LENGTH_SHORT).show();
-                            // Optionally refresh the inventory list
-                            //loadInventoryData();
-                            loadUsedItemsForDate(getTodayDate());
+                            for (QueryDocumentSnapshot subDoc : task.getResult()) {
+                                db.collection("inventory").document(documentId)
+                                        .collection("dailyRecords").document(subDoc.getId()).delete();
+                            }
+                            db.collection("inventory").document(documentId)
+                                    .delete()
+                                    .addOnCompleteListener(deleteTask -> {
+                                        if (deleteTask.isSuccessful()) {
+                                            Toast.makeText(getContext(), "Deleted: " + item.get("name"), Toast.LENGTH_SHORT).show();
+                                            loadUsedItemsForDate(getTodayDate());
+                                        } else {
+                                            Toast.makeText(getContext(), "Failed to delete: " + deleteTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
                         } else {
-                            Toast.makeText(getContext(), "Failed to delete: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Failed to retrieve sub-collection: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
         } else {
             Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
         }
     }
+
     private boolean isInventoryDataLoaded = false; // Flag to control inventory loading
 
     private String getTodayDate() {
