@@ -339,7 +339,7 @@ public class InventoryFragment extends Fragment {
                     }
                 });
     }
-
+// jari nor
     private void addQuantityToFirestore(Map<String, Object> item, int quantityToAdd, int inUseToAdd) {
         String documentId = (String) item.get("id"); // Get the document ID
         String todayDate = getTodayDate(); // Get today's date
@@ -364,28 +364,33 @@ public class InventoryFragment extends Fragment {
                                             int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
                                             int todayInUse = todaySnapshot.getLong("in_use") != null ? todaySnapshot.getLong("in_use").intValue() : 0;
 
-                                            // Update today's stock by adding the new quantity to the current today's stock
-                                            int updatedTodayStocks = todayStocks + quantityToAdd;
+                                            // Check if the date is today's date, allow update only if it's today
+                                            if (todayDate.equals(getTodayDate())) {
+                                                // Update today's stock by adding the new quantity to the current today's stock
+                                                int updatedTodayStocks = todayStocks + quantityToAdd;
 
-                                            // Update today's in_use by adding the new in_use to the current today's in_use
-                                            int updatedTodayInUse = todayInUse + inUseToAdd;
+                                                // Update today's in_use by adding the new in_use to the current today's in_use
+                                                int updatedTodayInUse = todayInUse + inUseToAdd;
 
-                                            // Prepare the update
-                                            Map<String, Object> updateFields = new HashMap<>();
-                                            updateFields.put("stocks", updatedTodayStocks); // Add to today's stock
-                                            updateFields.put("in_use", updatedTodayInUse); // Add to today's in_use
+                                                // Prepare the update
+                                                Map<String, Object> updateFields = new HashMap<>();
+                                                updateFields.put("stocks", updatedTodayStocks); // Add to today's stock
+                                                updateFields.put("in_use", updatedTodayInUse); // Add to today's in_use
 
-                                            // Update Firestore document for today
-                                            db.collection("inventory").document(documentId).collection("dailyRecords")
-                                                    .document(todayDate).update(updateFields)
-                                                    .addOnCompleteListener(updateTask -> {
-                                                        if (updateTask.isSuccessful()) {
-                                                            Toast.makeText(getContext(), "Stock and usage updated successfully", Toast.LENGTH_SHORT).show();
-                                                            loadUsedItemsForDate(todayDate); // Load data for today's date
-                                                        } else {
-                                                            Toast.makeText(getContext(), "Failed to update stock and usage: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
+                                                // Update Firestore document for today
+                                                db.collection("inventory").document(documentId).collection("dailyRecords")
+                                                        .document(todayDate).update(updateFields)
+                                                        .addOnCompleteListener(updateTask -> {
+                                                            if (updateTask.isSuccessful()) {
+                                                                Toast.makeText(getContext(), "Stock and usage updated successfully", Toast.LENGTH_SHORT).show();
+                                                                loadUsedItemsForDate(todayDate); // Load data for today's date
+                                                            } else {
+                                                                Toast.makeText(getContext(), "Failed to update stock and usage: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                            }
+                                                        });
+                                            } else {
+                                                Toast.makeText(getContext(), "Cannot edit data for previous dates", Toast.LENGTH_SHORT).show();
+                                            }
                                         } else {
                                             // If no today record, create a new one with yesterday's stock and add today's values
                                             int updatedTodayStocks = yesterdayStocks + quantityToAdd; // Use yesterday's stock as the base
