@@ -36,7 +36,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
     public void setOnItemLongClickListener(OnItemLongClickListener longClickListener) {
         this.longClickListener = longClickListener;
     }
-
+//
     @NonNull
     @Override
     public InventoryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
