@@ -2,8 +2,10 @@ package com.example.tropics_app;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +19,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +30,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
     private final Context context;
     private List<Map<String, Object>> inventoryList;
     private OnItemLongClickListener longClickListener;
-
+    private String selectedDate;
     public InventoryAdapter(Context context, List<Map<String, Object>> inventoryList) {
         this.context = context;
         this.inventoryList = new ArrayList<>(inventoryList);
@@ -36,7 +40,9 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
     public void setOnItemLongClickListener(OnItemLongClickListener longClickListener) {
         this.longClickListener = longClickListener;
     }
-//
+    public void setSelectedDate(String selectedDate){
+        this.selectedDate = selectedDate;
+    }
     @NonNull
     @Override
     public InventoryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -112,6 +118,27 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
         MenuInflater inflater = popupMenu.getMenuInflater();
         inflater.inflate(R.menu.inventory_item_menu, popupMenu.getMenu());
+        Menu menu = popupMenu.getMenu();
+        Date currentDate = new Date(); // Get current date
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/d/yyyy"); // Define the date format
+        String formattedDate = sdf.format(currentDate); // Format current date
+        Log.d("InventoryAdapter", "Selected Date: " + selectedDate);
+        Log.d("InventoryAdapter", "Formatted Current Date: " + formattedDate);
+        boolean iTrue = !formattedDate.equals(selectedDate);
+        Log.d("InventoryAdapter", "das" + iTrue);
+
+        if (selectedDate != null && !formattedDate.equals(selectedDate)) {
+            menu.findItem(R.id.action_edit).setEnabled(false);
+            menu.findItem(R.id.action_add).setEnabled(false);
+            menu.findItem(R.id.action_subtract).setEnabled(false);
+            menu.findItem(R.id.action_delete).setEnabled(false);
+        }else {
+            menu.findItem(R.id.action_edit).setEnabled(true);
+            menu.findItem(R.id.action_add).setEnabled(true);
+            menu.findItem(R.id.action_subtract).setEnabled(true);
+            menu.findItem(R.id.action_delete).setEnabled(true);
+            Log.d("InventoryAdapter", "Trues");
+        }
 
         popupMenu.setOnMenuItemClickListener(menuItem -> {
             int id = menuItem.getItemId();

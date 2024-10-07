@@ -91,7 +91,14 @@ public class InventoryFragment extends Fragment {
         filteredList = new ArrayList<>();
         adapter = new InventoryAdapter(getContext(), filteredList); // Use filteredList
         rvInventory.setAdapter(adapter);
+        Date currentDate = new Date(); // Get current date
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/d/yyyy"); // Define the date format
+        String formattedDate = sdf.format(currentDate);
+
         EditText datePicker = view.findViewById(R.id.date_picker);
+        datePicker.setText(formattedDate);
+        adapter.setSelectedDate(formattedDate);
+        adapter.setSelectedDate(datePicker.getText().toString());
         datePicker.setOnClickListener(v -> {
             final Calendar calendar = Calendar.getInstance();
             int year = calendar.get(Calendar.YEAR);
@@ -102,7 +109,7 @@ public class InventoryFragment extends Fragment {
                 String selectedDate = (monthOfYear + 1) + "/" + dayOfMonth + "/" + year1;
                 datePicker.setText(selectedDate);
                 loadUsedItemsForDate(selectedDate);
-
+                adapter.setSelectedDate(selectedDate);
             }, year, month, day);
             datePickerDialog.show();
         });
