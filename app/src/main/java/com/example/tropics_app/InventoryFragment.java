@@ -364,7 +364,7 @@ public class InventoryFragment extends Fragment {
                                             int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
                                             int todayInUse = todaySnapshot.getLong("in_use") != null ? todaySnapshot.getLong("in_use").intValue() : 0;
 
-                                            // Check if the date is today's date, allow update only if it's today
+                                            // jari an pag check kung an date kuman is today amo na maka modify
                                             if (todayDate.equals(getTodayDate())) {
                                                 // Update today's stock by adding the new quantity to the current today's stock
                                                 int updatedTodayStocks = todayStocks + quantityToAdd;
