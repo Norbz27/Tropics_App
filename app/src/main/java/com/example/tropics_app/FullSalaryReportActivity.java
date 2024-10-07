@@ -740,13 +740,17 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 finalSalaryTable.addView(tableRow);
             }
             TableRow tableRow4 = new TableRow(this);
-            for(int i = 0; i < 9; i++){
+            for(int i = 0; i < 8; i++){
                 TextView TextView5 = createTextView("");
                 tableRow4.addView(TextView5);
             }
 
             TextView dateTextView4 = createTextView("Overall Salary");
+            dateTextView4.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+            dateTextView4.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
             TextView ovSal1 = createTextView(String.format("₱%.2f", overAllTotalSalary));
+            ovSal1.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+            ovSal1.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
             tableRow4.addView(dateTextView4);
             tableRow4.addView(ovSal1);
             finalSalaryTable.addView(tableRow4);
@@ -774,6 +778,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             TextView Rbal = createTextView(String.format("₱%.2f", remainingBal));
             Rbal.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
             Rbal.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+            Rbal.setTextSize(20);
             tableRow3.addView(dateTextView3);
             tableRow3.addView(Rbal);
             breakdown_table.addView(tableRow);

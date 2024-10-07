@@ -13,6 +13,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -446,6 +447,9 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         inflater.inflate(R.menu.employee_item_menu, popupMenu.getMenu());
 
         Menu menu = popupMenu.getMenu();
+        MenuItem editItem = menu.findItem(R.id.action_edit);
+
+        editItem.setVisible(false);
 
         // Set a listener for menu item clicks
         popupMenu.setOnMenuItemClickListener(menuItem -> {
@@ -453,7 +457,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
 
             if (id == R.id.action_edit) {
                 // Call the edit action
-                showEditEmployeeDialog(employee);
+                //showEditEmployeeDialog(employee);
                 return true;
             } else if (id == R.id.action_delete) {
                 // Create a confirmation dialog
@@ -579,7 +583,6 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             }
         });
     }
-
 
     private void updateEmployee(String employeeId, Map<String, Object> updatedEmployeeData) {
         db.collection("Employees").document(employeeId).update(updatedEmployeeData)
