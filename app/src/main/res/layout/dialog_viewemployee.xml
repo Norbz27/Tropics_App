@@ -111,7 +111,7 @@
             android:layout_marginTop="10dp"
             android:paddingHorizontal="12dp"
             android:fontFamily="@font/manrope"
-            android:text="Weekly Salary: $500"
+            android:text="Daily Salary: $500"
             android:textColor="#B6B6B6"
             android:textSize="15sp"/>
 
