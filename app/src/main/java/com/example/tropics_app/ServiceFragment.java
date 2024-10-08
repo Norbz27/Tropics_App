@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -204,14 +205,28 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
     private void showDeleteConfirmationDialog(Map<String, Object> item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Delete Product")
-                .setMessage("Are you sure you want to delete " + item.get("service_name") + "?")
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    deleteServiceFromFirestore(item);
+                .setMessage("Type 'DELETE' to confirm deletion of " + item.get("service_name") + ":");
+
+        // Create an EditText for user input
+        EditText input = new EditText(getContext());
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        builder.setPositiveButton("Delete", (dialog, which) -> {
+                    // Check if the user input matches "DELETE"
+                    String userInput = input.getText().toString().trim();
+                    if ("DELETE".equalsIgnoreCase(userInput)) {
+                        deleteServiceFromFirestore(item);
+                    } else {
+                        // Optionally, show a message if the input was incorrect
+                        Toast.makeText(getContext(), "Type 'DELETE' to confirm.", Toast.LENGTH_SHORT).show();
+                    }
                 })
-                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
-                .create()
-                .show();
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+
+        builder.create().show();
     }
+
 
     private void showEditServiceDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_new_service, null);
