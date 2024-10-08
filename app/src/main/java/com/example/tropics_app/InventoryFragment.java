@@ -211,7 +211,7 @@ public class InventoryFragment extends Fragment {
     */
    private void showAddQuantityDialog(Map<String, Object> item) {
        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
-       AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+       AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
        builder.setView(dialogView);
 
        AlertDialog dialog = builder.create();
@@ -236,7 +236,7 @@ public class InventoryFragment extends Fragment {
 //
     private void showUpdateQuantityDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setView(dialogView);
 
         AlertDialog dialog = builder.create();
@@ -434,7 +434,7 @@ public class InventoryFragment extends Fragment {
 
     private void showAddProductDialog() {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_product, null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setView(dialogView);
 
         AlertDialog dialog = builder.create();
@@ -562,7 +562,7 @@ public class InventoryFragment extends Fragment {
     // Show a dialog to edit the product
     private void showEditProductDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_name_product, null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setView(dialogView);
 
         AlertDialog dialog = builder.create();
@@ -608,7 +608,7 @@ public class InventoryFragment extends Fragment {
 
     // Show a confirmation dialog to delete the product
     private void showDeleteConfirmationDialog(Map<String, Object> item) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setTitle("Delete Product")
                 .setMessage("Are you sure you want to delete " + item.get("name") + "?")
                 .setPositiveButton("Delete", (dialog, which) -> {

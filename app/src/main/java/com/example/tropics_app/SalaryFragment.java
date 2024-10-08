@@ -150,7 +150,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         Button btnSubmit = dialogView.findViewById(R.id.empsub);
         imgEmp = dialogView.findViewById(R.id.imgemp);
 
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
@@ -318,7 +318,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             }
         });
 
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
@@ -461,7 +461,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 return true;
             } else if (id == R.id.action_delete) {
                 // Create a confirmation dialog
-                new AlertDialog.Builder(getActivity())
+                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
                         .setTitle("Delete Employee")
                         .setMessage("Are you sure you want to delete this employee?")
                         .setPositiveButton("Yes", (dialog, which) -> {
@@ -511,7 +511,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 .load(employee.getImage())
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(imgEmp);
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();

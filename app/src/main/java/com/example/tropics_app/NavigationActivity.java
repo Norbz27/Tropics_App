@@ -13,6 +13,7 @@ import android.view.Window;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 
 import androidx.core.content.ContextCompat;
@@ -32,7 +33,7 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         mAuth = FirebaseAuth.getInstance();
         sharedPreferences = getSharedPreferences(Preference, MODE_PRIVATE);
         setContentView(R.layout.activity_navigation);

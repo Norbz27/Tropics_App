@@ -7,6 +7,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -51,6 +52,7 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         View view = inflater.inflate(R.layout.fragment_service, container, false);
         searchView = view.findViewById(R.id.searchView);
         searchView.setOnClickListener(v -> searchView.setIconified(false));
@@ -159,7 +161,7 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
     }
     private void showNewServiceDialog() {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_new_service, null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setView(dialogView);
 
         AlertDialog dialog = builder.create();
@@ -203,7 +205,7 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
     }
 
     private void showDeleteConfirmationDialog(Map<String, Object> item) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setTitle("Delete Product")
                 .setMessage("Type 'DELETE' to confirm deletion of " + item.get("service_name") + ":");
 
@@ -230,7 +232,7 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
 
     private void showEditServiceDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_new_service, null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setView(dialogView);
 
         AlertDialog dialog = builder.create();

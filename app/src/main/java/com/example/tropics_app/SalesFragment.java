@@ -217,7 +217,7 @@ public class SalesFragment extends Fragment {
         // Create an instance of Firebase Firestore
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
@@ -234,7 +234,7 @@ public class SalesFragment extends Fragment {
             }
 
             // Show confirmation warning
-            new AlertDialog.Builder(getActivity())
+            new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
                     .setTitle("Confirm Submission")
                     .setMessage("Once submitted, this expense cannot be erased. Do you want to continue?")
                     .setPositiveButton("Yes", (dialogInterface, i) -> {
@@ -273,7 +273,7 @@ public class SalesFragment extends Fragment {
         // Create an instance of Firebase Firestore
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
@@ -289,7 +289,7 @@ public class SalesFragment extends Fragment {
             }
 
             // Show confirmation warning
-            new AlertDialog.Builder(getActivity())
+            new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
                     .setTitle("Confirm Submission")
                     .setMessage("Once submitted, this GCash payment cannot be erased. Do you want to continue?")
                     .setPositiveButton("Yes", (dialogInterface, i) -> {

@@ -12,10 +12,10 @@
         <item name="colorSecondaryVariant">@color/darkgray</item>
 
         <!-- Background and surface colors -->
-        <item name="colorSurface">@color/gray</item> <!-- Correct surface attribute -->
+        <item name="colorSurface">@color/gray</item>
 
         <!-- Text color -->
-        <item name="android:textColorPrimary">@color/black</item>
+        <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/white</item>
 
         <!-- Status bar and navigation bar -->
@@ -37,4 +37,32 @@
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/white</item>
     </style>
+
+    <style name="AlertDialogTheme" parent="ThemeOverlay.AppCompat.Dialog.Alert">
+        <!-- Background color -->
+        <item name="android:background">@color/gray</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/white</item>
+        <item name="android:textColorLink">@color/orange</item>
+        <item name="colorAccent">@color/orange</item>
+        <item name="android:itemTextAppearance">@style/AlertDialogItemTextAppearance</item>
+    </style>
+    <style name="AlertDialogItemTextAppearance" parent="TextAppearance.AppCompat.Body1">
+        <!-- Force the text color for dialog items (both in Day and Night mode) -->
+        <item name="android:textColor">@color/white</item> <!-- Regular text -->
+    </style>
+    <style name="PopupMenuTheme" parent="Widget.AppCompat.PopupMenu">
+        <!-- Background color -->
+        <item name="android:popupBackground">@color/darkgray</item>
+
+        <!-- Text color -->
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <!-- In styles.xml -->
+    <style name="MenuItemBackground" parent="Widget.AppCompat.PopupMenu.Overflow">
+        <item name="android:background">@color/gray</item> <!-- Set your desired background color -->
+        <item name="android:padding">16dp</item> <!-- Optional: Add padding for better appearance -->
+    </style>
+
 </resources>

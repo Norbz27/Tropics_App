@@ -21,6 +21,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
@@ -63,7 +64,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_calendar, container, false);
-
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
 
@@ -323,7 +324,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     }
 
                     // Build and display the dialog
-                    AlertDialog.Builder assignDialogBuilder = new AlertDialog.Builder(getActivity());
+                    AlertDialog.Builder assignDialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
                     assignDialogBuilder.setView(assignDialogView)
                             .setTitle("Assign Employees")
                             .setPositiveButton("Assign", (dialogInterface, which) -> {
@@ -414,7 +415,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
 
 
     private void showAppointmentOptionsDialog(Appointment appointment) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         builder.setTitle("Options")
                 .setItems(new CharSequence[]{"Delete"}, (dialog, optionIndex) -> {
                     if (optionIndex == 0) {
