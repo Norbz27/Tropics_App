@@ -412,8 +412,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         btnClose.setOnClickListener(v -> dialog.dismiss());
     }
 
-
-
     private void showAppointmentOptionsDialog(Appointment appointment) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         builder.setTitle("Options")

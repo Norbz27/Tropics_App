@@ -62,6 +62,13 @@
             android:textColor="#B6B6B6"
             android:textSize="15sp" />
     </com.google.android.material.textfield.TextInputLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSearchResults"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:nestedScrollingEnabled="false"
+        android:layout_marginTop="10dp"
+        android:visibility="gone" />
     <!-- Add Product Button -->
     <Button
         android:id="@+id/btnSubmit"
