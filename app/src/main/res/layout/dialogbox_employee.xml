@@ -148,7 +148,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fontFamily="@font/manrope_bold"
-        android:text="Salary:"
+        android:text="Daily Salary:"
         android:textColor="#B6B6B6" />
 
     <com.google.android.material.textfield.TextInputLayout

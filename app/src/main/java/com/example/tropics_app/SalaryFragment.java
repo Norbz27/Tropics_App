@@ -449,7 +449,6 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         Menu menu = popupMenu.getMenu();
         MenuItem editItem = menu.findItem(R.id.action_edit);
 
-        editItem.setVisible(false);
 
         // Set a listener for menu item clicks
         popupMenu.setOnMenuItemClickListener(menuItem -> {
@@ -457,7 +456,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
 
             if (id == R.id.action_edit) {
                 // Call the edit action
-                //showEditEmployeeDialog(employee);
+                showEditEmployeeDialog(employee);
                 return true;
             } else if (id == R.id.action_delete) {
                 // Create a confirmation dialog
@@ -491,7 +490,14 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialogbox_employee, null);
 
+        TextView tvName = dialogView.findViewById(R.id.textView9);
+        tvName.setVisibility(View.GONE);
         EditText empName = dialogView.findViewById(R.id.empname);
+        empName.setEnabled(false);
+        empName.setTextSize(23);
+        empName.setGravity(Gravity.CENTER);
+        empName.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+        empName.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
         EditText empAddress = dialogView.findViewById(R.id.empadd);
         EditText empPhone = dialogView.findViewById(R.id.empphone);
         EditText empEmail = dialogView.findViewById(R.id.empemail);

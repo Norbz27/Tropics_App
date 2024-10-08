@@ -61,7 +61,7 @@ public class SalesFragment extends Fragment {
     private Calendar calendar;
     private int targetMonth, targetYear;
     private boolean isDaily = true;
-    private TableLayout tableLayout, tableLayout2, tableLayout3;
+    private TableLayout tableLayout, tableLayout2, tableLayout3, tblGcash, tblExpenses;
     private List<Employee> employeeList;
     private List<Expenses> expensesList;
     private List<Gcash> gcashList;
@@ -91,6 +91,8 @@ public class SalesFragment extends Fragment {
         tableLayout = rootView.findViewById(R.id.tblayout);
         tableLayout2 = rootView.findViewById(R.id.tblayout2);
         tableLayout3 = rootView.findViewById(R.id.tblayout3);
+        tblGcash = rootView.findViewById(R.id.tblGcash);
+        tblExpenses = rootView.findViewById(R.id.tblExpenses);
         tvDayOfWeek = rootView.findViewById(R.id.day_of_Week);
         DatePicker.setOnClickListener(v -> showDatePickerDialog(DatePicker));
         Date dateNow = new Date();
@@ -268,6 +270,7 @@ public class SalesFragment extends Fragment {
         View dialogView = inflater.inflate(R.layout.dialog_gcash, null);
 
         EditText edAmount = dialogView.findViewById(R.id.etAmount);
+        EditText edClientName = dialogView.findViewById(R.id.etClient);
         Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
 
         // Create an instance of Firebase Firestore
@@ -281,9 +284,10 @@ public class SalesFragment extends Fragment {
         btnSubmit.setOnClickListener(v -> {
             // Get input values
             String amount = edAmount.getText().toString().trim();
+            String clientName = edClientName.getText().toString().trim();
 
             // Validate input
-            if (amount.isEmpty()) {
+            if (amount.isEmpty() && clientName.isEmpty()) {
                 Toast.makeText(getActivity(), "Please enter the GCash amount", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -344,6 +348,9 @@ public class SalesFragment extends Fragment {
                 tableLayout.removeViews(1, tableLayout.getChildCount() - 1); // Keep header
                 tableLayout2.removeViews(1, tableLayout2.getChildCount() - 1); // Keep header
                 tableLayout3.removeViews(1, tableLayout3.getChildCount() - 1);
+                tblGcash.removeViews(1, tblGcash.getChildCount() - 1);
+                tblExpenses.removeViews(1, tblExpenses.getChildCount() - 1);
+
                 // Filter appointments for the selected date
                 for (Appointment appointment : appointmentsList) {
                     Date appointmentDate = appointment.getClientDateTimeAsDate();
@@ -589,13 +596,26 @@ public class SalesFragment extends Fragment {
         List<Expenses> expensesList = getExpensesForDate(selectedDate);
         List<Gcash> gcashList = getGcashForDate(selectedDate);
         TextView tvTEGD = getActivity().findViewById(R.id.tvTEGD);
+        TextView tvGcash = getActivity().findViewById(R.id.tvGcash);
+        TextView tvExpenses = getActivity().findViewById(R.id.tvExpenses);
+
         if(expensesList.size() == 0 && gcashList.size() == 0){
             tableLayout3.setVisibility(View.GONE);
             tvTEGD.setVisibility(View.GONE);
+
+            tblExpenses.setVisibility(View.GONE);
+            tblGcash.setVisibility(View.GONE);
+            tvGcash.setVisibility(View.GONE);
+            tvExpenses.setVisibility(View.GONE);
             return;
         }else {
             tableLayout3.setVisibility(View.VISIBLE);
             tvTEGD.setVisibility(View.VISIBLE);
+
+            tblExpenses.setVisibility(View.VISIBLE);
+            tblGcash.setVisibility(View.VISIBLE);
+            tvGcash.setVisibility(View.VISIBLE);
+            tvExpenses.setVisibility(View.VISIBLE);
         }
         for (Expenses expense : expensesList) {
             TableRow expenseRow = new TableRow(getContext());
@@ -615,13 +635,22 @@ public class SalesFragment extends Fragment {
             expenseAmountTextView.setPadding(10, 5, 5, 5);
             expenseRow.addView(expenseAmountTextView);
 
-            tableLayout3.addView(expenseRow); // Display in tableLayout3 for expenses
+            tblExpenses.addView(expenseRow); // Display in tableLayout3 for expenses
 
             // Accumulate total expenses
             totalExpenses += expense.getAmount();
         }
+        TableRow expenseRow = new TableRow(getContext());
+        expenseRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
-         // Use the updated method
+        TextView tv1 = createTextViewBold("Total: ");
+        tv1.setGravity(Gravity.RIGHT);
+        TextView tvTotalExpenses = createTextViewBold(String.format("₱%.2f", totalExpenses));
+        expenseRow.addView(tv1);
+        expenseRow.addView(tvTotalExpenses);
+        tblExpenses.addView(expenseRow);
+
+        // Use the updated method
         for (Gcash gcash : gcashList) {
             TableRow gcashRow = new TableRow(getContext());
             gcashRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
@@ -640,10 +669,37 @@ public class SalesFragment extends Fragment {
             expenseAmountTextView.setPadding(10, 5, 5, 5);
             gcashRow.addView(expenseAmountTextView);
 
-            tableLayout3.addView(gcashRow); // Display in tableLayout3 for expenses
+            tblGcash.addView(gcashRow); // Display in tableLayout3 for expenses
             // Accumulate total expenses
             totalGcash += gcash.getAmount();
         }
+        TableRow gcashRow = new TableRow(getContext());
+        gcashRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        TextView tv2 = createTextViewBold("Total: ");
+        tv2.setGravity(Gravity.RIGHT);
+        TextView tvTotalGcash = createTextViewBold(String.format("₱%.2f", totalGcash));
+        gcashRow.addView(tv2);
+        gcashRow.addView(tvTotalGcash);
+        tblGcash.addView(gcashRow);
+
+        TableRow calc = new TableRow(getContext());
+        calc.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+        TextView tv5 = createTextView("Total Expenses: ");
+        TextView tv3 = createTextView(String.format("₱%.2f", totalExpenses));
+        calc.addView(tv5);
+        calc.addView(tv3);
+        tableLayout3.addView(calc);
+
+        TableRow calc2 = new TableRow(getContext());
+        calc2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+        TextView tv6 = createTextView("Total Gcash: ");
+        TextView tv4 = createTextView(String.format("₱%.2f", totalGcash));
+
+        calc2.addView(tv6);
+        calc2.addView(tv4);
+        tableLayout3.addView(calc2);
+
         TableRow UndeRow = new TableRow(getContext());
         UndeRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
 
@@ -691,7 +747,7 @@ public class SalesFragment extends Fragment {
         TotalSalesRow.addView(TextView1);
 
         TextView totalSalesTextView = new TextView(getContext());
-        totalSalesTextView.setText(String.format("₱%.2f", totalSales));
+        totalSalesTextView.setText(String.format("-₱%.2f", totalSales));
         totalSalesTextView.setTextColor(Color.LTGRAY);
         totalSalesTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
         totalSalesTextView.setPadding(10, 5, 5, 5);
@@ -731,6 +787,22 @@ public class SalesFragment extends Fragment {
         balTextView.setPadding(10, 5, 5, 5);
         balSalesRow.addView(balTextView);
         tableLayout3.addView(balSalesRow);
+    }
+    private TextView createTextViewBold(String text) {
+        TextView textView = new TextView(getContext());
+        textView.setText(text);
+        textView.setPadding(10, 5, 5, 5);
+        textView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+        textView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+        return textView;
+    }
+    private TextView createTextView(String text) {
+        TextView textView = new TextView(getContext());
+        textView.setText(text);
+        textView.setPadding(10, 5, 5, 5);
+        textView.setTextColor(Color.LTGRAY);
+        textView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        return textView;
     }
     private Employee findEmployeeByName(String employeeName) {
         for (Employee employee : employeeList) {
