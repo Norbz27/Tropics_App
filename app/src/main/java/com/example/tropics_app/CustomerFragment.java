@@ -71,7 +71,13 @@ public class CustomerFragment extends Fragment {
         loadCustomerData();
         return view;
     }
-
+    private void reloadFragment() {
+        // Reload the current fragment
+        getParentFragmentManager().beginTransaction()
+                .detach(this)
+                .attach(this)
+                .commit();
+    }
     private void setupSearchView() {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override

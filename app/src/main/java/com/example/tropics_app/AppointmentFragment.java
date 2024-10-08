@@ -2,6 +2,7 @@ package com.example.tropics_app;
 
 import android.os.Bundle;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -25,7 +26,22 @@ public class AppointmentFragment extends Fragment {
         viewPager.setUserInputEnabled(false);
         ViewPagerAdapter adapter = new ViewPagerAdapter(getActivity());
         viewPager.setAdapter(adapter);
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                reloadFragment();
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(this, callback);
 
         return view;
+    }
+
+    private void reloadFragment() {
+        // Reload the current fragment
+        getParentFragmentManager().beginTransaction()
+                .detach(this)
+                .attach(this)
+                .commit();
     }
 }
