@@ -319,7 +319,6 @@ public class InventoryFragment extends Fragment {
                                                     }
                                                 });
                                     } else {
-                                        // If no today record, create a new one using yesterday's data
                                         int newStocks = Math.max(0, yesterdayStocks[0] - quantityToUpdate);
                                         int newInUse = yesterdayInUse[0] + quantityToUpdate;
 

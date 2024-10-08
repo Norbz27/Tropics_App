@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
@@ -139,9 +140,6 @@ public class SalesFragment extends Fragment {
 
         monthSpinner.setSelection(currentMonth); // Set to current month
         yearSpinner.setSelection(years.indexOf(String.valueOf(currentYear))); // Set to current year
-        // Fetch data from Firestore
-
-
         btnDaily.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -198,16 +196,32 @@ public class SalesFragment extends Fragment {
 
             }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
 
-            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
 
+        // Declare the callback here
+            OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    // Reload the fragment when back button is pressed
+                    reloadFragment();
+                }
+            };
 
-        return rootView;
+            // Add the callback
+            requireActivity().getOnBackPressedDispatcher().addCallback(this, callback);
+
+    return rootView;
+        }
+    private void reloadFragment() {
+        // Reload the current fragment
+        getParentFragmentManager().beginTransaction()
+                .detach(this)
+                .attach(this)
+                .commit();
     }
-
     private void showExpensesDialog(Editable selectedDate) {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_new_expenses, null);
@@ -1174,3 +1188,4 @@ public class SalesFragment extends Fragment {
 
 
 }
+

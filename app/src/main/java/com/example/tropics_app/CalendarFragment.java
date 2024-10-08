@@ -18,6 +18,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -100,8 +101,22 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
             selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(event.getCalendar().getTime());
             loadAppointmentData(selectedDate);
         });
-
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Do nothing or reload the fragment
+                reloadFragment(); // Call the reload method here
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(this, callback);
         return view;
+    }
+    private void reloadFragment() {
+        // Reload the current fragment
+        getParentFragmentManager().beginTransaction()
+                .detach(this)
+                .attach(this)
+                .commit();
     }
     private void showToday(){
         Calendar calendarnow = Calendar.getInstance();
@@ -163,6 +178,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     Toast.makeText(getActivity(), "Failed to load appointments: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
     @Override
     public void onItemLongClick(Appointment appointment) {
         showAppointmentOptionsDialog(appointment);
