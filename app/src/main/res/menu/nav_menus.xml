@@ -16,7 +16,7 @@
             android:id="@+id/nav_apt"
             android:icon="@drawable/baseline_edit_calendar_24"
             android:fontFamily="@font/manrope"
-            android:title="Appoinment"/>
+            android:title="Appointment"/>
 
         <item
             android:id="@+id/nav_calendar"
