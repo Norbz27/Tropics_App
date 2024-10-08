@@ -64,7 +64,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     private List<EmployeeSalaryDetails> salaryDetailsList ;
     private List<Expenses> expensesList;
     private List<Gcash> gcashList;
-    private TableLayout daily_table, weekend_table, finalSalaryTable, breakdown_table;
+    private TableLayout daily_table, finalSalaryTable, breakdown_table;
     private Spinner month_spinner, year_spinner, week_num;
     private double totalSalesFtS = 0.0;
     @Override
@@ -78,7 +78,6 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         }
         db = FirebaseFirestore.getInstance();
         daily_table = findViewById(R.id.daily_table);
-        weekend_table = findViewById(R.id.weekend_table);
         finalSalaryTable = findViewById(R.id.final_salary_table);
         breakdown_table = findViewById(R.id.breakdown_table);
         fabCompFiSal = findViewById(R.id.fabCompFiSal);
@@ -471,7 +470,6 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
             // Clear previous rows
             daily_table.removeViews(1, daily_table.getChildCount() - 1); // Keep header
-            weekend_table.removeViews(1, weekend_table.getChildCount() - 1); // Keep header
             finalSalaryTable.removeViews(1, finalSalaryTable.getChildCount() - 1);
             breakdown_table.removeViews(1, breakdown_table.getChildCount() - 1);
 
@@ -488,36 +486,11 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             TextView.setPadding(10, 10, 10, 10);
             dateRow.addView(TextView);
 
-            TableRow dateRowWeekend = new TableRow(this);
-            dateRowWeekend.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-            // Create layout parameters for TextView with layout_weight
-            TableRow.LayoutParams params2 = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f); // 0dp width, weight of 1
-            TextView TextView2 = new TextView(this);
-            TextView2.setText("");
-            TextView2.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-            TextView2.setTextColor(Color.WHITE);
-            TextView2.setPadding(10, 10, 10, 10);
-            dateRowWeekend.addView(TextView2);
             // Add dates to the dateRow (only Monday to Thursday)
             Calendar displayCalendar = (Calendar) calendar.clone(); // Clone to keep the original calendar unchanged
             for (int i = 0; i < 7; i++) { // Loop for Monday to Thursday
                 if(i > 3){
-                    TextView dateTextView = new TextView(this);
                     String dateStr = sdf.format(displayCalendar.getTime());
-                    dateTextView.setText(dateStr);
-                    dateTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-                    dateTextView.setTextColor(Color.WHITE);
-                    dateTextView.setPadding(10, 10, 10, 10);
-                    dateRowWeekend.addView(dateTextView);
-                    displayCalendar.add(Calendar.DAY_OF_MONTH, 1);
-
-                    TextView TextView3 = new TextView(this);
-                    TextView3.setText("");
-                    TextView3.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-                    TextView3.setTextColor(Color.WHITE);
-                    TextView3.setPadding(10, 10, 10, 10);
-                    dateRowWeekend.addView(TextView3);
                     filterDataByDate(dateStr);
                 }else {
                     TextView dateTextView = new TextView(this);
@@ -536,25 +509,24 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     TextView3.setPadding(10, 10, 10, 10);
                     dateRow.addView(TextView3);
                 }
+                TextView dateTextView = new TextView(this);
+                String dateStr = sdf.format(displayCalendar.getTime());
+                dateTextView.setText(dateStr);
+                dateTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
+                dateTextView.setTextColor(Color.WHITE);
+                dateTextView.setPadding(10, 10, 10, 10);
+                dateRow.addView(dateTextView);
+                displayCalendar.add(Calendar.DAY_OF_MONTH, 1);
+
+                TextView TextView3 = new TextView(this);
+                TextView3.setText("");
+                TextView3.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
+                TextView3.setTextColor(Color.WHITE);
+                TextView3.setPadding(10, 10, 10, 10);
+                dateRow.addView(TextView3);
             }
-
-            TextView TextView3 = new TextView(this);
-            TextView3.setText("");
-            TextView3.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-            TextView3.setTextColor(Color.WHITE);
-            TextView3.setPadding(10, 10, 10, 10);
-            dateRowWeekend.addView(TextView3);
-
-            TextView TextView4 = new TextView(this);
-            TextView4.setText("");
-            TextView4.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-            TextView4.setTextColor(Color.WHITE);
-            TextView4.setPadding(10, 10, 10, 10);
-            dateRowWeekend.addView(TextView4);
-
             // Add the dateRow to the table
             daily_table.addView(dateRow);
-            weekend_table.addView(dateRowWeekend);
             // Reset calendar to the start of the selected week for filtering appointments
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, month);
@@ -631,14 +603,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     TableRow rowCommission = new TableRow(this);
                     rowCommission.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
-                    TableRow rowWeekend = new TableRow(this);
-                    rowWeekend.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
-
                     // Add employee name for weekdays and weekends
                     TextView nameTextView = createTextView(employeeName);
                     rowCommission.addView(nameTextView);
-                    TextView nameTextView2 = createTextView(employeeName);
-                    rowWeekend.addView(nameTextView2);
 
                     double totalSalesPerEmp = 0.0;
                     double totalCommissionPerEmp = 0.0;
@@ -651,14 +618,8 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                         TextView dailySalesTextView = createTextView(String.format("₱%.2f", dailySales));
                         TextView dailyCommissionTextView = createTextView(String.format("₱%.2f", dailyCommission));
 
-                        if (i < 4) {  // Monday to Thursday (weekdays)
-                            rowCommission.addView(dailySalesTextView);
-                            rowCommission.addView(dailyCommissionTextView);
-                        } else {  // Friday to Sunday (weekends)
-                            rowWeekend.addView(dailySalesTextView);
-                            rowWeekend.addView(dailyCommissionTextView);
-
-                        }
+                        rowCommission.addView(dailySalesTextView);
+                        rowCommission.addView(dailyCommissionTextView);
 
                         totalSalesPerEmp += dailySales;
                         totalCommissionPerEmp += dailyCommission;
@@ -671,12 +632,11 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     TextView totalCommissionTextView = createTextView(String.format("₱%.2f", totalCommissionPerEmp));
                     totalCommissionTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
                     totalCommissionTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-                    rowWeekend.addView(totalSalesTextView);
-                    rowWeekend.addView(totalCommissionTextView);
+                    rowCommission.addView(totalSalesTextView);
+                    rowCommission.addView(totalCommissionTextView);
 
                     // Add rows to respective tables
                     daily_table.addView(rowCommission);
-                    weekend_table.addView(rowWeekend);
                 }
             }
 
@@ -752,7 +712,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 TextView TextView5 = createTextView("");
                 tableRow4.addView(TextView5);
             }
-
+            double remainingBal = 0.0;
             TextView dateTextView4 = createTextView("Overall Salary");
             dateTextView4.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
             dateTextView4.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
@@ -763,7 +723,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             tableRow4.addView(ovSal1);
             finalSalaryTable.addView(tableRow4);
 
-            double remainingBal = totalSalesFtS - overAllTotalSalary;
+            remainingBal = totalSalesFtS - overAllTotalSalary;
             TableRow tableRow = new TableRow(this);
             tableRow.setBackgroundResource(R.color.gray);
             // Set the formatted date to TextView

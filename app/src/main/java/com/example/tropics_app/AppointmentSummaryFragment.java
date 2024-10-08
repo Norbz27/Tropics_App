@@ -113,7 +113,7 @@ public class AppointmentSummaryFragment extends Fragment {
         return view;
     }
     private void showConfirmationDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setTitle("Confirm Appointment");
         builder.setMessage("Are you sure you want to submit the appointment?");
 
@@ -188,7 +188,7 @@ public class AppointmentSummaryFragment extends Fragment {
     }
 
     private void showMessageDialog(String title, String message, ViewPager2 viewPager) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setTitle(title);
         builder.setMessage(message);
 

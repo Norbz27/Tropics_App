@@ -157,32 +157,6 @@
                                 android:fontFamily="@font/manrope_bold"
                                 android:text="THURSDAY\n(Comm)"
                                 android:textColor="@color/white" />
-                        </TableRow>
-                    </TableLayout>
-                </HorizontalScrollView>
-
-                <!-- Wrap the second table in a HorizontalScrollView -->
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp">
-
-                    <TableLayout
-                        android:id="@+id/weekend_table"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:stretchColumns="0">
-
-                        <TableRow android:background="@color/gray">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:padding="10dp"
-                                android:fontFamily="@font/manrope_bold"
-                                android:text="NAME"
-                                android:textColor="@color/white" />
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"

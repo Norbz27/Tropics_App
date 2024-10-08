@@ -129,7 +129,7 @@ public class SubServiceActivity extends AppCompatActivity implements SubServiceA
 
     private void showNewServiceDialog() {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_new_sub_service, null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
         builder.setView(dialogView);
 
         AlertDialog dialog = builder.create();
@@ -192,7 +192,7 @@ public class SubServiceActivity extends AppCompatActivity implements SubServiceA
     }
     private void showEditServiceDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_new_sub_service, null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
         builder.setView(dialogView);
 
         AlertDialog dialog = builder.create();
@@ -247,7 +247,7 @@ public class SubServiceActivity extends AppCompatActivity implements SubServiceA
         }
     }
     private void showDeleteConfirmationDialog(Map<String, Object> item) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
         builder.setTitle("Delete Product")
                 .setMessage("Are you sure you want to delete " + item.get("sub_service_name") + "?")
                 .setPositiveButton("Delete", (dialog, which) -> {

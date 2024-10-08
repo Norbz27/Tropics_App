@@ -18,9 +18,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
@@ -63,7 +65,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_calendar, container, false);
-
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
 
@@ -99,8 +101,22 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
             selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(event.getCalendar().getTime());
             loadAppointmentData(selectedDate);
         });
-
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Do nothing or reload the fragment
+                reloadFragment(); // Call the reload method here
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(this, callback);
         return view;
+    }
+    private void reloadFragment() {
+        // Reload the current fragment
+        getParentFragmentManager().beginTransaction()
+                .detach(this)
+                .attach(this)
+                .commit();
     }
     private void showToday(){
         Calendar calendarnow = Calendar.getInstance();
@@ -162,6 +178,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     Toast.makeText(getActivity(), "Failed to load appointments: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
     @Override
     public void onItemLongClick(Appointment appointment) {
         showAppointmentOptionsDialog(appointment);
@@ -323,7 +340,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     }
 
                     // Build and display the dialog
-                    AlertDialog.Builder assignDialogBuilder = new AlertDialog.Builder(getActivity());
+                    AlertDialog.Builder assignDialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
                     assignDialogBuilder.setView(assignDialogView)
                             .setTitle("Assign Employees")
                             .setPositiveButton("Assign", (dialogInterface, which) -> {
@@ -411,10 +428,8 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         btnClose.setOnClickListener(v -> dialog.dismiss());
     }
 
-
-
     private void showAppointmentOptionsDialog(Appointment appointment) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         builder.setTitle("Options")
                 .setItems(new CharSequence[]{"Delete"}, (dialog, optionIndex) -> {
                     if (optionIndex == 0) {

@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -49,7 +50,7 @@ public class CustomerFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_customer, container, false);
-
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         // Use view to find the SearchView in the layout
         searchView = view.findViewById(R.id.searchView);
         rvCustomer = view.findViewById(R.id.rvCustomer);
@@ -70,7 +71,13 @@ public class CustomerFragment extends Fragment {
         loadCustomerData();
         return view;
     }
-
+    private void reloadFragment() {
+        // Reload the current fragment
+        getParentFragmentManager().beginTransaction()
+                .detach(this)
+                .attach(this)
+                .commit();
+    }
     private void setupSearchView() {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -109,7 +116,7 @@ public class CustomerFragment extends Fragment {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_client_info, null);
 
         // Create the AlertDialog Builder
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setView(dialogView);
 
         // Create the AlertDialog

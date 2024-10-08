@@ -150,7 +150,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         Button btnSubmit = dialogView.findViewById(R.id.empsub);
         imgEmp = dialogView.findViewById(R.id.imgemp);
 
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
@@ -318,7 +318,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             }
         });
 
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
@@ -449,7 +449,6 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         Menu menu = popupMenu.getMenu();
         MenuItem editItem = menu.findItem(R.id.action_edit);
 
-        editItem.setVisible(false);
 
         // Set a listener for menu item clicks
         popupMenu.setOnMenuItemClickListener(menuItem -> {
@@ -457,11 +456,11 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
 
             if (id == R.id.action_edit) {
                 // Call the edit action
-                //showEditEmployeeDialog(employee);
+                showEditEmployeeDialog(employee);
                 return true;
             } else if (id == R.id.action_delete) {
                 // Create a confirmation dialog
-                new AlertDialog.Builder(getActivity())
+                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
                         .setTitle("Delete Employee")
                         .setMessage("Are you sure you want to delete this employee?")
                         .setPositiveButton("Yes", (dialog, which) -> {
@@ -491,7 +490,14 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialogbox_employee, null);
 
+        TextView tvName = dialogView.findViewById(R.id.textView9);
+        tvName.setVisibility(View.GONE);
         EditText empName = dialogView.findViewById(R.id.empname);
+        empName.setEnabled(false);
+        empName.setTextSize(23);
+        empName.setGravity(Gravity.CENTER);
+        empName.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+        empName.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
         EditText empAddress = dialogView.findViewById(R.id.empadd);
         EditText empPhone = dialogView.findViewById(R.id.empphone);
         EditText empEmail = dialogView.findViewById(R.id.empemail);
@@ -511,7 +517,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 .load(employee.getImage())
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(imgEmp);
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
