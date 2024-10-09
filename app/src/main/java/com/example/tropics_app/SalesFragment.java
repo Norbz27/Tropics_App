@@ -11,8 +11,11 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -22,6 +25,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -48,9 +54,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class SalesFragment extends Fragment {
     private TextView tvAverage, tvHigh, tvLow,tvDayOfWeek;
@@ -66,7 +74,10 @@ public class SalesFragment extends Fragment {
     private List<Expenses> expensesList;
     private List<Gcash> gcashList;
     private FloatingActionButton fabExpenses, fabGcash;
-
+    private List<Client> clientList;
+    private ClientAdapter clientAdapter;
+    private RecyclerView rvSearchResults;
+    private EditText edClientName;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -76,7 +87,15 @@ public class SalesFragment extends Fragment {
         employeeList = new ArrayList<>();
         expensesList = new ArrayList<>();
         gcashList = new ArrayList<>();
+        clientList = new ArrayList<>();
         loadEmployeeData();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        loadExpensesData();
+        loadGcashData();
     }
 
     @Override
@@ -84,8 +103,10 @@ public class SalesFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_sales, container, false);
+
         fabExpenses = rootView.findViewById(R.id.fabExpenses);
         fabGcash = rootView.findViewById(R.id.fabGcash);
+
 
         EditText DatePicker = rootView.findViewById(R.id.date_picker);
         tableLayout = rootView.findViewById(R.id.tblayout);
@@ -94,13 +115,14 @@ public class SalesFragment extends Fragment {
         tblGcash = rootView.findViewById(R.id.tblGcash);
         tblExpenses = rootView.findViewById(R.id.tblExpenses);
         tvDayOfWeek = rootView.findViewById(R.id.day_of_Week);
+
         DatePicker.setOnClickListener(v -> showDatePickerDialog(DatePicker));
         Date dateNow = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
         DatePicker.setText(dateFormat.format(dateNow));
 
-        fabExpenses.setOnClickListener(v -> showExpensesDialog(DatePicker.getText()));
-        fabGcash.setOnClickListener(v -> showGcashDialog(DatePicker.getText()));
+        fabExpenses.setOnClickListener(v -> showExpensesDialog());
+        fabGcash.setOnClickListener(v -> showGcashDialog());
 
         calendar = Calendar.getInstance();
         targetMonth = calendar.get(Calendar.MONTH); // Current month (0-indexed)
@@ -208,7 +230,7 @@ public class SalesFragment extends Fragment {
         return rootView;
     }
 
-    private void showExpensesDialog(Editable selectedDate) {
+    private void showExpensesDialog() {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_new_expenses, null);
 
@@ -217,7 +239,6 @@ public class SalesFragment extends Fragment {
         Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
 
         // Create an instance of Firebase Firestore
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
@@ -231,7 +252,13 @@ public class SalesFragment extends Fragment {
 
             // Validate input
             if (amount.isEmpty() || reason.isEmpty()) {
-                Toast.makeText(getActivity(), "Please enter both amount and reason", Toast.LENGTH_SHORT).show();
+                edAmount.setError("Enter Amount");
+                edAmount.requestFocus();
+                return;
+            }
+            if (reason.isEmpty()) {
+                edReason.setError("Enter Reason");
+                edReason.requestFocus();
                 return;
             }
 
@@ -265,16 +292,29 @@ public class SalesFragment extends Fragment {
         });
     }
 
-    private void showGcashDialog(Editable selectedDate) {
+    private void showGcashDialog() {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_gcash, null);
 
         EditText edAmount = dialogView.findViewById(R.id.etAmount);
-        EditText edClientName = dialogView.findViewById(R.id.etClient);
+        edClientName = dialogView.findViewById(R.id.etClient);
         Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+        rvSearchResults = dialogView.findViewById(R.id.rvSearchResults);
+        clientAdapter = new ClientAdapter(clientList, this::onClientSelected);
+        rvSearchResults.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvSearchResults.setAdapter(clientAdapter);
+        edClientName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
-        // Create an instance of Firebase Firestore
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                searchClientByFirstName(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
 
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         dialogBuilder.setView(dialogView);
@@ -287,21 +327,28 @@ public class SalesFragment extends Fragment {
             String clientName = edClientName.getText().toString().trim();
 
             // Validate input
-            if (amount.isEmpty() && clientName.isEmpty()) {
-                Toast.makeText(getActivity(), "Please enter the GCash amount", Toast.LENGTH_SHORT).show();
+            if (amount.isEmpty()) {
+                edAmount.setError("Enter Amount");
+                edAmount.requestFocus();
+                return;
+            }
+            if(clientName.isEmpty()){
+                edClientName.setError("Enter Client Name");
+                edClientName.requestFocus();
                 return;
             }
 
             // Show confirmation warning
             new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
                     .setTitle("Confirm Submission")
-                    .setMessage("Once submitted, this GCash payment cannot be erased. Do you want to continue?")
+                    .setMessage("Do you want to continue?")
                     .setPositiveButton("Yes", (dialogInterface, i) -> {
                         // Submit GCash payment
                         Date dateNow = new Date();
                         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
                         Map<String, Object> gcashPayment = new HashMap<>();
                         gcashPayment.put("amount", Double.parseDouble(amount));  // Store amount as a number
+                        gcashPayment.put("clientname", clientName);  // Store amount as a number
                         gcashPayment.put("paymentMethod", "GCash");
                         gcashPayment.put("timestamp", dateFormat.format(dateNow));  // Add a timestamp
 
@@ -621,6 +668,126 @@ public class SalesFragment extends Fragment {
             TableRow expenseRow = new TableRow(getContext());
             expenseRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
+            ImageView iconView = new ImageView(getContext());
+            Drawable icon = ContextCompat.getDrawable(getContext(), R.drawable.baseline_menu_24); // Replace with your icon
+            iconView.setImageDrawable(icon);
+            iconView.setPadding(10, 5, 5, 5);
+            expenseRow.addView(iconView); // Add icon to the row
+
+            iconView.setOnClickListener(v -> {
+                // Create a PopupMenu anchored to the iconView
+                PopupMenu popupMenu = new PopupMenu(getContext(), iconView);
+                popupMenu.getMenuInflater().inflate(R.menu.employee_item_menu, popupMenu.getMenu());
+
+                // Handle the menu item clicks
+                popupMenu.setOnMenuItemClickListener(item -> {
+                    if (item.getItemId() == R.id.action_edit) {
+                        // Inflate the custom dialog view
+                        LayoutInflater inflater = getLayoutInflater();
+                        View dialogView = inflater.inflate(R.layout.dialog_new_expenses, null);
+
+                        // Initialize EditTexts and Button
+                        EditText edAmount = dialogView.findViewById(R.id.etAmount);
+                        EditText edReason = dialogView.findViewById(R.id.etReason);
+                        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+                        // Pre-fill the EditTexts with the current values
+                        edAmount.setText(String.valueOf(expense.getAmount())); // Pre-fill with current amount
+                        edReason.setText(expense.getReason()); // Pre-fill with current reason/client name
+
+                        // Create the AlertDialog
+                        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
+                        dialogBuilder.setView(dialogView);
+                        AlertDialog dialog = dialogBuilder.create();
+                        dialog.show();
+
+                        // Handle the submit button click
+                        btnSubmit.setOnClickListener(v1 -> {
+                            // Get the updated values from the EditTexts
+                            String newAmount = edAmount.getText().toString();
+                            String newReason = edReason.getText().toString();
+
+                            // Validate the input
+                            if (!newAmount.isEmpty() && !newReason.isEmpty()) {
+                                // Show confirmation dialog before proceeding with the update
+                                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                                        .setTitle("Confirm Update")
+                                        .setMessage("Are you sure you want to update this expense?")
+                                        .setPositiveButton("Update", (dialogInterface, i) -> {
+                                            // Proceed with the update if the user confirms
+                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                                            // Create a map of the updated fields
+                                            Map<String, Object> updates = new HashMap<>();
+                                            updates.put("amount", Double.parseDouble(newAmount)); // Parse amount to double
+                                            updates.put("reason", newReason);
+
+                                            // Update the Firestore document
+                                            db.collection("expenses")
+                                                    .document(expense.getId()) // Replace with your Firestore document ID field
+                                                    .update(updates)
+                                                    .addOnSuccessListener(aVoid -> {
+                                                        Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
+                                                        dialog.dismiss(); // Close the dialog on success
+                                                        loadExpensesData();
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                    });
+                                        })
+                                        .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                                            // User canceled the action, do nothing
+                                            dialogInterface.dismiss();
+                                        })
+                                        .show();
+                            } else {
+                                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+
+
+                        return true;
+
+                    } else if (item.getItemId() == R.id.action_delete) {
+                        // Create a confirmation dialog
+                        new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                                .setTitle("Confirm Deletion")
+                                .setMessage("Are you sure you want to delete this expense?")
+                                .setPositiveButton("Delete", (dialogInterface, i) -> {
+                                    // Proceed with deletion if the user confirms
+                                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                                    // Delete the Firestore document
+                                    db.collection("expenses")
+                                            .document(expense.getId()) // Replace with your Firestore document ID field
+                                            .delete()
+                                            .addOnSuccessListener(aVoid -> {
+                                                Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
+                                                // You may also want to update your UI after deletion, e.g., remove the item from the list
+                                                loadExpensesData();
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                            });
+                                })
+                                .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                                    // User canceled the action, do nothing
+                                    dialogInterface.dismiss();
+                                })
+                                .show();
+
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+
+
+                // Show the PopupMenu
+                popupMenu.show();
+            });
+
+
             TextView reasonTextView = new TextView(getContext());
             reasonTextView.setText(expense.getReason());
             reasonTextView.setTextColor(Color.LTGRAY);
@@ -655,13 +822,137 @@ public class SalesFragment extends Fragment {
             TableRow gcashRow = new TableRow(getContext());
             gcashRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
+            // Create an ImageView for the icon
+            ImageView iconView = new ImageView(getContext());
+            Drawable icon = ContextCompat.getDrawable(getContext(), R.drawable.baseline_menu_24); // Replace with your icon
+            iconView.setImageDrawable(icon);
+            iconView.setPadding(10, 5, 5, 5);
+            gcashRow.addView(iconView); // Add icon to the row
+
+            iconView.setOnClickListener(v -> {
+                // Create a PopupMenu anchored to the iconView
+                PopupMenu popupMenu = new PopupMenu(getContext(), iconView);
+                popupMenu.getMenuInflater().inflate(R.menu.employee_item_menu, popupMenu.getMenu());
+
+                // Handle the menu item clicks
+                popupMenu.setOnMenuItemClickListener(item -> {
+                    if (item.getItemId() == R.id.action_edit) {
+                        // Inflate the custom dialog view
+                        LayoutInflater inflater = getLayoutInflater();
+                        View dialogView = inflater.inflate(R.layout.dialog_gcash, null);
+
+                        EditText edAmount = dialogView.findViewById(R.id.etAmount);
+                        edClientName = dialogView.findViewById(R.id.etClient);
+                        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+                        rvSearchResults = dialogView.findViewById(R.id.rvSearchResults);
+                        clientAdapter = new ClientAdapter(clientList, this::onClientSelected);
+                        rvSearchResults.setLayoutManager(new LinearLayoutManager(getContext()));
+                        rvSearchResults.setAdapter(clientAdapter);
+
+                        edAmount.setText(""+gcash.getAmount());
+                        edClientName.setText(gcash.getClientname());
+
+                        // TextWatcher to search clients by first name
+                        edClientName.addTextChangedListener(new TextWatcher() {
+                            @Override
+                            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                            @Override
+                            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                                searchClientByFirstName(s.toString());
+                            }
+
+                            @Override
+                            public void afterTextChanged(Editable s) {}
+                        });
+
+                        // Create and show the AlertDialog for edit
+                        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
+                        dialogBuilder.setView(dialogView);
+                        AlertDialog dialog = dialogBuilder.create();
+                        dialog.show();
+
+                        // Handle the submit button click with a confirmation dialog
+                        btnSubmit.setOnClickListener(v1 -> {
+                            String newAmount = edAmount.getText().toString();
+                            String newClientName = edClientName.getText().toString();
+
+                            if (!newAmount.isEmpty() && !newClientName.isEmpty()) {
+                                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                                        .setTitle("Confirm Update")
+                                        .setMessage("Are you sure you want to update this GCash entry?")
+                                        .setPositiveButton("Update", (dialogInterface, i) -> {
+                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                                            Map<String, Object> updates = new HashMap<>();
+                                            updates.put("amount", Double.parseDouble(newAmount));
+                                            updates.put("clientname", newClientName);
+
+                                            // Update Firestore document
+                                            db.collection("gcash_payments")
+                                                    .document(gcash.getId())  // Replace with Firestore document ID
+                                                    .update(updates)
+                                                    .addOnSuccessListener(aVoid -> {
+                                                        Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
+                                                        dialog.dismiss();
+                                                        loadGcashData();
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                    });
+                                        })
+                                        .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                                            dialogInterface.dismiss();
+                                        })
+                                        .show();
+                            } else {
+                                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+
+                        return true;
+
+                    } else if (item.getItemId() == R.id.action_delete) {
+                        // Confirm before deleting
+                        new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                                .setTitle("Confirm Deletion")
+                                .setMessage("Are you sure you want to delete this GCash entry?")
+                                .setPositiveButton("Delete", (dialogInterface, i) -> {
+                                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+                                    // Delete Firestore document
+                                    db.collection("gcash_payments")
+                                            .document(gcash.getId()) // Replace with Firestore document ID
+                                            .delete()
+                                            .addOnSuccessListener(aVoid -> {
+                                                Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
+                                                // Optionally, update your UI here
+                                                loadGcashData();
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                            });
+                                })
+                                .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                                    dialogInterface.dismiss();
+                                })
+                                .show();
+
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+                // Show the PopupMenu
+                popupMenu.show();
+            });
+            // Add client name
             TextView reasonTextView = new TextView(getContext());
-            reasonTextView.setText("Gcash");
+            reasonTextView.setText(gcash.getClientname());
             reasonTextView.setTextColor(Color.LTGRAY);
             reasonTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
             reasonTextView.setPadding(10, 5, 5, 5);
             gcashRow.addView(reasonTextView);
 
+            // Add amount
             TextView expenseAmountTextView = new TextView(getContext());
             expenseAmountTextView.setText(String.format("₱%.2f", gcash.getAmount()));
             expenseAmountTextView.setTextColor(Color.LTGRAY);
@@ -669,10 +960,13 @@ public class SalesFragment extends Fragment {
             expenseAmountTextView.setPadding(10, 5, 5, 5);
             gcashRow.addView(expenseAmountTextView);
 
-            tblGcash.addView(gcashRow); // Display in tableLayout3 for expenses
-            // Accumulate total expenses
+            // Add the row to the table layout
+            tblGcash.addView(gcashRow);
+
+            // Accumulate total Gcash amount
             totalGcash += gcash.getAmount();
         }
+
         TableRow gcashRow = new TableRow(getContext());
         gcashRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
@@ -1170,7 +1464,49 @@ public class SalesFragment extends Fragment {
 
         lineChart.invalidate(); // Refresh the chart
     }
+    private void searchClientByFirstName(String firstName) {
+        if (firstName.isEmpty()) {
+            rvSearchResults.setVisibility(View.GONE);
+            clientList.clear();
+            clientAdapter.notifyDataSetChanged();
+            return;
+        }
 
+        rvSearchResults.setVisibility(View.VISIBLE); // Show RecyclerView when searching
+        // Optionally, show a loading indicator here
+
+        db.collection("appointments")
+                .whereGreaterThanOrEqualTo("fullName", firstName)
+                .whereLessThanOrEqualTo("fullName", firstName + "\uf8ff") // Get clients starting with that name
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        clientList.clear();
+                        Set<String> uniqueFullNames = new HashSet<>(); // Set to track unique full names
+
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Client client = document.toObject(Client.class); // Ensure Client class matches Firestore structure
+                            String fullName = client.getFullName(); // Adjust according to your Client class structure
+
+                            // Check if the full name is unique
+                            if (uniqueFullNames.add(fullName)) { // add() returns true if the name was added, false if it was already present
+                                clientList.add(client); // Only add the client if the name is unique
+                            }
+                        }
+
+                        clientAdapter.notifyDataSetChanged();
+                        rvSearchResults.setVisibility(clientList.isEmpty() ? View.GONE : View.VISIBLE);
+                    } else {
+                        // Handle error
+                        Log.e("Firestore Error", "Error getting documents: ", task.getException());
+                    }
+                    // Hide loading indicator here
+                });
+    }
+    private void onClientSelected(Client client) {
+        edClientName.setText(client.getFullName()); // Assume Client class has a method to get first name
+        rvSearchResults.setVisibility(View.GONE); // Hide the RecyclerView after selection
+    }
 
 
 }
