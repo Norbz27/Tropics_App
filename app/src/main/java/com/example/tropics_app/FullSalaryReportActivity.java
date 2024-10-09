@@ -3,7 +3,6 @@ package com.example.tropics_app;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.text.InputType;
@@ -12,7 +11,6 @@ import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -28,7 +26,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -71,13 +68,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_full_salary_report);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Window window = getWindow();
-            window.setStatusBarColor(ContextCompat.getColor(this, R.color.darkgray));
-            window.setNavigationBarColor(ContextCompat.getColor(this, R.color.darkgray));
-        }
         db = FirebaseFirestore.getInstance();
         daily_table = findViewById(R.id.daily_table);
+        //weekend_table = findViewById(R.id.weekend_table);
         finalSalaryTable = findViewById(R.id.final_salary_table);
         breakdown_table = findViewById(R.id.breakdown_table);
         fabCompFiSal = findViewById(R.id.fabCompFiSal);
@@ -103,7 +96,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         loadEmployeeData();
         loadSalaryData();
         spinnerSetup();
-        filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+
 
         fabCompFiSal.setOnClickListener(v -> showSalaryComputationDialog(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString()));
     }
@@ -336,7 +329,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
         // Set default week number
         updateWeekSpinner(currentYear, currentMonth, currentWeek);
-
+        filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
         // Add listeners for month and year spinners to update the week spinner dynamically
         month_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -450,6 +443,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     }
     private void filterDataByMonthYearWeek(String selectedMonth, String selectedYear, String selectedWeekNumber) {
         Calendar calendar = Calendar.getInstance();
+        totalSalesFtS = 0.0;
         Map<String, Double> employeeSalesMap = new HashMap<>(); // To store total sales by employee
         Map<String, double[]> dailySalesMap = new HashMap<>(); // To store daily sales by employee for each day of the week (Monday to Thursday)
         double totalSales = 0.0;
@@ -470,6 +464,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
             // Clear previous rows
             daily_table.removeViews(1, daily_table.getChildCount() - 1); // Keep header
+            //weekend_table.removeViews(1, weekend_table.getChildCount() - 1); // Keep header
             finalSalaryTable.removeViews(1, finalSalaryTable.getChildCount() - 1);
             breakdown_table.removeViews(1, breakdown_table.getChildCount() - 1);
 
@@ -489,26 +484,6 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             // Add dates to the dateRow (only Monday to Thursday)
             Calendar displayCalendar = (Calendar) calendar.clone(); // Clone to keep the original calendar unchanged
             for (int i = 0; i < 7; i++) { // Loop for Monday to Thursday
-                if(i > 3){
-                    String dateStr = sdf.format(displayCalendar.getTime());
-                    filterDataByDate(dateStr);
-                }else {
-                    TextView dateTextView = new TextView(this);
-                    String dateStr = sdf.format(displayCalendar.getTime());
-                    dateTextView.setText(dateStr);
-                    dateTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-                    dateTextView.setTextColor(Color.WHITE);
-                    dateTextView.setPadding(10, 10, 10, 10);
-                    dateRow.addView(dateTextView);
-                    displayCalendar.add(Calendar.DAY_OF_MONTH, 1);
-
-                    TextView TextView3 = new TextView(this);
-                    TextView3.setText("");
-                    TextView3.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-                    TextView3.setTextColor(Color.WHITE);
-                    TextView3.setPadding(10, 10, 10, 10);
-                    dateRow.addView(TextView3);
-                }
                 TextView dateTextView = new TextView(this);
                 String dateStr = sdf.format(displayCalendar.getTime());
                 dateTextView.setText(dateStr);
@@ -524,9 +499,17 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 TextView3.setTextColor(Color.WHITE);
                 TextView3.setPadding(10, 10, 10, 10);
                 dateRow.addView(TextView3);
+                if(i > 3){
+                    filterDataByDate(dateStr);
+                }
+
+
+
             }
+
             // Add the dateRow to the table
             daily_table.addView(dateRow);
+           //weekend_table.addView(dateRowWeekend);
             // Reset calendar to the start of the selected week for filtering appointments
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, month);
@@ -603,6 +586,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     TableRow rowCommission = new TableRow(this);
                     rowCommission.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
+                    TableRow rowWeekend = new TableRow(this);
+                    rowWeekend.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
                     // Add employee name for weekdays and weekends
                     TextView nameTextView = createTextView(employeeName);
                     rowCommission.addView(nameTextView);
@@ -637,6 +623,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
                     // Add rows to respective tables
                     daily_table.addView(rowCommission);
+                    //weekend_table.addView(rowWeekend);
                 }
             }
 
@@ -648,6 +635,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     return emp1.getEmployeeId().compareToIgnoreCase(emp2.getEmployeeId());
                 }
             });
+
             double overAllTotalSalary = 0.0;
             for (EmployeeSalaryDetails emp : EmployeeSalList) {
                 Employee employee = findEmployeeByName(emp.getEmployeeId());
@@ -713,6 +701,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 tableRow4.addView(TextView5);
             }
             double remainingBal = 0.0;
+
             TextView dateTextView4 = createTextView("Overall Salary");
             dateTextView4.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
             dateTextView4.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));

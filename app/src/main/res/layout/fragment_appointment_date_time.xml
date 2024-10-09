@@ -53,8 +53,6 @@
                         app:headerLabelColor="@color/orange"
                         app:highlightedDaysLabelsColor="@color/orange"
                         app:pagesColor="@color/darkgray"
-                        app:selectionColor="@color/orange"
-                        app:selectionLabelColor="@color/white"
                         app:todayLabelColor="@color/white" />
 
                     <!-- TimePicker -->
