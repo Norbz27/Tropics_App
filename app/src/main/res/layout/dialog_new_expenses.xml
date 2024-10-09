@@ -55,7 +55,7 @@
             android:layout_height="60dp"
             android:background="@drawable/custom_input"
             android:fontFamily="@font/manrope_medium"
-            android:hint="Reason"
+            android:hint="Description"
             android:inputType="textCapSentences"
             android:paddingHorizontal="12dp"
             android:textColorHint="#B6B6B6"
