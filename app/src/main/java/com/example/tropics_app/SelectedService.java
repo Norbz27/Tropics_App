@@ -8,7 +8,9 @@ public class SelectedService {
     private String parentServiceName; // Field for the parent service name
     private String serviceName; // Field for the service name
     private double price; // Field for the price of the service or sub-service
-    private final List<SelectedService> subServices;
+    private List<SelectedService> subServices;
+
+    public SelectedService(){}
 
     // Updated constructor with price parameter
     public SelectedService(String subServiceName, String parentServiceName, String serviceName, double price) {
@@ -35,13 +37,25 @@ public class SelectedService {
     public String getName() {
         return subServiceName; // Return the sub-service name
     }
+    public void setSubServiceName(String subServiceName) {
+        this.subServiceName = subServiceName;
+    }
+    public void setName(String subServiceName) {
+        this.subServiceName = subServiceName;
+    }
 
     public String getParentServiceName() {
         return parentServiceName;
     }
+    public void setParentServiceName(String parentServiceName) {
+        this.parentServiceName = parentServiceName;
+    }
 
     public String getServiceName() {
         return serviceName; // Return the service name
+    }
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public double getPrice() {
@@ -63,5 +77,8 @@ public class SelectedService {
             totalPrice += subService.getTotalPrice(); // Add prices of sub-services recursively
         }
         return totalPrice;
+    }
+    public void setSubServices(List<SelectedService> subServices) {
+        this.subServices = subServices;
     }
 }

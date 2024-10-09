@@ -162,4 +162,11 @@ public class Appointment {
             return null; // Return null if parsing fails
         }
     }
+    public String getFirstName() {
+        return fullName != null ? fullName.split(" ")[0] : null; // Assumes first name is the first word
+    }
+
+    public String getLastName() {
+        return fullName != null && fullName.split(" ").length > 1 ? fullName.split(" ")[1] : null; // Assumes last name is the second word
+    }
 }

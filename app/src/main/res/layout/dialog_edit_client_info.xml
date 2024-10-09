@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/gray"
+    android:padding="20dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/tvCI"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Client Information"
+            android:fontFamily="@font/manrope"
+            android:textSize="22sp"
+            android:textColor="@color/orange" />
+        <TextView
+            android:id="@+id/tvFname"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Full name"
+            android:layout_marginTop="15dp"
+            android:fontFamily="@font/manrope"
+            android:textSize="14sp"
+            android:textColor="#B6B6B6" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/edFname"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColorHint="@android:color/darker_gray"
+                app:boxStrokeWidth="3dp"
+                app:boxStrokeWidthFocused="3dp"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edFirstname"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:background="@drawable/custom_input"
+                    android:fontFamily="@font/manrope_medium"
+                    android:hint="First name"
+                    android:inputType="text|textCapSentences"
+                    android:paddingHorizontal="12dp"
+                    android:textColor="#B6B6B6"
+                    android:textColorHint="#B6B6B6"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <Space
+                android:layout_width="30dp"
+                android:layout_height="wrap_content" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/edLname"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColorHint="@android:color/darker_gray"
+                app:boxStrokeWidth="3dp"
+                app:boxStrokeWidthFocused="3dp"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edLastname"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:background="@drawable/custom_input"
+                    android:fontFamily="@font/manrope_medium"
+                    android:hint="Last name"
+                    android:inputType="text|textCapSentences"
+                    android:paddingHorizontal="12dp"
+                    android:textColor="#B6B6B6"
+                    android:textColorHint="#B6B6B6"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvAddress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Address"
+            android:layout_marginTop="20dp"
+            android:fontFamily="@font/manrope"
+            android:textSize="14sp"
+            android:textColor="#B6B6B6" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/edAdd"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColorHint="@android:color/darker_gray"
+            android:layout_marginTop="10dp"
+            app:boxStrokeWidth="3dp"
+            app:boxStrokeWidthFocused="3dp"
+            app:hintEnabled="false">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edAddress"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:background="@drawable/custom_input"
+                android:drawableStart="@drawable/outline_location_on_24"
+                android:drawablePadding="10dp"
+                android:fontFamily="@font/manrope_medium"
+                android:hint=" "
+                android:inputType="text|textCapSentences"
+                android:paddingHorizontal="12dp"
+                android:textColor="#B6B6B6"
+                android:textColorHint="#B6B6B6"
+                android:textSize="15sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/tvCn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Contact Information"
+            android:fontFamily="@font/manrope"
+            android:textSize="17sp"
+            android:layout_marginTop="40dp"
+            android:textColor="#B6B6B6" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="10dp"
+                android:layout_weight="1">
+
+                <TextView
+                    android:id="@+id/tvContact"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Phone"
+                    android:fontFamily="@font/manrope"
+                    android:textSize="14sp"
+                    android:textColor="#B6B6B6" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/edP"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColorHint="@android:color/darker_gray"
+                    app:boxStrokeWidth="3dp"
+                    app:boxStrokeWidthFocused="3dp"
+                    app:hintEnabled="false">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edPhone"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:background="@drawable/custom_input"
+                        android:drawableStart="@drawable/rounded_phone_iphone_24"
+                        android:fontFamily="@font/manrope_medium"
+                        android:hint=" "
+                        android:inputType="phone"
+                        android:paddingHorizontal="12dp"
+                        android:textColor="#B6B6B6"
+                        android:textColorHint="#B6B6B6"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <Space
+                android:layout_width="30dp"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="10dp"
+                android:layout_weight="1">
+
+                <TextView
+                    android:id="@+id/tvEmail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Email"
+                    android:fontFamily="@font/manrope"
+                    android:textSize="14sp"
+                    android:textColor="#B6B6B6" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/edE"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColorHint="@android:color/darker_gray"
+                    app:boxStrokeWidth="3dp"
+                    android:layout_marginTop="10dp"
+                    app:boxStrokeWidthFocused="3dp"
+                    app:hintEnabled="false">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:background="@drawable/custom_input"
+                        android:drawableStart="@drawable/outline_email_24"
+                        android:fontFamily="@font/manrope_medium"
+                        android:hint=" "
+                        android:inputType="text|textEmailAddress"
+                        android:paddingHorizontal="12dp"
+                        android:textColor="#B6B6B6"
+                        android:textColorHint="#B6B6B6"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:gravity="right">
+            <Button
+                android:id="@+id/btnClose"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Close"
+                android:background="@drawable/custom_background_2"
+                android:textColor="@color/orange"
+                android:padding="12dp"
+                android:textSize="16sp" />
+            <Button
+                android:id="@+id/btnSubmit"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Submit"
+                android:background="@drawable/custom_background_2"
+                android:textColor="@color/orange"
+                android:padding="12dp"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

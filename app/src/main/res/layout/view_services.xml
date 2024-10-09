@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
     android:padding="16dp"
     android:background="@color/gray">
+
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical">
         <!-- Client Name -->
         <TextView
@@ -78,7 +81,7 @@
             android:id="@+id/tvServiceHeader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Services"
+            android:text="Services selected"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@color/orange"
@@ -86,71 +89,85 @@
             android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp" />
 
-        <TextView
-            android:id="@+id/services"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/sub_text"
-            android:fontFamily="@font/manrope"
-            android:textSize="13sp"/>
+            android:layout_height="match_parent"
+            android:paddingTop="10dp">
 
-        <!-- Total Section (Two Columns) -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="2"
-            android:layout_marginTop="8dp">
-
-            <TextView
-                android:id="@+id/tvServiceTotal"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="Total:"
-                android:textSize="16sp"
-                android:layout_weight="1"
-                android:textColor="@android:color/darker_gray"
-                android:fontFamily="@font/manrope"/>
-
-            <TextView
-                android:id="@+id/tvTotalPrice"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="PHP 1000"
-                android:textSize="18sp"
-                android:layout_weight="1"
-                android:gravity="right"
-                android:textColor="@android:color/white"
-                android:fontFamily="@font/manrope_bold"/>
-        </LinearLayout>
-
-        <!-- Buttons Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="16dp"
-            android:gravity="right">
-            <Button
-                android:id="@+id/btnClose"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="Close"
-                android:background="@drawable/custom_background_2"
-                android:textColor="@color/orange"
-                android:padding="12dp"
-                android:textSize="16sp" />
-            <Button
-                android:id="@+id/btnAssign"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="Assign"
-                android:background="@drawable/custom_background_2"
-                android:textColor="@color/orange"
-                android:padding="12dp"
-                android:textSize="16sp" />
-        </LinearLayout>
+            <LinearLayout
+                android:id="@+id/servicesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+                <!-- Your accordion content will be inserted here -->
+            </LinearLayout>
+        </ScrollView>
     </LinearLayout>
-</ScrollView>
+    <!-- Total Section (Two Columns) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:id="@+id/btnCalc"
+            android:layout_width="wrap_content"
+            android:layout_height="45dp"
+            android:text="Calculate"
+            android:background="@drawable/custom_background_3"
+            android:layout_marginEnd="20dp"
+            android:paddingHorizontal="10dp"/>
+
+        <TextView
+            android:id="@+id/tvServiceTotal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Total:"
+            android:gravity="right"
+            android:textSize="16sp"
+            android:layout_weight="1"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="@font/manrope"/>
+
+        <TextView
+            android:id="@+id/tvTotalPrice"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="₱0.00"
+            android:textSize="18sp"
+            android:layout_weight="1"
+            android:gravity="right"
+            android:textColor="@android:color/white"
+            android:fontFamily="@font/manrope_bold"/>
+    </LinearLayout>
+    <!-- Buttons Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp"
+        android:gravity="right">
+        <Button
+            android:id="@+id/btnClose"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Close"
+            android:background="@drawable/custom_background_2"
+            android:textColor="@color/orange"
+            android:padding="12dp"
+            android:textSize="16sp" />
+        <Button
+            android:id="@+id/btnSubmit"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Submit"
+            android:background="@drawable/custom_background_2"
+            android:textColor="@color/orange"
+            android:padding="12dp"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+</LinearLayout>
