@@ -48,6 +48,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -69,7 +70,7 @@ public class SalesFragment extends Fragment {
     private Calendar calendar;
     private int targetMonth, targetYear;
     private boolean isDaily = true;
-    private TableLayout tableLayout, tableLayout2, tableLayout3, tblGcash, tblExpenses;
+    private TableLayout tableLayout, tableLayout2, tableLayout3, tblGcash, tblExpenses, tblTherapist;
     private List<Employee> employeeList;
     private List<Expenses> expensesList;
     private List<Gcash> gcashList;
@@ -78,11 +79,12 @@ public class SalesFragment extends Fragment {
     private ClientAdapter clientAdapter;
     private RecyclerView rvSearchResults;
     private EditText edClientName;
-
+    private NumberFormat numberFormat;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         db = FirebaseFirestore.getInstance();
+        numberFormat = NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
         appointmentsList = new ArrayList<>();
         employeeList = new ArrayList<>();
         expensesList = new ArrayList<>();
@@ -112,6 +114,7 @@ public class SalesFragment extends Fragment {
         tableLayout = rootView.findViewById(R.id.tblayout);
         tableLayout2 = rootView.findViewById(R.id.tblayout2);
         tableLayout3 = rootView.findViewById(R.id.tblayout3);
+        tblTherapist = rootView.findViewById(R.id.tblTherapist);
         tblGcash = rootView.findViewById(R.id.tblGcash);
         tblExpenses = rootView.findViewById(R.id.tblExpenses);
         tvDayOfWeek = rootView.findViewById(R.id.day_of_Week);
@@ -397,6 +400,7 @@ public class SalesFragment extends Fragment {
                 tableLayout3.removeViews(1, tableLayout3.getChildCount() - 1);
                 tblGcash.removeViews(1, tblGcash.getChildCount() - 1);
                 tblExpenses.removeViews(1, tblExpenses.getChildCount() - 1);
+                tblTherapist.removeViews(1, tblTherapist.getChildCount() - 1);
 
                 // Filter appointments for the selected date
                 for (Appointment appointment : appointmentsList) {
@@ -423,7 +427,7 @@ public class SalesFragment extends Fragment {
                             for (Map<String, Object> service : services) {
                                 // Skip the service if "assignedEmployee" is null
                                 String assignedEmployee = (String) service.get("assignedEmployee");
-                                if (assignedEmployee == null) {
+                                if (assignedEmployee == null || assignedEmployee.equals("None")) {
                                     continue;
                                 }
                                 TableRow row = new TableRow(getContext());
@@ -467,7 +471,6 @@ public class SalesFragment extends Fragment {
                                 subServiceNameTextView.setPadding(10, 5, 5, 5);
                                 row.addView(subServiceNameTextView);
 
-
                                 double totalPriceForParentService = (Double) service.get("servicePrice"); // Variable to hold total price for this parent service
 
                                 List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
@@ -482,7 +485,7 @@ public class SalesFragment extends Fragment {
                                 }
 
                                 TextView subServicePriceTextView = new TextView(getContext());
-                                subServicePriceTextView.setText(String.format("₱%.2f", totalPriceForParentService));
+                                subServicePriceTextView.setText(numberFormat.format(totalPriceForParentService));
                                 subServicePriceTextView.setTextColor(Color.LTGRAY);
                                 subServicePriceTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
                                 subServicePriceTextView.setPadding(10, 5, 5, 5);
@@ -502,7 +505,7 @@ public class SalesFragment extends Fragment {
                             List<Map<String, Object>> services2 = appointment.getServices();
                             for (Map<String, Object> service : services2) {
                                 String assignedEmployee = (String) service.get("assignedEmployee");
-                                if (assignedEmployee == null) {
+                                if (assignedEmployee == null || assignedEmployee.equals("None")) {
                                     continue;
                                 }
                                 String employee = service.get("assignedEmployee").toString();
@@ -527,6 +530,7 @@ public class SalesFragment extends Fragment {
                     }
                 }
                 double totalCommission = 0.0;
+                double totalTherCommission = 0.0;
                 // Assuming employeeSalesMap contains employee names and their corresponding sales
                 for (Map.Entry<String, Double> entry : employeeSalesMap.entrySet()) {
                     String employeeName = entry.getKey();
@@ -535,43 +539,86 @@ public class SalesFragment extends Fragment {
                     // Find the employee by name
                     Employee employee = findEmployeeByName(employeeName);
                     if (employee != null) {
-                        // Retrieve the commission rate from the employee's data
-                        double commissionRate = employee.getComs();
-                        double employeeCommission = (sales * commissionRate) / 100.0;
-                        totalCommission += employeeCommission;
-                        // Store the calculated commission in the employeeCommissionMap (if needed)
-                        employeeCommissionMap.put(employeeName, employeeCommission);
+                        // Check if the employee is a therapist
+                        String therapistRole = employee.getTherapist();
+                        if ("Therapist".equals(therapistRole) || therapistRole != null || employee.getSalary() == 0) {
+                            // Retrieve the commission rate from the employee's data
+                            double commissionRate = employee.getComs();
+                            double employeeCommission = (sales * commissionRate) / 100.0;
+                            totalTherCommission += employeeCommission;
+                            // Store the calculated commission in the employeeCommissionMap (if needed)
+                            employeeCommissionMap.put(employeeName, employeeCommission);
 
-                        // Create a new table row for the employee's commission
-                        TableRow rowCommission = new TableRow(getContext());
-                        rowCommission.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+                            // Create a new table row for the employee's commission
+                            TableRow rowCommission = new TableRow(getContext());
+                            rowCommission.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
-                        // Add the employee's name to the row
-                        TextView nameTextView = new TextView(getContext());
-                        nameTextView.setText(employeeName);
-                        nameTextView.setTextColor(Color.WHITE);
-                        nameTextView.setPadding(5, 5, 5, 5);
-                        rowCommission.addView(nameTextView);
+                            // Add the employee's name to the row
+                            TextView nameTextView = new TextView(getContext());
+                            nameTextView.setText(employeeName);
+                            nameTextView.setTextColor(Color.LTGRAY);
+                            nameTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                            nameTextView.setPadding(5, 5, 5, 5);
+                            rowCommission.addView(nameTextView);
 
-                        // Add the total sales to the row
-                        TextView salesTextView = new TextView(getContext());
-                        salesTextView.setText(String.format("₱%.2f", sales));
-                        salesTextView.setTextColor(Color.WHITE);
-                        salesTextView.setPadding(5, 5, 5, 5);
-                        rowCommission.addView(salesTextView);
+                            // Add the total sales to the row
+                            TextView salesTextView = new TextView(getContext());
+                            salesTextView.setText(numberFormat.format(sales));
+                            salesTextView.setTextColor(Color.LTGRAY);
+                            salesTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                            salesTextView.setPadding(5, 5, 5, 5);
+                            rowCommission.addView(salesTextView);
 
-                        // Add the calculated commission to the row
-                        TextView commissionTextView = new TextView(getContext());
-                        commissionTextView.setText(String.format("₱%.2f", employeeCommission));
-                        commissionTextView.setTextColor(Color.WHITE);
-                        commissionTextView.setPadding(5, 5, 5, 5);
-                        rowCommission.addView(commissionTextView);
+                            // Add the calculated commission to the row
+                            TextView commissionTextView = new TextView(getContext());
+                            commissionTextView.setText(numberFormat.format(employeeCommission));
+                            commissionTextView.setTextColor(Color.LTGRAY);
+                            commissionTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                            commissionTextView.setPadding(5, 5, 5, 5);
+                            rowCommission.addView(commissionTextView);
 
-                        // Add the row to the commission table layout (tableLayout2)
-                        tableLayout2.addView(rowCommission);
+                            // Add the row to the commission table layout (tableLayout2)
+                            tblTherapist.addView(rowCommission);
+                        }else {
+                            double commissionRate = employee.getComs();
+                            double employeeCommission = (sales * commissionRate) / 100.0;
+                            totalCommission += employeeCommission;
+                            // Store the calculated commission in the employeeCommissionMap (if needed)
+                            employeeCommissionMap.put(employeeName, employeeCommission);
+
+                            // Create a new table row for the employee's commission
+                            TableRow rowCommission = new TableRow(getContext());
+                            rowCommission.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                            // Add the employee's name to the row
+                            TextView nameTextView = new TextView(getContext());
+                            nameTextView.setText(employeeName);
+                            nameTextView.setTextColor(Color.LTGRAY);
+                            nameTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                            nameTextView.setPadding(5, 5, 5, 5);
+                            rowCommission.addView(nameTextView);
+
+                            // Add the total sales to the row
+                            TextView salesTextView = new TextView(getContext());
+                            salesTextView.setText(numberFormat.format(sales));
+                            salesTextView.setTextColor(Color.LTGRAY);
+                            salesTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                            salesTextView.setPadding(5, 5, 5, 5);
+                            rowCommission.addView(salesTextView);
+
+                            // Add the calculated commission to the row
+                            TextView commissionTextView = new TextView(getContext());
+                            commissionTextView.setText(numberFormat.format(employeeCommission));
+                            commissionTextView.setTextColor(Color.LTGRAY);
+                            commissionTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                            commissionTextView.setPadding(5, 5, 5, 5);
+                            rowCommission.addView(commissionTextView);
+
+                            // Add the row to the commission table layout (tableLayout2)
+                            tableLayout2.addView(rowCommission);
+                        }
                     }
                 }
-
 
                 // Display total sales
                 TableRow rowTotal = new TableRow(getContext());
@@ -598,7 +645,7 @@ public class SalesFragment extends Fragment {
                 rowTotal.addView(tv3);
 
                 TextView tvTotal = new TextView(getContext());
-                tvTotal.setText(String.format("₱%.2f", totalSales));
+                tvTotal.setText(numberFormat.format(totalSales));
                 tvTotal.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
                 tvTotal.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
                 tvTotal.setPadding(10, 5, 5, 5);
@@ -622,22 +669,47 @@ public class SalesFragment extends Fragment {
                 rowTotalCom.addView(tv3Com);
 
                 TextView tvTotalCom = new TextView(getContext());
-                tvTotalCom.setText(String.format("₱%.2f", totalCommission));
+                tvTotalCom.setText(numberFormat.format(totalCommission));
                 tvTotalCom.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
                 tvTotalCom.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
                 tvTotalCom.setPadding(10, 5, 5, 5);
                 rowTotalCom.addView(tvTotalCom);
 
+                TableRow rowTherTotalCom = new TableRow(getContext());
+                rowTherTotalCom.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                TextView tvTher1Com = new TextView(getContext());
+                tvTher1Com.setText("");
+                tvTher1Com.setTextColor(Color.LTGRAY);
+                tvTher1Com.setPadding(10, 5, 5, 5);
+                rowTherTotalCom.addView(tvTher1Com);
+
+                TextView tvTher3Com = new TextView(getContext());
+                tvTher3Com.setText("Total Commission:");
+                tvTher3Com.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                tvTher3Com.setGravity(Gravity.RIGHT);
+                tvTher3Com.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+                tvTher3Com.setPadding(10, 5, 5, 5);
+                rowTherTotalCom.addView(tvTher3Com);
+
+                TextView tvTherTotalCom = new TextView(getContext());
+                tvTherTotalCom.setText(numberFormat.format(totalTherCommission));
+                tvTherTotalCom.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                tvTherTotalCom.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+                tvTherTotalCom.setPadding(10, 5, 5, 5);
+                rowTherTotalCom.addView(tvTherTotalCom);
+
                 tableLayout2.addView(rowTotalCom);
+                tblTherapist.addView(rowTherTotalCom);
                 tableLayout.addView(rowTotal);
 
-                displayTotalSalesWithDeductions(selectedDate, totalSales);
+                displayTotalSalesWithDeductions(selectedDate, totalSales, totalTherCommission);
             }
         } catch (ParseException e) {
             Log.e("SalesFragment", "Error parsing date: ", e);
         }
     }
-    private void displayTotalSalesWithDeductions(String selectedDate, double totalSales) {
+    private void displayTotalSalesWithDeductions(String selectedDate, double totalSales, double totalTherCommission) {
         double totalExpenses = 0.0;
         double totalGcash = 0.0;
         List<Expenses> expensesList = getExpensesForDate(selectedDate);
@@ -796,7 +868,7 @@ public class SalesFragment extends Fragment {
             expenseRow.addView(reasonTextView);
 
             TextView expenseAmountTextView = new TextView(getContext());
-            expenseAmountTextView.setText(String.format("₱%.2f", expense.getAmount()));
+            expenseAmountTextView.setText(numberFormat.format(expense.getAmount()));
             expenseAmountTextView.setTextColor(Color.LTGRAY);
             expenseAmountTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
             expenseAmountTextView.setPadding(10, 5, 5, 5);
@@ -812,7 +884,7 @@ public class SalesFragment extends Fragment {
 
         TextView tv1 = createTextViewBold("Total: ");
         tv1.setGravity(Gravity.RIGHT);
-        TextView tvTotalExpenses = createTextViewBold(String.format("₱%.2f", totalExpenses));
+        TextView tvTotalExpenses = createTextViewBold(numberFormat.format(totalExpenses));
         expenseRow.addView(tv1);
         expenseRow.addView(tvTotalExpenses);
         tblExpenses.addView(expenseRow);
@@ -954,7 +1026,7 @@ public class SalesFragment extends Fragment {
 
             // Add amount
             TextView expenseAmountTextView = new TextView(getContext());
-            expenseAmountTextView.setText(String.format("₱%.2f", gcash.getAmount()));
+            expenseAmountTextView.setText(numberFormat.format(gcash.getAmount()));
             expenseAmountTextView.setTextColor(Color.LTGRAY);
             expenseAmountTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
             expenseAmountTextView.setPadding(10, 5, 5, 5);
@@ -972,7 +1044,7 @@ public class SalesFragment extends Fragment {
 
         TextView tv2 = createTextViewBold("Total: ");
         tv2.setGravity(Gravity.RIGHT);
-        TextView tvTotalGcash = createTextViewBold(String.format("₱%.2f", totalGcash));
+        TextView tvTotalGcash = createTextViewBold(numberFormat.format(totalGcash));
         gcashRow.addView(tv2);
         gcashRow.addView(tvTotalGcash);
         tblGcash.addView(gcashRow);
@@ -980,7 +1052,7 @@ public class SalesFragment extends Fragment {
         TableRow calc = new TableRow(getContext());
         calc.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
         TextView tv5 = createTextView("Total Expenses: ");
-        TextView tv3 = createTextView(String.format("₱%.2f", totalExpenses));
+        TextView tv3 = createTextView(numberFormat.format(totalExpenses));
         calc.addView(tv5);
         calc.addView(tv3);
         tableLayout3.addView(calc);
@@ -988,11 +1060,20 @@ public class SalesFragment extends Fragment {
         TableRow calc2 = new TableRow(getContext());
         calc2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
         TextView tv6 = createTextView("Total Gcash: ");
-        TextView tv4 = createTextView(String.format("₱%.2f", totalGcash));
-
+        TextView tv4 = createTextView(numberFormat.format(totalGcash));
         calc2.addView(tv6);
         calc2.addView(tv4);
         tableLayout3.addView(calc2);
+
+        TableRow calc3 = new TableRow(getContext());
+        calc3.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+        TextView tv7 = createTextView("Total Therapist Commision: ");
+        TextView tv8 = createTextView(numberFormat.format(totalTherCommission));
+        calc3.addView(tv7);
+        calc3.addView(tv8);
+
+        tableLayout3.addView(calc3);
+
 
         TableRow UndeRow = new TableRow(getContext());
         UndeRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
@@ -1010,7 +1091,7 @@ public class SalesFragment extends Fragment {
 
         tableLayout3.addView(UndeRow);
 
-        double total = totalExpenses + totalGcash;
+        double total = totalExpenses + totalGcash + totalTherCommission;
         double balance = totalSales - total;
         TableRow TotalRow = new TableRow(getContext());
         TotalRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
@@ -1023,7 +1104,7 @@ public class SalesFragment extends Fragment {
         TotalRow.addView(TextView);
 
         TextView totalTextView = new TextView(getContext());
-        totalTextView.setText(String.format("₱%.2f", total));
+        totalTextView.setText(numberFormat.format(total));
         totalTextView.setTextColor(Color.LTGRAY);
         totalTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
         totalTextView.setPadding(10, 5, 5, 5);
@@ -1041,7 +1122,7 @@ public class SalesFragment extends Fragment {
         TotalSalesRow.addView(TextView1);
 
         TextView totalSalesTextView = new TextView(getContext());
-        totalSalesTextView.setText(String.format("-₱%.2f", totalSales));
+        totalSalesTextView.setText("-"+numberFormat.format(totalSales));
         totalSalesTextView.setTextColor(Color.LTGRAY);
         totalSalesTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
         totalSalesTextView.setPadding(10, 5, 5, 5);
@@ -1075,7 +1156,7 @@ public class SalesFragment extends Fragment {
         balSalesRow.addView(TextView2);
 
         TextView balTextView = new TextView(getContext());
-        balTextView.setText(String.format("₱%.2f", balance));
+        balTextView.setText(numberFormat.format(balance));
         balTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
         balTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
         balTextView.setPadding(10, 5, 5, 5);

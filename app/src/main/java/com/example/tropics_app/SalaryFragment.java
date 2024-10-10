@@ -16,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -36,6 +37,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -141,6 +143,20 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialogbox_employee, null);
 
+        Spinner spTherapist = dialogView.findViewById(R.id.spTherapist);
+
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
+                R.array.therapist_options, android.R.layout.simple_spinner_item);
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spTherapist.setAdapter(adapter);
+
+        TextView tv3 = dialogView.findViewById(R.id.textView3);
+        TextView tv13 = dialogView.findViewById(R.id.textView13);
+
+        TextInputLayout empComm2 = dialogView.findViewById(R.id.empcomm2);
+        TextInputLayout comission2 = dialogView.findViewById(R.id.comission2);
+
         EditText empName = dialogView.findViewById(R.id.empname);
         EditText empAddress = dialogView.findViewById(R.id.empadd);
         EditText empPhone = dialogView.findViewById(R.id.empphone);
@@ -150,9 +166,32 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         Button btnSubmit = dialogView.findViewById(R.id.empsub);
         imgEmp = dialogView.findViewById(R.id.imgemp);
 
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
-        dialogBuilder.setView(dialogView);
-        AlertDialog dialog = dialogBuilder.create();
+        spTherapist.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                String selectedItem = parentView.getItemAtPosition(position).toString();
+
+                if (selectedItem.equals("Therapist")) {
+                    tv3.setVisibility(View.GONE);
+                    empComm2.setVisibility(View.GONE);
+                } else {
+                    tv3.setVisibility(View.VISIBLE);
+                    empComm2.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // Optionally handle the case where no selection is made
+            }
+        });
+
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         dialog.show();
 
         imgEmp.setOnClickListener(v -> {
@@ -172,7 +211,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
 
             if (!name.isEmpty() && !address.isEmpty() && !phone.isEmpty() && !email.isEmpty() && selectedImageUri != null) {
                 try {
-                    double salary = Double.parseDouble(salaryString);
+                    double salary = salaryString.isEmpty() ? 0.00 : Double.parseDouble(salaryString);
                     double commission = Double.parseDouble(commissionString);
 
                     Map<String, Object> employeeData = new HashMap<>();
@@ -182,6 +221,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                     employeeData.put("email", email);
                     employeeData.put("salary", salary);
                     employeeData.put("coms", commission);
+                    employeeData.put("therapist", spTherapist.getSelectedItem().toString());
 
                     // Show ProgressDialog
                     ProgressDialog progressDialog = new ProgressDialog(getActivity());
@@ -279,7 +319,12 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         empAddress.setText("Address: " + employee.getAddress());
         empPhone.setText("Phone: " + employee.getPhone());
         empEmail.setText("Email: " + employee.getEmail());
-        empSal.setText("Daily Salary Rate: ₱" + employee.getSalary());
+        String therapistRole = employee.getTherapist();
+        if ("Therapist".equals(therapistRole) || therapistRole != null || employee.getSalary() == 0) {
+            empSal.setText("Role: Therapist");
+        }else {
+            empSal.setText("Role: Regular \nDaily Salary Rate: ₱" + employee.getSalary());
+        }
         empComm.setText("Commission Rate %: " + employee.getComs());
 
         Glide.with(this)
@@ -489,7 +534,46 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
     private void showEditEmployeeDialog(Employee employee) {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialogbox_employee, null);
+        Spinner spTherapist = dialogView.findViewById(R.id.spTherapist);
 
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
+                R.array.therapist_options, android.R.layout.simple_spinner_item);
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spTherapist.setAdapter(adapter);
+
+        TextView tv3 = dialogView.findViewById(R.id.textView3);
+        TextView tv13 = dialogView.findViewById(R.id.textView13);
+
+        TextInputLayout empComm2 = dialogView.findViewById(R.id.empcomm2);
+        TextInputLayout comission2 = dialogView.findViewById(R.id.comission2);
+        String role = employee.getTherapist();
+        int position = adapter.getPosition(role);
+        if (position >= 0) {
+            spTherapist.setSelection(position);
+        } else {
+            spTherapist.setSelection(0);
+        }
+
+        spTherapist.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                String selectedItem = parentView.getItemAtPosition(position).toString();
+
+                if (selectedItem.equals("Therapist")) {
+                    tv3.setVisibility(View.GONE);
+                    empComm2.setVisibility(View.GONE);
+                } else {
+                    tv3.setVisibility(View.VISIBLE);
+                    empComm2.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // Optionally handle the case where no selection is made
+            }
+        });
         TextView tvName = dialogView.findViewById(R.id.textView9);
         tvName.setVisibility(View.GONE);
         EditText empName = dialogView.findViewById(R.id.empname);
@@ -517,9 +601,12 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 .load(employee.getImage())
                 .placeholder(R.drawable.ic_image_placeholder)
                 .into(imgEmp);
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
-        dialogBuilder.setView(dialogView);
-        AlertDialog dialog = dialogBuilder.create();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         dialog.show();
 
         imgEmp.setOnClickListener(v -> {
@@ -536,6 +623,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             String email = empEmail.getText().toString().trim();
             String salaryString = empSal.getText().toString().trim();
             String commissionString = comsEditText.getText().toString().trim();
+            String therapist = spTherapist.getSelectedItem().toString();
 
             if (!name.isEmpty() && !address.isEmpty() && !phone.isEmpty() && !email.isEmpty()) {
                 try {
@@ -549,6 +637,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                     updatedEmployeeData.put("email", email);
                     updatedEmployeeData.put("salary", salary);
                     updatedEmployeeData.put("coms", commission);
+                    updatedEmployeeData.put("therapist", therapist);
 
                     ProgressDialog progressDialog = new ProgressDialog(getActivity());
                     progressDialog.setMessage("Updating data...");
@@ -565,10 +654,14 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                                     updateEmployee(employee.getId(), updatedEmployeeData);
                                     // Dismiss the dialog once done
                                     progressDialog.dismiss();
+                                    dialog.dismiss();
+                                    loadEmployeeData();
                                     Toast.makeText(getActivity(), "Employee updated successfully", Toast.LENGTH_SHORT).show();
                                 }))
                                 .addOnFailureListener(e -> {
-                                    progressDialog.dismiss(); // Dismiss in case of failure
+                                    progressDialog.dismiss();
+                                    dialog.dismiss();
+                                    loadEmployeeData();// Dismiss in case of failure
                                     Toast.makeText(getActivity(), "Failed to upload image", Toast.LENGTH_SHORT).show();
                                     Log.e("Storage Error", "Failed to upload image: " + e.getMessage());
                                 });
@@ -577,6 +670,8 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                         updateEmployee(employee.getId(), updatedEmployeeData);
                         // Dismiss the dialog once done
                         progressDialog.dismiss();
+                        dialog.dismiss();
+                        loadEmployeeData();
                         Toast.makeText(getActivity(), "Employee updated successfully", Toast.LENGTH_SHORT).show();
                     }
 

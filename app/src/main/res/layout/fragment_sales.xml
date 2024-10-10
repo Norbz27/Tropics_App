@@ -85,7 +85,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="50dp"
-                        android:stretchColumns="1">
+                        android:stretchColumns="*">
 
                         <!-- Table Header -->
                         <TableRow android:background="@color/gray">
@@ -147,7 +147,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="50dp"
-                        android:stretchColumns="0">
+                        android:stretchColumns="*">
                         <!-- Table Header -->
                         <TableRow android:background="@color/gray">
                             <TextView
@@ -174,7 +174,54 @@
                         </TableRow>
                     </TableLayout>
                 </HorizontalScrollView>
-
+                <TextView
+                    android:id="@+id/tvTherapist"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope_bold"
+                    android:text="Therapist Commission"
+                    android:layout_gravity="center"
+                    android:textColor="@color/orange"
+                    android:layout_marginBottom="10dp"
+                    android:textSize="16sp" />
+                <HorizontalScrollView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="horizontal"
+                    android:layout_gravity="center"
+                    android:paddingHorizontal="5dp">
+                    <!-- Table for Sales Data -->
+                    <TableLayout
+                        android:id="@+id/tblTherapist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="50dp">
+                        <!-- Table Header -->
+                        <TableRow android:background="@color/gray">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Employee Name"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Sales"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Commission"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                        </TableRow>
+                    </TableLayout>
+                </HorizontalScrollView>
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

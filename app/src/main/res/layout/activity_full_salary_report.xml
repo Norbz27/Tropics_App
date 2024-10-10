@@ -29,7 +29,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="WEEKLY SALARY COMPUTATION"
+                    android:text="Weekly Salary Computation"
                     android:textSize="20sp"
                     android:textStyle="bold"
                     android:fontFamily="@font/manrope"
@@ -66,8 +66,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:paddingBottom="8dp"
-                    android:text="DAILY SALES AND COMMISSION"
-                    android:textColor="@color/white"
+                    android:text="Daily Sales and Commission"
+                    android:textColor="@color/orange"
                     android:textSize="18sp"
                     android:fontFamily="@font/manrope"
                     android:textStyle="bold" />
@@ -228,8 +228,8 @@
                     android:layout_height="wrap_content"
                     android:paddingTop="16dp"
                     android:paddingBottom="8dp"
-                    android:text="FINAL SALARY COMPUTATION"
-                    android:textColor="@color/white"
+                    android:text="Final Salary Computation"
+                    android:textColor="@color/orange"
                     android:fontFamily="@font/manrope"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -329,11 +329,11 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="BREAKDOWN:"
+                    android:text="Breakdown:"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:fontFamily="@font/manrope"
-                    android:textColor="@color/white"
+                    android:textColor="@color/orange"
                     android:paddingTop="16dp"/>
                 <HorizontalScrollView
                     android:layout_width="match_parent"

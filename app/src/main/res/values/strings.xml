@@ -19,5 +19,8 @@
         <item>November</item>
         <item>December</item>
     </string-array>
-
+    <string-array name="therapist_options">
+        <item>Regular</item>
+        <item>Therapist</item>
+    </string-array>
 </resources>

@@ -9,12 +9,13 @@ public class Employee {
     private String image;
     private Double coms; // Change from Double to String
     private String imageUrl;
+    private String therapist;
 
     // Empty constructor required for Firebase
     public Employee() {}
 
     // Constructor with parameters
-    public Employee(String id, String name, String address, String phone, String email, Double salary, String image, Double coms) {
+    public Employee(String id, String name, String address, String phone, String email, Double salary, String image, Double coms, String therapist) {
         this.id = id;
         this.name = name;
         this.address = address;
@@ -23,6 +24,7 @@ public class Employee {
         this.salary = salary;
         this.image = image;
         this.coms = coms; // Now stored as String
+        this.therapist = therapist;
     }
 
     // Getters and Setters
@@ -52,4 +54,8 @@ public class Employee {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; } // Set the imageUrl
+
+    public String getTherapist() {
+        return therapist;
+    }
 }

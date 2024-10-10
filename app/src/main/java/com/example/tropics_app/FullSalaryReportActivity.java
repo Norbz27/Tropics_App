@@ -1,6 +1,7 @@
 package com.example.tropics_app;
 
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -39,6 +40,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -64,11 +66,14 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     private TableLayout daily_table, finalSalaryTable, breakdown_table;
     private Spinner month_spinner, year_spinner, week_num;
     private double totalSalesFtS = 0.0;
+    private NumberFormat numberFormat;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_full_salary_report);
         db = FirebaseFirestore.getInstance();
+        numberFormat = NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
+        
         daily_table = findViewById(R.id.daily_table);
         //weekend_table = findViewById(R.id.weekend_table);
         finalSalaryTable = findViewById(R.id.final_salary_table);
@@ -329,7 +334,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
         // Set default week number
         updateWeekSpinner(currentYear, currentMonth, currentWeek);
-        filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+
         // Add listeners for month and year spinners to update the week spinner dynamically
         month_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -402,6 +407,10 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         } else {
             week_num.setSelection(0); // Default to first week if the current week doesn't exist
         }
+        Log.d("SalesFragment", "Selected Month: " + month_spinner.getSelectedItem().toString());
+        Log.d("SalesFragment", "Selected Year: " + year_spinner.getSelectedItem().toString());
+        Log.d("SalesFragment", "Selected Week: " + week_num.getSelectedItem().toString());
+        filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
     }
 
     // Correctly calculate the current week of the month based on the first day of the week
@@ -604,8 +613,8 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                         double dailySales = dailySalesMap.get(employeeName)[i];
                         double dailyCommission = (dailySales * commissionRate) / 100.0;
 
-                        TextView dailySalesTextView = createTextView(String.format("₱%.2f", dailySales));
-                        TextView dailyCommissionTextView = createTextView(String.format("₱%.2f", dailyCommission));
+                        TextView dailySalesTextView = createTextView(numberFormat.format(dailySales));
+                        TextView dailyCommissionTextView = createTextView(numberFormat.format(dailyCommission));
 
                         rowCommission.addView(dailySalesTextView);
                         rowCommission.addView(dailyCommissionTextView);
@@ -615,10 +624,10 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     }
 
                     // Add total sales and commission for weekends
-                    TextView totalSalesTextView = createTextView(String.format("₱%.2f", totalSalesPerEmp));
+                    TextView totalSalesTextView = createTextView(numberFormat.format(totalSalesPerEmp));
                     totalSalesTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
                     totalSalesTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-                    TextView totalCommissionTextView = createTextView(String.format("₱%.2f", totalCommissionPerEmp));
+                    TextView totalCommissionTextView = createTextView(numberFormat.format(totalCommissionPerEmp));
                     totalCommissionTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
                     totalCommissionTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
                     rowCommission.addView(totalSalesTextView);
@@ -643,70 +652,76 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             for (EmployeeSalaryDetails emp : EmployeeSalList) {
                 Employee employee = findEmployeeByName(emp.getEmployeeId());
                 Log.d("FullSlaraReports", emp.getEmployeeId());
+
                 // Check if the employee and required fields exist before proceeding
                 if (employee != null && emp.getEmployeeId() != null && !"None".equals(emp.getEmployeeId())) {
 
-                    TableRow tableRow = new TableRow(this);
-                    Log.d("FullSlaraReports", emp.getLateDeduction());
-                    // Calculate the basic weekly salary and deductions
-                    double weekSal = employee.getSalary() * Integer.parseInt(emp.getDaysPresent());
-                    double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
-                    double deductedWeekSal = weekSal - lateDeduction;
-                    double totalCommissionPerEmp = 0.0;
-                    double commissionRate = employee.getComs();
+                    // Check if the employee role is "Regular"
+                    if ("Regular".equals(employee.getTherapist()) || employee.getSalary() != 0) {
+                        TableRow tableRow = new TableRow(this);
+                        Log.d("FullSlaraReports", emp.getLateDeduction());
 
-                    // Check if the employee has sales data in the dailySalesMap
-                    double[] dailySalesArray = dailySalesMap.get(emp.getEmployeeId());
-                    if (dailySalesArray == null) {
-                        dailySalesArray = new double[7];  // Initialize with zero sales for all 7 days if not found
+                        // Calculate the basic weekly salary and deductions
+                        double weekSal = employee.getSalary() * Integer.parseInt(emp.getDaysPresent());
+                        double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
+                        double deductedWeekSal = weekSal - lateDeduction;
+                        double totalCommissionPerEmp = 0.0;
+                        double commissionRate = employee.getComs();
+
+                        // Check if the employee has sales data in the dailySalesMap
+                        double[] dailySalesArray = dailySalesMap.get(emp.getEmployeeId());
+                        if (dailySalesArray == null) {
+                            dailySalesArray = new double[7];  // Initialize with zero sales for all 7 days if not found
+                        }
+
+                        // Process sales and commissions for 7 days (weekdays and weekends)
+                        for (int i = 0; i < 7; i++) {
+                            double dailySales = dailySalesArray[i];
+                            double dailyCommission = (dailySales * commissionRate) / 100.0;
+                            totalCommissionPerEmp += dailyCommission;
+                        }
+
+                        // Calculate total salary including commission and deductions
+                        double totalSalary = deductedWeekSal + totalCommissionPerEmp;
+                        double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
+                        double totalSalaryDeducted = totalSalary - caDeduction;
+
+                        overAllTotalSalary += totalSalaryDeducted;
+
+                        // Create TextViews for displaying employee details
+                        TextView name = createTextView(emp.getEmployeeId());
+                        TextView perDay = createTextView(numberFormat.format(employee.getSalary()));
+                        TextView daysPresentTextView = createTextView(emp.getDaysPresent());
+                        TextView weekSalary = createTextView(numberFormat.format(weekSal));
+                        TextView lateDeductionTextView = createTextView(numberFormat.format(lateDeduction));
+                        TextView deductedSalary = createTextView(numberFormat.format(deductedWeekSal));
+                        TextView commissionTextView = createTextView(numberFormat.format(totalCommissionPerEmp));
+                        TextView totalSalaryTextView = createTextView(numberFormat.format(totalSalary));
+                        TextView caDeductionTextView = createTextView(numberFormat.format(caDeduction));
+                        TextView overallSalaryTextView = createTextView(numberFormat.format(totalSalaryDeducted));
+
+                        // Styling for the overall salary
+                        overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                        overallSalaryTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+
+                        // Add TextViews to the table row
+                        tableRow.addView(name);
+                        tableRow.addView(perDay);
+                        tableRow.addView(daysPresentTextView);
+                        tableRow.addView(weekSalary);
+                        tableRow.addView(lateDeductionTextView);
+                        tableRow.addView(deductedSalary);
+                        tableRow.addView(commissionTextView);
+                        tableRow.addView(totalSalaryTextView);
+                        tableRow.addView(caDeductionTextView);
+                        tableRow.addView(overallSalaryTextView);
+
+                        // Add the row to the final salary table
+                        finalSalaryTable.addView(tableRow);
                     }
-
-                    // Process sales and commissions for 7 days (weekdays and weekends)
-                    for (int i = 0; i < 7; i++) {
-                        double dailySales = dailySalesArray[i];
-                        double dailyCommission = (dailySales * commissionRate) / 100.0;
-                        totalCommissionPerEmp += dailyCommission;
-                    }
-
-                    // Calculate total salary including commission and deductions
-                    double totalSalary = deductedWeekSal + totalCommissionPerEmp;
-                    double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
-                    double totalSalaryDeducted = totalSalary - caDeduction;
-
-                    overAllTotalSalary += totalSalaryDeducted;
-
-                    // Create TextViews for displaying employee details
-                    TextView name = createTextView(emp.getEmployeeId());
-                    TextView perDay = createTextView(String.format("₱%.2f", employee.getSalary()));
-                    TextView daysPresentTextView = createTextView(emp.getDaysPresent());
-                    TextView weekSalary = createTextView(String.format("₱%.2f", weekSal));
-                    TextView lateDeductionTextView = createTextView(String.format("₱%.2f", lateDeduction));
-                    TextView deductedSalary = createTextView(String.format("₱%.2f", deductedWeekSal));
-                    TextView commissionTextView = createTextView(String.format("₱%.2f", totalCommissionPerEmp));
-                    TextView totalSalaryTextView = createTextView(String.format("₱%.2f", totalSalary));
-                    TextView caDeductionTextView = createTextView(String.format("₱%.2f", caDeduction));
-                    TextView overallSalaryTextView = createTextView(String.format("₱%.2f", totalSalaryDeducted));
-
-                    // Styling for the overall salary
-                    overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-                    overallSalaryTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-
-                    // Add TextViews to the table row
-                    tableRow.addView(name);
-                    tableRow.addView(perDay);
-                    tableRow.addView(daysPresentTextView);
-                    tableRow.addView(weekSalary);
-                    tableRow.addView(lateDeductionTextView);
-                    tableRow.addView(deductedSalary);
-                    tableRow.addView(commissionTextView);
-                    tableRow.addView(totalSalaryTextView);
-                    tableRow.addView(caDeductionTextView);
-                    tableRow.addView(overallSalaryTextView);
-
-                    // Add the row to the final salary table
-                    finalSalaryTable.addView(tableRow);
                 }
             }
+
 
             TableRow tableRow4 = new TableRow(this);
             for(int i = 0; i < 8; i++){
@@ -718,7 +733,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             TextView dateTextView4 = createTextView("Overall Salary");
             dateTextView4.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
             dateTextView4.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-            TextView ovSal1 = createTextView(String.format("₱%.2f", overAllTotalSalary));
+            TextView ovSal1 = createTextView(numberFormat.format(overAllTotalSalary));
             ovSal1.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
             ovSal1.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
             tableRow4.addView(dateTextView4);
@@ -730,7 +745,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             tableRow.setBackgroundResource(R.color.gray);
             // Set the formatted date to TextView
             TextView dateTextView = createTextView("Total");
-            TextView bal = createTextView(String.format("₱%.2f", totalSalesFtS));
+            TextView bal = createTextView(numberFormat.format(totalSalesFtS));
 
 
             tableRow.addView(dateTextView);
@@ -738,14 +753,14 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
             TableRow tableRow2 = new TableRow(this);
             TextView dateTextView2 = createTextView("Overall Salary");
-            TextView ovSal = createTextView(String.format("-₱%.2f", overAllTotalSalary));
+            TextView ovSal = createTextView("-"+numberFormat.format(overAllTotalSalary));
             tableRow2.addView(dateTextView2);
             tableRow2.addView(ovSal);
 
             TableRow tableRow3 = new TableRow(this);
             tableRow3.setBackgroundResource(R.color.gray);
             TextView dateTextView3 = createTextView("");
-            TextView Rbal = createTextView(String.format("₱%.2f", remainingBal));
+            TextView Rbal = createTextView(numberFormat.format(remainingBal));
             Rbal.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
             Rbal.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
             Rbal.setTextSize(20);
@@ -794,21 +809,25 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                             // Check for and display sub-services
                             List<Map<String, Object>> services = appointment.getServices();
                             for (Map<String, Object> service : services) {
-                                double totalPriceForParentService = (Double) service.get("servicePrice"); // Variable to hold total price for this parent service
+                                String assignedEmployee = (String) service.get("assignedEmployee");
+                                Log.d("SalesFragment", "Assigned Employee: " + assignedEmployee);
 
-                                List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
-                                if (subServices != null) {
-                                    for (Map<String, Object> subService : subServices) {
-                                        // Get the sub-service name and price
-                                        Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                if (assignedEmployee != null && !"None".equals(assignedEmployee.toString())) {
+                                    double totalPriceForParentService = (Double) service.get("servicePrice"); // Variable to hold total price for this parent service
 
-                                        totalPriceForParentService += subServicePrice;
+                                    List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                                    if (subServices != null) {
+                                        for (Map<String, Object> subService : subServices) {
+                                            // Get the sub-service name and price
+                                            Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
 
+                                            totalPriceForParentService += subServicePrice;
+
+                                        }
                                     }
+
+                                    totalSales += totalPriceForParentService;
                                 }
-
-                                totalSales += totalPriceForParentService;
-
                             }
                         }
                     }
@@ -851,7 +870,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
             // Set the formatted date to TextView
             TextView dateTextView = createTextView(formattedDate);
-            TextView bal = createTextView(String.format("₱%.2f", balance));
+            TextView bal = createTextView(numberFormat.format(balance));
             totalSalesFtS += balance;
             tableRow.addView(dateTextView);
             tableRow.addView(bal);
