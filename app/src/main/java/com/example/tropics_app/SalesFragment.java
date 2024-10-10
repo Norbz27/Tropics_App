@@ -802,7 +802,7 @@ public class SalesFragment extends Fragment {
             expenseAmountTextView.setPadding(10, 5, 5, 5);
             expenseRow.addView(expenseAmountTextView);
 
-            tblExpenses.addView(expenseRow); // Display in tableLayout3 for expenses
+            tblExpenses.addView(expenseRow);
 
             // Accumulate total expenses
             totalExpenses += expense.getAmount();

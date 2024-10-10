@@ -792,6 +792,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                                         Date currentDate = new Date(); // Get current date
                                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()); // Define the date format
                                         String formattedDate = sdf.format(currentDate);
+                                        eventDays.clear();
                                         loadAppointmentData(formattedDate);
                                     })
                                     .addOnFailureListener(e -> {
