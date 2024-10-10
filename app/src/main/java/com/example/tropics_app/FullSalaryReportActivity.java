@@ -32,6 +32,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -67,6 +68,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     private Spinner month_spinner, year_spinner, week_num;
     private double totalSalesFtS = 0.0;
     private NumberFormat numberFormat;
+    private SwipeRefreshLayout swipeRefreshLayout;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,6 +85,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         month_spinner = findViewById(R.id.month_spinner);
         year_spinner = findViewById(R.id.year_spinner);
         week_num = findViewById(R.id.week_num);
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
 
         appointmentsList = new ArrayList<>();
         employeeList = new ArrayList<>();
@@ -102,7 +105,12 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         loadSalaryData();
         spinnerSetup();
 
-
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+            }
+        });
         fabCompFiSal.setOnClickListener(v -> showSalaryComputationDialog(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString()));
     }
 
@@ -769,6 +777,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             breakdown_table.addView(tableRow);
             breakdown_table.addView(tableRow2);
             breakdown_table.addView(tableRow3);
+            swipeRefreshLayout.setRefreshing(false);
         } catch (Exception e) {
             Log.e("SalesFragment", "Error filtering data: ", e);
         }
