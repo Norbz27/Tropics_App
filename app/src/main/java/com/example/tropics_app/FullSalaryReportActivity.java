@@ -45,6 +45,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -458,6 +459,77 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 throw new IllegalArgumentException("Invalid month name: " + monthName);
         }
     }
+    private double getSalaryByDate(Employee employee, String daysPresentStr, SimpleDateFormat sdf) {
+        double salary = employee.getSalary() != null ? employee.getSalary() : 0.0; // Default to current salary
+        List<Map<String, Object>> salaryHistory = employee.getSalaryHistory();
+
+        // Parse the current date for salary calculation
+        Calendar currentCalendar = Calendar.getInstance();
+        int daysPresent = Integer.parseInt(daysPresentStr);
+
+        // Calculate the total salary for the days present
+        double totalSalary = salary * daysPresent;
+
+        // Iterate through salary history to find the appropriate salary based on the date
+        try {
+            for (Map<String, Object> history : salaryHistory) {
+                String changeDateStr = (String) history.get("dateChanged");
+                double salaryAtChange = ((Number) history.get("salary")).doubleValue(); // Handle both Long and Double
+
+                // Parse the change date
+                Date changeDate = sdf.parse(changeDateStr);
+                Date currentDate = currentCalendar.getTime();
+
+                // If the change date is before or equal to the current date, use this salary
+                if (changeDate != null && !changeDate.after(currentDate)) {
+                    salary = salaryAtChange; // Update salary to the most recent one before or equal to current date
+                }
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        // Calculate total salary for the given number of days present
+        return salary * daysPresent;
+    }
+
+    private double getCommissionRateByDate(Employee employee, String appointmentDate) {
+        List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
+        double commissionRate = employee.getComs() != null ? employee.getComs() : 0.0; // Default to current commission rate
+
+        // Parse the appointment date
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // Adjust date format to match your Firebase data
+            Date appointment = sdf.parse(appointmentDate);
+
+            // Iterate through commission history to find the appropriate rate based on date
+            for (Map<String, Object> history : commissionHistory) {
+                String changeDateStr = (String) history.get("dateChanged");
+                Object rateAtChangeObj = history.get("commission");
+
+                // Ensure the rate is properly retrieved as Double
+                double rateAtChange = 0.0;
+                if (rateAtChangeObj instanceof Long) {
+                    rateAtChange = ((Long) rateAtChangeObj).doubleValue();
+                } else if (rateAtChangeObj instanceof Double) {
+                    rateAtChange = (Double) rateAtChangeObj;
+                }
+
+                // Parse the change date
+                Date changeDate = sdf.parse(changeDateStr);
+
+                // If the change date is before the appointment date, use this rate
+                if (changeDate != null && changeDate.before(appointment)) {
+                    commissionRate = rateAtChange;
+                }
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return commissionRate;
+    }
+
     private void filterDataByMonthYearWeek(String selectedMonth, String selectedYear, String selectedWeekNumber) {
         Calendar calendar = Calendar.getInstance();
         totalSalesFtS = 0.0;
@@ -528,20 +600,23 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, month);
             calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
-            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday
+            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday// Reset time to midnight (start of the day)
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
 
-            // Calculate start and end of the week
-            Date startOfWeek = calendar.getTime(); // Start of the selected week
+            Date startOfWeek = calendar.getTime();
+            Log.d("SalesFragment", "Start of Week (reset to midnight): " + startOfWeek);
+
             calendar.add(Calendar.DAY_OF_MONTH, 6); // Add 6 days to get to Sunday
-            Date endOfWeek = calendar.getTime(); // End of the selected week
+            Date endOfWeek = calendar.getTime();
+            Log.d("SalesFragment", "End of Week (reset to midnight): " + endOfWeek);
 
             // Initialize daily sales for each employee for each day of the week (only Monday to Thursday)
             for (Appointment appointment : appointmentsList) {
                 Date appointmentDate = appointment.getClientDateTimeAsDate();
-
-                if (appointmentDate != null && (appointmentDate.after(startOfWeek) || appointmentDate.equals(startOfWeek)) &&
-                        (appointmentDate.before(endOfWeek) || appointmentDate.equals(endOfWeek))) {
-
+                if (appointmentDate != null && (appointmentDate.after(startOfWeek) || appointmentDate.equals(startOfWeek)) && (appointmentDate.before(endOfWeek) || appointmentDate.equals(endOfWeek))) {
                     // Check for and display sub-services
                     List<Map<String, Object>> services = appointment.getServices();
                     // Update sales per employee
@@ -584,23 +659,23 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 }
             }
 
-            double totalCommission = 0.0;
-
-            // Clear the table before starting the population
-            finalSalaryTable.removeViews(1, finalSalaryTable.getChildCount() - 1);  // Keep the header row
-
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, month);
+            calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
+            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday// Reset time to midnight (start of the day)
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
 
             Map<String, Double> sortedEmployeeSalesMap = new TreeMap<>(employeeSalesMap);
-
+            Calendar displayCalendar2 = (Calendar) calendar.clone();
             for (Map.Entry<String, Double> entry : sortedEmployeeSalesMap.entrySet()) {
                 String employeeName = entry.getKey();
                 double sales = entry.getValue();
                 // Find the employee details
                 Employee employee = findEmployeeByName(employeeName);
                 if (employee != null) {
-                    double commissionRate = employee.getComs();
-                    double employeeCommission = (sales * commissionRate) / 100.0;
-                    totalCommission += employeeCommission;
 
                     // Create rows for weekdays and weekends
                     TableRow rowCommission = new TableRow(this);
@@ -618,7 +693,11 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
                     // Process sales and commissions for 7 days (weekdays and weekends)
                     for (int i = 0; i < 7; i++) {
+                        String dateStr = sdf.format(displayCalendar2.getTime());
+                        Log.d("SelectedDate", dateStr);
                         double dailySales = dailySalesMap.get(employeeName)[i];
+                        double commissionRate = getCommissionRateByDate(employee, dateStr);
+                        //double commissionRate = employee.getComs();
                         double dailyCommission = (dailySales * commissionRate) / 100.0;
 
                         TextView dailySalesTextView = createTextView(numberFormat.format(dailySales));
@@ -629,6 +708,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
                         totalSalesPerEmp += dailySales;
                         totalCommissionPerEmp += dailyCommission;
+                        displayCalendar2.add(Calendar.DAY_OF_MONTH, 1);
                     }
 
                     // Add total sales and commission for weekends
@@ -656,10 +736,19 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 }
             });
 
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, month);
+            calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
+            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday// Reset time to midnight (start of the day)
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            Calendar displayCalendar3 = (Calendar) calendar.clone();
             double overAllTotalSalary = 0.0;
             for (EmployeeSalaryDetails emp : EmployeeSalList) {
                 Employee employee = findEmployeeByName(emp.getEmployeeId());
-                Log.d("FullSlaraReports", emp.getEmployeeId());
+                Log.d("FullSalaryReports", emp.getEmployeeId());
 
                 // Check if the employee and required fields exist before proceeding
                 if (employee != null && emp.getEmployeeId() != null && !"None".equals(emp.getEmployeeId())) {
@@ -667,14 +756,13 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     // Check if the employee role is "Regular"
                     if ("Regular".equals(employee.getTherapist()) || employee.getSalary() != 0) {
                         TableRow tableRow = new TableRow(this);
-                        Log.d("FullSlaraReports", emp.getLateDeduction());
+                        Log.d("FullSalaryReports", emp.getLateDeduction());
 
                         // Calculate the basic weekly salary and deductions
-                        double weekSal = employee.getSalary() * Integer.parseInt(emp.getDaysPresent());
+                        double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
                         double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
                         double deductedWeekSal = weekSal - lateDeduction;
                         double totalCommissionPerEmp = 0.0;
-                        double commissionRate = employee.getComs();
 
                         // Check if the employee has sales data in the dailySalesMap
                         double[] dailySalesArray = dailySalesMap.get(emp.getEmployeeId());
@@ -684,9 +772,12 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
                         // Process sales and commissions for 7 days (weekdays and weekends)
                         for (int i = 0; i < 7; i++) {
+                            String dateStr = sdf.format(displayCalendar2.getTime());
+                            double commissionRate = getCommissionRateByDate(employee, dateStr);
                             double dailySales = dailySalesArray[i];
                             double dailyCommission = (dailySales * commissionRate) / 100.0;
                             totalCommissionPerEmp += dailyCommission;
+                            displayCalendar2.add(Calendar.DAY_OF_MONTH, 1);
                         }
 
                         // Calculate total salary including commission and deductions
@@ -729,6 +820,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     }
                 }
             }
+
 
 
             TableRow tableRow4 = new TableRow(this);

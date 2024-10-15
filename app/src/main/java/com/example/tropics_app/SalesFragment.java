@@ -53,6 +53,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -403,6 +405,22 @@ public class SalesFragment extends Fragment {
                 tblTherapist.removeViews(1, tblTherapist.getChildCount() - 1);
 
                 // Filter appointments for the selected date
+                // Sort appointmentsList by appointment time
+                Collections.sort(appointmentsList, new Comparator<Appointment>() {
+                    @Override
+                    public int compare(Appointment a1, Appointment a2) {
+                        try {
+                            SimpleDateFormat sdf24 = new SimpleDateFormat("HH:mm");
+                            Date time1 = sdf24.parse(a1.getTime());
+                            Date time2 = sdf24.parse(a2.getTime());
+                            return time1.compareTo(time2);
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        return 0; // In case of exception, treat them as equal
+                    }
+                });
+
                 for (Appointment appointment : appointmentsList) {
                     Date appointmentDate = appointment.getClientDateTimeAsDate();
                     String appointmentTime = appointment.getTime();
@@ -419,21 +437,20 @@ public class SalesFragment extends Fragment {
                                 appointmentCalendar.get(Calendar.MONTH) == month &&
                                 appointmentCalendar.get(Calendar.YEAR) == year) {
                             String name = "";
-
                             String time = "";
 
                             // Check for and display sub-services
                             List<Map<String, Object>> services = appointment.getServices();
                             for (Map<String, Object> service : services) {
-                                // Skip the service if "assignedEmployee" is null
                                 String assignedEmployee = (String) service.get("assignedEmployee");
                                 if (assignedEmployee == null || assignedEmployee.equals("None")) {
                                     continue;
                                 }
+
                                 TableRow row = new TableRow(getContext());
                                 row.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
-                                if(appointment.getFullName() != name && appointment.getTime() != time){
+                                if (!appointment.getFullName().equals(name) && !appointment.getTime().equals(time)) {
                                     TextView timeTextView = new TextView(getContext());
                                     timeTextView.setText(formattedTime);
                                     timeTextView.setTextColor(Color.WHITE);
@@ -450,7 +467,7 @@ public class SalesFragment extends Fragment {
 
                                     name = appointment.getFullName();
                                     time = appointment.getTime();
-                                }else {
+                                } else {
                                     TextView timeTextView = new TextView(getContext());
                                     timeTextView.setText("");
                                     timeTextView.setTextColor(Color.WHITE);
@@ -464,6 +481,7 @@ public class SalesFragment extends Fragment {
                                     row.addView(nameTextView);
                                 }
 
+                                // Process sub-services and prices
                                 TextView subServiceNameTextView = new TextView(getContext());
                                 subServiceNameTextView.setText((String) service.get("serviceName"));
                                 subServiceNameTextView.setTextColor(Color.LTGRAY);
@@ -471,16 +489,13 @@ public class SalesFragment extends Fragment {
                                 subServiceNameTextView.setPadding(10, 5, 5, 5);
                                 row.addView(subServiceNameTextView);
 
-                                double totalPriceForParentService = (Double) service.get("servicePrice"); // Variable to hold total price for this parent service
+                                double totalPriceForParentService = (Double) service.get("servicePrice");
 
                                 List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
                                 if (subServices != null) {
                                     for (Map<String, Object> subService : subServices) {
-                                        // Get the sub-service name and price
                                         Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
-
                                         totalPriceForParentService += subServicePrice;
-
                                     }
                                 }
 
@@ -491,26 +506,25 @@ public class SalesFragment extends Fragment {
                                 subServicePriceTextView.setPadding(10, 5, 5, 5);
                                 row.addView(subServicePriceTextView);
 
-                                TextView HandlerTextView = new TextView(getContext());
-                                HandlerTextView.setText((String) service.get("assignedEmployee"));
-                                HandlerTextView.setTextColor(Color.LTGRAY);
-                                HandlerTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
-                                HandlerTextView.setPadding(10, 5, 5, 5);
-                                row.addView(HandlerTextView);
-                                totalSales += totalPriceForParentService;
+                                TextView handlerTextView = new TextView(getContext());
+                                handlerTextView.setText((String) service.get("assignedEmployee"));
+                                handlerTextView.setTextColor(Color.LTGRAY);
+                                handlerTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                                handlerTextView.setPadding(10, 5, 5, 5);
+                                row.addView(handlerTextView);
 
+                                totalSales += totalPriceForParentService;
                                 tableLayout.addView(row);
                             }
 
-                            List<Map<String, Object>> services2 = appointment.getServices();
-                            for (Map<String, Object> service : services2) {
-                                String assignedEmployee = (String) service.get("assignedEmployee");
-                                if (assignedEmployee == null || assignedEmployee.equals("None")) {
+                            // Process employee sales
+                            for (Map<String, Object> service : appointment.getServices()) {
+                                String employee = (String) service.get("assignedEmployee");
+                                if (employee == null || employee.equals("None")) {
                                     continue;
                                 }
-                                String employee = service.get("assignedEmployee").toString();
-                                double totalPriceForService = (Double) service.get("servicePrice");
 
+                                double totalPriceForService = (Double) service.get("servicePrice");
                                 List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
                                 if (subServices != null) {
                                     for (Map<String, Object> subService : subServices) {
@@ -529,6 +543,7 @@ public class SalesFragment extends Fragment {
                         }
                     }
                 }
+
                 double totalCommission = 0.0;
                 double totalTherCommission = 0.0;
                 // Assuming employeeSalesMap contains employee names and their corresponding sales
@@ -541,11 +556,12 @@ public class SalesFragment extends Fragment {
                     if (employee != null) {
                         // Check if the employee is a therapist
                         String therapistRole = employee.getTherapist();
-                        if ("Therapist".equals(therapistRole) || therapistRole != null || employee.getSalary() == 0) {
-                            // Retrieve the commission rate from the employee's data
-                            double commissionRate = employee.getComs();
+                        if ("Therapist".equals(therapistRole) || employee.getSalary() == 0) {
+                            // Retrieve the appropriate commission rate based on the current date
+                            double commissionRate = getCommissionRateByDate(employee, date.toString()); // Pass the current date
                             double employeeCommission = (sales * commissionRate) / 100.0;
                             totalTherCommission += employeeCommission;
+
                             // Store the calculated commission in the employeeCommissionMap (if needed)
                             employeeCommissionMap.put(employeeName, employeeCommission);
 
@@ -577,12 +593,14 @@ public class SalesFragment extends Fragment {
                             commissionTextView.setPadding(5, 5, 5, 5);
                             rowCommission.addView(commissionTextView);
 
-                            // Add the row to the commission table layout (tableLayout2)
+                            // Add the row to the commission table layout (tblTherapist)
                             tblTherapist.addView(rowCommission);
-                        }else {
-                            double commissionRate = employee.getComs();
+                        } else {
+                            // Retrieve the appropriate commission rate based on the current date
+                            double commissionRate = getCommissionRateByDate(employee, date.toString()); // Pass the current date
                             double employeeCommission = (sales * commissionRate) / 100.0;
                             totalCommission += employeeCommission;
+
                             // Store the calculated commission in the employeeCommissionMap (if needed)
                             employeeCommissionMap.put(employeeName, employeeCommission);
 
@@ -709,33 +727,39 @@ public class SalesFragment extends Fragment {
             Log.e("SalesFragment", "Error parsing date: ", e);
         }
     }
+    private double getCommissionRateByDate(Employee employee, String appointmentDate) {
+        List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
+        double commissionRate = employee.getComs(); // Default to current commission rate
+
+        // Parse the appointment date
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // Adjust date format to match your Firebase data
+            Date appointment = sdf.parse(appointmentDate);
+
+            // Iterate through commission history to find the appropriate rate based on date
+            for (Map<String, Object> history : commissionHistory) {
+                String changeDateStr = (String) history.get("dateChanged");
+                double rateAtChange = (Double) history.get("commission");
+
+                // Parse the change date
+                Date changeDate = sdf.parse(changeDateStr);
+
+                // If the change date is before the appointment date, use this rate
+                if (changeDate != null && changeDate.before(appointment)) {
+                    commissionRate = rateAtChange;
+                }
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return commissionRate;
+    }
     private void displayTotalSalesWithDeductions(String selectedDate, double totalSales, double totalTherCommission) {
         double totalExpenses = 0.0;
         double totalGcash = 0.0;
         List<Expenses> expensesList = getExpensesForDate(selectedDate);
         List<Gcash> gcashList = getGcashForDate(selectedDate);
-        TextView tvTEGD = getActivity().findViewById(R.id.tvTEGD);
-        TextView tvGcash = getActivity().findViewById(R.id.tvGcash);
-        TextView tvExpenses = getActivity().findViewById(R.id.tvExpenses);
-
-        if(expensesList.size() == 0 && gcashList.size() == 0){
-            tableLayout3.setVisibility(View.GONE);
-            tvTEGD.setVisibility(View.GONE);
-
-            tblExpenses.setVisibility(View.GONE);
-            tblGcash.setVisibility(View.GONE);
-            tvGcash.setVisibility(View.GONE);
-            tvExpenses.setVisibility(View.GONE);
-            return;
-        }else {
-            tableLayout3.setVisibility(View.VISIBLE);
-            tvTEGD.setVisibility(View.VISIBLE);
-
-            tblExpenses.setVisibility(View.VISIBLE);
-            tblGcash.setVisibility(View.VISIBLE);
-            tvGcash.setVisibility(View.VISIBLE);
-            tvExpenses.setVisibility(View.VISIBLE);
-        }
         for (Expenses expense : expensesList) {
             TableRow expenseRow = new TableRow(getContext());
             expenseRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));

@@ -49,6 +49,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -172,12 +174,25 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                         }
                     }
 
+                    // Sort appointmentList by appointment time
+                    Collections.sort(appointmentList, new Comparator<Appointment>() {
+                        @Override
+                        public int compare(Appointment a1, Appointment a2) {
+                            try {
+                                SimpleDateFormat sdf24 = new SimpleDateFormat("HH:mm");
+                                Date time1 = sdf24.parse(a1.getTime());
+                                Date time2 = sdf24.parse(a2.getTime());
+                                return time1.compareTo(time2);
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            return 0; // In case of exception, treat them as equal
+                        }
+                    });
+
                     // Set the events to highlight dates with appointments
                     calendarView.setEvents(events);
                     appointmentAdapter.notifyDataSetChanged();
-
-                    // If there are appointments, show the ImageView
-
 
                 })
                 .addOnFailureListener(e -> {
@@ -185,6 +200,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     Toast.makeText(getActivity(), "Failed to load appointments: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
 
     @Override
     public void onItemLongClick(Appointment appointment) {

@@ -39,6 +39,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
@@ -320,7 +321,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         empPhone.setText("Phone: " + employee.getPhone());
         empEmail.setText("Email: " + employee.getEmail());
         String therapistRole = employee.getTherapist();
-        if ("Therapist".equals(therapistRole) || therapistRole != null || employee.getSalary() == 0) {
+        if ("Therapist".equals(therapistRole) || employee.getSalary() == 0) {
             empSal.setText("Role: Therapist");
         }else {
             empSal.setText("Role: Regular \nDaily Salary Rate: ₱" + employee.getSalary());
@@ -383,7 +384,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                         String assignedEmployee = (String) service.get("assignedEmployee");
                         double totalPriceForService = (Double) service.get("servicePrice"); // Get the primary service price
 
-                        // Initialize total price for sub-sub-services
+                        // Initialize total price for sub-services
                         double totalSubServicePrice = 0.0;
 
                         // If there are sub-services, calculate their total price
@@ -395,7 +396,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                             }
                         }
 
-                        // Combine the total price for the service and its sub-sub-services
+                        // Combine the total price for the service and its sub-services
                         double combinedTotalPrice = totalPriceForService + totalSubServicePrice;
 
                         // Check if the service is assigned to the current employee
@@ -412,6 +413,9 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                                 // Check if the appointment is in the selected month
                                 if (calendar.get(Calendar.MONTH) == monthNumber) {
                                     int weekNumber = calendar.get(Calendar.WEEK_OF_MONTH); // Get the week of the month
+
+                                    // Retrieve the appropriate commission rate for the appointment date
+                                    double commissionRate = getCommissionRateByDate(employee, appointmentDate);
 
                                     // Create AssignedService object, passing the combined total price
                                     AssignedService assignedService = new AssignedService(
@@ -444,7 +448,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
 
                     // Calculate total earnings and commission for this week
                     double totalEarnings = weeklyEarningsMap.getOrDefault(week, 0.0);
-                    double commissionRate = employee.getComs(); // Get the commission rate as a percentage
+                    double commissionRate = getCommissionRateByDate(employee, services.get(0).getAppointmentDate()); // Get the commission rate by the first service date
                     double totalCommission = (totalEarnings * commissionRate) / 100; // Calculate total commission based on total earnings
 
                     // Only add the week if there are services for that week
@@ -466,6 +470,37 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             }
         });
     }
+
+    // Method to get the commission rate by the appointment date
+    private double getCommissionRateByDate(Employee employee, String appointmentDate) {
+        List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
+        double commissionRate = employee.getComs(); // Default to current commission rate
+
+        // Parse the appointment date
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // Adjust date format to match your Firebase data
+            Date appointment = sdf.parse(appointmentDate);
+
+            // Iterate through commission history to find the appropriate rate based on date
+            for (Map<String, Object> history : commissionHistory) {
+                String changeDateStr = (String) history.get("dateChanged");
+                double rateAtChange = (Double) history.get("commission");
+
+                // Parse the change date
+                Date changeDate = sdf.parse(changeDateStr);
+
+                // If the change date is before the appointment date, use this rate
+                if (changeDate != null && changeDate.before(appointment)) {
+                    commissionRate = rateAtChange;
+                }
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return commissionRate;
+    }
+
 
 
 
@@ -492,7 +527,6 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         inflater.inflate(R.menu.employee_item_menu, popupMenu.getMenu());
 
         Menu menu = popupMenu.getMenu();
-        MenuItem editItem = menu.findItem(R.id.action_edit);
 
 
         // Set a listener for menu item clicks
@@ -630,15 +664,45 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                     double salary = Double.parseDouble(salaryString);
                     double commission = Double.parseDouble(commissionString);
 
+                    // Create a Map to hold the updated employee data
                     Map<String, Object> updatedEmployeeData = new HashMap<>();
                     updatedEmployeeData.put("name", name);
                     updatedEmployeeData.put("address", address);
                     updatedEmployeeData.put("phone", phone);
                     updatedEmployeeData.put("email", email);
                     updatedEmployeeData.put("salary", salary);
-                    updatedEmployeeData.put("coms", commission);
+                    updatedEmployeeData.put("coms", commission); // Current commission
                     updatedEmployeeData.put("therapist", therapist);
+                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                    Date currentDate = new Date();
+                    // Add the current timestamp as "dateLastChange"
+                    updatedEmployeeData.put("dateLastChange", sdf.format(currentDate));
 
+                    // Handle commission history
+                    List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
+                    if (commissionHistory == null) {
+                        commissionHistory = new ArrayList<>();
+                    }
+
+                    // Add current commission change to history
+                    Map<String, Object> newCommissionRecord = new HashMap<>();
+                    newCommissionRecord.put("commission", commission);
+                    newCommissionRecord.put("dateChanged", sdf.format(currentDate));
+
+                    commissionHistory.add(newCommissionRecord);
+                    updatedEmployeeData.put("commissionsHistory", commissionHistory);
+
+                    List<Map<String, Object>> salaryHistory = employee.getSalaryHistory();
+                    if (salaryHistory == null) {
+                        salaryHistory = new ArrayList<>();
+                    }
+                    Map<String, Object> salaryChange = new HashMap<>();
+                    salaryChange.put("salary", salary);
+                    salaryChange.put("dateChanged", sdf.format(currentDate)); // Add the current date for the change
+                    salaryHistory.add(salaryChange);
+
+                    updatedEmployeeData.put("salaryHistory", salaryHistory); // Add history of salary changes
+                    updatedEmployeeData.put("salaryLastChange", sdf.format(currentDate)); // Store the last salary change date
                     ProgressDialog progressDialog = new ProgressDialog(getActivity());
                     progressDialog.setMessage("Updating data...");
                     progressDialog.setCancelable(false);
@@ -661,7 +725,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                                 .addOnFailureListener(e -> {
                                     progressDialog.dismiss();
                                     dialog.dismiss();
-                                    loadEmployeeData();// Dismiss in case of failure
+                                    loadEmployeeData(); // Dismiss in case of failure
                                     Toast.makeText(getActivity(), "Failed to upload image", Toast.LENGTH_SHORT).show();
                                     Log.e("Storage Error", "Failed to upload image: " + e.getMessage());
                                 });
@@ -683,6 +747,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                 Toast.makeText(getActivity(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
             }
         });
+
     }
 
     private void updateEmployee(String employeeId, Map<String, Object> updatedEmployeeData) {
