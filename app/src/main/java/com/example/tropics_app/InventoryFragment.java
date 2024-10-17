@@ -1,4 +1,6 @@
 package com.example.tropics_app;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -12,9 +14,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.ParseException;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,6 +47,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
@@ -139,7 +144,6 @@ public class InventoryFragment extends Fragment {
         });
 
         setupSearchView();
-       // loadInventoryData();
         loadUsedItemsForDate(getTodayDate());
         return view;
     }
@@ -148,67 +152,40 @@ public class InventoryFragment extends Fragment {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                return false;
+                return false; // No action on query submission
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                filterInventory(newText);
+                filterInventory(newText); // Call filter method on text change
                 return true;
             }
         });
     }
-    private void filterInventory(String query) {
-        filteredList.clear(); // Clear the filtered list
 
-        if (query.isEmpty() || query.equals("")) {
-            filteredList.addAll(inventoryList); // Add all items back
+    private void filterInventory(String query) {
+        filteredList.clear();
+        Log.d("FilterInventory", "Query: " + query);
+
+        if (query.isEmpty()) {
+         filteredList.addAll(inventoryList);
+
         } else {
+            String lowerCaseQuery = query.toLowerCase();
             for (Map<String, Object> item : inventoryList) {
                 String name = (String) item.get("name");
-                if (name != null && name.toLowerCase().contains(query.toLowerCase())) {
+                Log.d("FilterInventory", "Checking item: " + name);
+
+                if (name != null && name.toLowerCase().contains(lowerCaseQuery)) {
+                    Log.d("FilterInventory", "Match found: " + name);
                     filteredList.add(item);
                 }
             }
         }
 
-        adapter.updateList(filteredList);
-        adapter.notifyDataSetChanged();
+        adapter.updateList(filteredList); // Update the RecyclerView
     }
 
-   /* private void loadInventoryData() {
-        db.collection("inventory")
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @SuppressLint("NotifyDataSetChanged")
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
-                        if (error != null) {
-                            Log.e("Firestore Error", "Error fetching inventory: " + error.getMessage());
-                            return;
-                        }
-
-                        if (value != null && !value.isEmpty()) {
-                            inventoryList.clear();
-                            for (QueryDocumentSnapshot doc : value) {
-                                Map<String, Object> data = doc.getData();
-                                data.put("id", doc.getId()); // Add document ID to the item
-                                inventoryList.add(data);
-                                Log.d("Firestore Document", "Loaded: " + data);
-                            }
-
-                            filteredList.clear();
-                            filteredList.addAll(inventoryList);
-                            adapter.updateList(filteredList);
-                        } else {
-                            Log.d("Inventory", "No items found in inventory.");
-                            filteredList.clear();
-                            adapter.notifyDataSetChanged();
-                        }
-                    }
-                });
-    }
-
-    */
    private void showAddQuantityDialog(Map<String, Object> item) {
        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
@@ -258,11 +235,10 @@ public class InventoryFragment extends Fragment {
             }
         });
     }
-    // use stock
+    // code to use stocks
     private void updateStocksAndInUse(Map<String, Object> item, int quantityToUpdate) {
         String documentId = (String) item.get("id");
         String todayDate = getTodayDate();
-        String yesterdayDate = getYesterdayDate();
 
         // Disable the ability to update for any date that is not today
         if (!todayDate.equals(getTodayDate())) {
@@ -270,19 +246,16 @@ public class InventoryFragment extends Fragment {
             return;
         }
 
-        final int[] yesterdayStocks = {0};
-        final int[] yesterdayInUse = {0};
-        final int[] todayStocks = {0};
-        final int[] todayInUse = {0};
-
-        // Retrieve yesterday's stocks and in_use only once
+        // Retrieve the last available stocks and in_use
         db.collection("inventory").document(documentId)
-                .collection("dailyRecords").document(yesterdayDate)
-                .get().addOnCompleteListener(yesterdayTask -> {
-                    if (yesterdayTask.isSuccessful() && yesterdayTask.getResult() != null) {
-                        DocumentSnapshot yesterdaySnapshot = yesterdayTask.getResult();
-                        yesterdayStocks[0] = yesterdaySnapshot.getLong("stocks") != null ? yesterdaySnapshot.getLong("stocks").intValue() : 0;
-                        yesterdayInUse[0] = yesterdaySnapshot.getLong("in_use") != null ? yesterdaySnapshot.getLong("in_use").intValue() : 0;
+                .collection("dailyRecords")
+                .orderBy("date", Query.Direction.DESCENDING)
+                .limit(1)
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                        DocumentSnapshot latestSnapshot = task.getResult().getDocuments().get(0);
+                        int latestStocks = latestSnapshot.getLong("stocks") != null ? latestSnapshot.getLong("stocks").intValue() : 0;
+                        int latestInUse = latestSnapshot.getLong("in_use") != null ? latestSnapshot.getLong("in_use").intValue() : 0;
 
                         // Now retrieve today's stocks and in_use
                         db.collection("inventory").document(documentId)
@@ -290,19 +263,20 @@ public class InventoryFragment extends Fragment {
                                 .get().addOnCompleteListener(todayTask -> {
                                     if (todayTask.isSuccessful() && todayTask.getResult() != null && todayTask.getResult().exists()) {
                                         DocumentSnapshot todaySnapshot = todayTask.getResult();
-                                        todayStocks[0] = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
-                                        todayInUse[0] = todaySnapshot.getLong("in_use") != null ? todaySnapshot.getLong("in_use").intValue() : 0;
+                                        int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
+                                        int todayInUse = todaySnapshot.getLong("in_use") != null ? todaySnapshot.getLong("in_use").intValue() : 0;
 
                                         // Ensure there is enough stock to use
-                                        if (quantityToUpdate > todayStocks[0]) {
+                                        if (quantityToUpdate > todayStocks) {
                                             Toast.makeText(getContext(), "Not enough stock available", Toast.LENGTH_SHORT).show();
                                             return;
                                         }
 
                                         // Update today's stock and in_use
-                                        int newTodayStocks = todayStocks[0] - quantityToUpdate;
-                                        int newInUse = todayInUse[0] + quantityToUpdate;
+                                        int newTodayStocks = todayStocks - quantityToUpdate;
+                                        int newInUse = todayInUse + quantityToUpdate;
 
+                                        // Prepare the update fields
                                         Map<String, Object> updateFields = new HashMap<>();
                                         updateFields.put("stocks", newTodayStocks);
                                         updateFields.put("in_use", newInUse);
@@ -319,15 +293,16 @@ public class InventoryFragment extends Fragment {
                                                     }
                                                 });
                                     } else {
-                                        int newStocks = Math.max(0, yesterdayStocks[0] - quantityToUpdate);
-                                        int newInUse = yesterdayInUse[0] + quantityToUpdate;
+                                        // If no today record, create a new one based on the latest available values
+                                        int newStocks = Math.max(0, latestStocks - quantityToUpdate); // Ensure stocks don't go negative
+                                        int newInUse = latestInUse + quantityToUpdate;
 
                                         Map<String, Object> newRecord = new HashMap<>();
                                         newRecord.put("date", todayDate);
                                         newRecord.put("stocks", newStocks);
                                         newRecord.put("in_use", newInUse);
 
-                                        // Create new document for today
+                                        // Set the new document in Firestore
                                         db.collection("inventory").document(documentId).collection("dailyRecords")
                                                 .document(todayDate).set(newRecord)
                                                 .addOnCompleteListener(createTask -> {
@@ -341,15 +316,18 @@ public class InventoryFragment extends Fragment {
                                     }
                                 });
                     } else {
-                        Toast.makeText(getContext(), "Failed to retrieve yesterday's stock records", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "No stock records found", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
-// jari nor
+
+
+
+    // add stocks i guess
     private void addQuantityToFirestore(Map<String, Object> item, int quantityToAdd, int inUseToAdd) {
-        String documentId = (String) item.get("id"); // Get the document ID
-        String todayDate = getTodayDate(); // Get today's date
-        String yesterdayDate = getYesterdayDate(); // Get yesterday's date
+        String documentId = (String) item.get("id");
+        String todayDate = getTodayDate();
+        String yesterdayDate = getYesterdayDate();
 
         if (documentId != null) {
             // First, fetch yesterday's stock and in_use
@@ -370,7 +348,7 @@ public class InventoryFragment extends Fragment {
                                             int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
                                             int todayInUse = todaySnapshot.getLong("in_use") != null ? todaySnapshot.getLong("in_use").intValue() : 0;
 
-                                            // jari an pag check kung an date kuman is today amo na maka modify
+                                            // Check if the date is today before modifying
                                             if (todayDate.equals(getTodayDate())) {
                                                 // Update today's stock by adding the new quantity to the current today's stock
                                                 int updatedTodayStocks = todayStocks + quantityToAdd;
@@ -380,8 +358,8 @@ public class InventoryFragment extends Fragment {
 
                                                 // Prepare the update
                                                 Map<String, Object> updateFields = new HashMap<>();
-                                                updateFields.put("stocks", updatedTodayStocks); // Add to today's stock
-                                                updateFields.put("in_use", updatedTodayInUse); // Add to today's in_use
+                                                updateFields.put("stocks", updatedTodayStocks);
+                                                updateFields.put("in_use", updatedTodayInUse);
 
                                                 // Update Firestore document for today
                                                 db.collection("inventory").document(documentId).collection("dailyRecords")
@@ -389,7 +367,7 @@ public class InventoryFragment extends Fragment {
                                                         .addOnCompleteListener(updateTask -> {
                                                             if (updateTask.isSuccessful()) {
                                                                 Toast.makeText(getContext(), "Stock and usage updated successfully", Toast.LENGTH_SHORT).show();
-                                                                loadUsedItemsForDate(todayDate); // Load data for today's date
+                                                                loadUsedItemsForDate(todayDate);
                                                             } else {
                                                                 Toast.makeText(getContext(), "Failed to update stock and usage: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                             }
@@ -414,7 +392,7 @@ public class InventoryFragment extends Fragment {
                                                     .addOnCompleteListener(createTask -> {
                                                         if (createTask.isSuccessful()) {
                                                             Toast.makeText(getContext(), "New stock and usage record created successfully", Toast.LENGTH_SHORT).show();
-                                                            loadUsedItemsForDate(todayDate); // Load data for today's date
+                                                            loadUsedItemsForDate(todayDate);
                                                         } else {
                                                             Toast.makeText(getContext(), "Failed to create stock and usage record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                         }
@@ -429,6 +407,8 @@ public class InventoryFragment extends Fragment {
             Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
         }
     }
+
+
 
 
     private void showAddProductDialog() {
@@ -466,55 +446,54 @@ public class InventoryFragment extends Fragment {
             }
         });
     }
-    private void logAdditionInDailyRecords(String documentId, int quantityAdded) {
-        // Create a date string in the format you want (e.g., "yyyy-MM-dd")
-        String date = getTodayDate(); // Implement this method to get today's date
 
-        // Prepare the daily record data
-        Map<String, Object> dailyRecord = new HashMap<>();
-        dailyRecord.put("date", new Timestamp(new Date())); // Record the current timestamp
-        dailyRecord.put("stockAdded", quantityAdded); // Store the quantity added
-
-        // Add the daily record to the inventory document's dailyRecords subcollection
-        db.collection("inventory").document(documentId)
-                .collection("dailyRecords")
-                .document(date) // Use date as document ID to ensure uniqueness
-                .set(dailyRecord)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(getContext(), "Addition recorded successfully", Toast.LENGTH_SHORT).show();
-                        loadUsedItemsForDate(getTodayDate());
-                    } else {
-                        Toast.makeText(getContext(), "Failed to record addition: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
     private void uploadImageToFirebase(String name, String stocks) {
         if (imageUri != null) {
-            StorageReference ref = FirebaseStorage.getInstance().getReference("images/" + UUID.randomUUID().toString());
-            UploadTask uploadTask = ref.putFile(imageUri);
+            // Resize the image
+            try {
+                // Load the image as a Bitmap
+                Bitmap originalBitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), imageUri);
 
-            Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
-                @Override
-                public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                    if (task.isSuccessful()) {
-                        return ref.getDownloadUrl();
-                    } else {
-                        throw task.getException(); // Throw the exception to be handled in the onComplete
+                // Calculate the desired width and height
+                int desiredWidth = 200; // Set your desired width
+                int desiredHeight = 200; // Set your desired height
+
+                // Resize the Bitmap
+                Bitmap resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, desiredWidth, desiredHeight, false);
+
+                // Convert the Bitmap to a ByteArrayOutputStream
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos); // You can adjust the quality (0-100)
+                byte[] data = baos.toByteArray();
+
+                // Upload the resized image to Firebase Storage
+                StorageReference ref = FirebaseStorage.getInstance().getReference("images/" + UUID.randomUUID().toString());
+                UploadTask uploadTask = ref.putBytes(data);
+
+                Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+                    @Override
+                    public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            return ref.getDownloadUrl();
+                        } else {
+                            throw task.getException(); // Throw the exception to be handled in the onComplete
+                        }
                     }
-                }
-            }).addOnCompleteListener(new OnCompleteListener<Uri>() {
-                @Override
-                public void onComplete(@NonNull Task<Uri> task) {
-                    if (task.isSuccessful()) {
-                        Uri downloadUri = task.getResult();
-                        addProductToInventory(name, stocks, downloadUri.toString());
-                        Toast.makeText(getContext(), "Uploaded", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(getContext(), "Upload failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Uri> task) {
+                        if (task.isSuccessful()) {
+                            Uri downloadUri = task.getResult();
+                            addProductToInventory(name, stocks, downloadUri.toString());
+                            Toast.makeText(getContext(), "Uploaded", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getContext(), "Upload failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
-                }
-            });
+                });
+            } catch (IOException e) {
+                Toast.makeText(getContext(), "Error resizing image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         } else {
             Toast.makeText(getContext(), "No image selected", Toast.LENGTH_SHORT).show();
         }
@@ -768,22 +747,15 @@ public class InventoryFragment extends Fragment {
 
     // Method to get the previous date based on the provided date
     private String getPreviousDate(String currentDate) {
-        DateTimeFormatter formatterFirestore = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.getDefault()); // Firestore format
+        DateTimeFormatter formatterFirestore = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.getDefault());
 
-        try {
-            // Parse the current date using Firestore's expected format
-            LocalDate date = LocalDate.parse(currentDate, formatterFirestore);
+        // Parse the current date using Firestore's expected format
+        LocalDate date = LocalDate.parse(currentDate, formatterFirestore);
 
-            // Get the previous date
-            LocalDate previousDate = date.minusDays(1);
-
-            // Return the previous date in Firestore format
-            return previousDate.format(formatterFirestore);
-        } catch (DateTimeParseException e) {
-            Log.e("Date Parsing Error", "Error parsing date in Firestore format: " + e.getMessage());
-            return currentDate; // Stop recursion and return the current date if parsing fails
-        }
+        // Get the previous date and return it in Firestore format
+        return date.minusDays(1).format(formatterFirestore);
     }
+
 
     private String getYesterdayDate() {
         SimpleDateFormat sdf = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()); // Use the same format as in Firestore

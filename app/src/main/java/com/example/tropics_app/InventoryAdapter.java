@@ -29,6 +29,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
     private final Context context;
     private List<Map<String, Object>> inventoryList;
+    private List<Map<String, Object>> filteredList;
     private OnItemLongClickListener longClickListener;
     private String selectedDate;
     public InventoryAdapter(Context context, List<Map<String, Object>> inventoryList) {
