@@ -99,7 +99,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         notifyDataSetChanged();
     }
     public String getSelectedDate() {
-        return selectedDate; // Replace with the actual variable that holds the selected date
+        return selectedDate;
     }
 
     public static class InventoryViewHolder extends RecyclerView.ViewHolder {
