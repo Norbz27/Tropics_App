@@ -821,8 +821,6 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 }
             }
 
-
-
             TableRow tableRow4 = new TableRow(this);
             for(int i = 0; i < 8; i++){
                 TextView TextView5 = createTextView("");
@@ -872,7 +870,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             swipeRefreshLayout.setRefreshing(false);
         } catch (Exception e) {
             Log.e("SalesFragment", "Error filtering data: ", e);
+            swipeRefreshLayout.setRefreshing(false);
         }
+        swipeRefreshLayout.setRefreshing(false);
     }
 
     private void filterDataByDate(String selectedDate) {
