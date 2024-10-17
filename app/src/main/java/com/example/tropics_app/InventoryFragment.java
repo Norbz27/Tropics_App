@@ -174,24 +174,24 @@ public class InventoryFragment extends Fragment {
     }
 
     private void filterListByName(String query) {
-        List<Map<String, Object>> originalList = new ArrayList<>(filteredList); // Make a copy of the current filtered list
-
+        // If the query is empty, reload the items for the currently selected date
         if (query.isEmpty()) {
-            // If the query is empty, reset the filtered list to the original inventory
-            filteredList.clear();
-            filteredList.addAll(originalList); // Restore the original filtered list based on the date
-        } else {
-            // Filter based on the query
-            List<Map<String, Object>> filteredResults = new ArrayList<>();
-            for (Map<String, Object> item : originalList) {
-                String name = (String) item.get("name"); // Assuming there's a "name" field
-                if (name != null && name.toLowerCase().contains(query.toLowerCase())) {
-                    filteredResults.add(item);
-                }
-            }
-            filteredList.clear();
-            filteredList.addAll(filteredResults);
+            // Reload the used items for the selected date
+            loadUsedItemsForDate(adapter.getSelectedDate()); // Assuming the adapter has a method to get the selected date
+            return; // Exit the method early
         }
+
+        // Otherwise, filter the list based on the query
+        List<Map<String, Object>> filteredResults = new ArrayList<>();
+        for (Map<String, Object> item : filteredList) {
+            String name = (String) item.get("name"); // Assuming there's a "name" field
+            if (name != null && name.toLowerCase().contains(query.toLowerCase())) {
+                filteredResults.add(item);
+            }
+        }
+
+        filteredList.clear();
+        filteredList.addAll(filteredResults); // Update the filtered list with results
 
         adapter.updateList(filteredList); // Update the adapter with the filtered list
         adapter.notifyDataSetChanged(); // Notify the adapter of data changes

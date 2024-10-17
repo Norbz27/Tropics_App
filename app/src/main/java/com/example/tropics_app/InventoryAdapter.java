@@ -98,6 +98,9 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         inventoryList = new ArrayList<>(newList);
         notifyDataSetChanged();
     }
+    public String getSelectedDate() {
+        return selectedDate; // Replace with the actual variable that holds the selected date
+    }
 
     public static class InventoryViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvStocks, tvInUse;
