@@ -96,14 +96,16 @@ public class InventoryFragment extends Fragment {
         filteredList = new ArrayList<>();
         adapter = new InventoryAdapter(getContext(), filteredList); // Use filteredList
         rvInventory.setAdapter(adapter);
-        Date currentDate = new Date(); // Get current date
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/d/yyyy"); // Define the date format
+
+        // Get the current date and format it
+        Date currentDate = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/d/yyyy");
         String formattedDate = sdf.format(currentDate);
 
         EditText datePicker = view.findViewById(R.id.date_picker);
         datePicker.setText(formattedDate);
         adapter.setSelectedDate(formattedDate);
-        adapter.setSelectedDate(datePicker.getText().toString());
+
         datePicker.setOnClickListener(v -> {
             final Calendar calendar = Calendar.getInstance();
             int year = calendar.get(Calendar.YEAR);
@@ -143,50 +145,92 @@ public class InventoryFragment extends Fragment {
             }
         });
 
-        setupSearchView();
+        // Pass the view parameter to the setupSearchView method
+        setupSearchView(view);
+
         loadUsedItemsForDate(getTodayDate());
         return view;
     }
 
-    private void setupSearchView() {
+
+    private void setupSearchView(View view) {
+        SearchView searchView = view.findViewById(R.id.searchView);
+
+        // Open the SearchView when clicked
+        searchView.setOnClickListener(v -> searchView.setIconified(false));
+
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                return false; // No action on query submission
+                return false; // You can implement additional logic here if needed
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                filterInventory(newText); // Call filter method on text change
+                filterListByName(newText); // Call the filter method whenever the query changes
                 return true;
             }
         });
     }
 
-    private void filterInventory(String query) {
-        filteredList.clear();
-        Log.d("FilterInventory", "Query: " + query);
+    private void filterListByName(String query) {
+        List<Map<String, Object>> originalList = new ArrayList<>(filteredList); // Make a copy of the current filtered list
 
         if (query.isEmpty()) {
-         filteredList.addAll(inventoryList);
-
+            // If the query is empty, reset the filtered list to the original inventory
+            filteredList.clear();
+            filteredList.addAll(originalList); // Restore the original filtered list based on the date
         } else {
-            String lowerCaseQuery = query.toLowerCase();
-            for (Map<String, Object> item : inventoryList) {
-                String name = (String) item.get("name");
-                Log.d("FilterInventory", "Checking item: " + name);
-
-                if (name != null && name.toLowerCase().contains(lowerCaseQuery)) {
-                    Log.d("FilterInventory", "Match found: " + name);
-                    filteredList.add(item);
+            // Filter based on the query
+            List<Map<String, Object>> filteredResults = new ArrayList<>();
+            for (Map<String, Object> item : originalList) {
+                String name = (String) item.get("name"); // Assuming there's a "name" field
+                if (name != null && name.toLowerCase().contains(query.toLowerCase())) {
+                    filteredResults.add(item);
                 }
             }
+            filteredList.clear();
+            filteredList.addAll(filteredResults);
         }
 
-        adapter.updateList(filteredList); // Update the RecyclerView
+        adapter.updateList(filteredList); // Update the adapter with the filtered list
+        adapter.notifyDataSetChanged(); // Notify the adapter of data changes
     }
 
-   private void showAddQuantityDialog(Map<String, Object> item) {
+    /* private void loadInventoryData() {
+         db.collection("inventory")
+                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                     @SuppressLint("NotifyDataSetChanged")
+                     @Override
+                     public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
+                         if (error != null) {
+                             Log.e("Firestore Error", "Error fetching inventory: " + error.getMessage());
+                             return;
+                         }
+
+                         if (value != null && !value.isEmpty()) {
+                             inventoryList.clear();
+                             for (QueryDocumentSnapshot doc : value) {
+                                 Map<String, Object> data = doc.getData();
+                                 data.put("id", doc.getId()); // Add document ID to the item
+                                 inventoryList.add(data);
+                                 Log.d("Firestore Document", "Loaded: " + data);
+                             }
+
+                             filteredList.clear();
+                             filteredList.addAll(inventoryList);
+                             adapter.updateList(filteredList);
+                         } else {
+                             Log.d("Inventory", "No items found in inventory.");
+                             filteredList.clear();
+                             adapter.notifyDataSetChanged();
+                         }
+                     }
+                 });
+     }
+*/
+
+    private void showAddQuantityDialog(Map<String, Object> item) {
        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
        builder.setView(dialogView);
@@ -636,32 +680,32 @@ public class InventoryFragment extends Fragment {
     }
 
     private void loadUsedItemsForDate(String selectedDate) {
-        // Check if a date was selected; if not, use yesterday's date
         if (selectedDate == null || selectedDate.isEmpty()) {
-            selectedDate = getYesterdayDate(); // Get yesterday's date if no date is selected
+            selectedDate = getYesterdayDate();
             Log.d("Date Selection", "No date selected, using yesterday's date: " + selectedDate);
         } else {
             Log.d("Date Selection", "Selected date: " + selectedDate);
         }
 
-        // Ensure the date is in the Firestore format "MMMM dd, yyyy"
         String formattedDate = formatDateForFirestore(selectedDate);
         Log.d("Date Formatting", "Formatted date for Firestore: " + formattedDate);
 
-        filteredList.clear();
+        filteredList.clear(); // Clear the filtered list before loading new data
         Log.d("Inventory Update", "Cleared filtered list.");
 
         if (!isInventoryDataLoaded) {
             Log.d("Firestore Query", "Fetching inventory data from Firestore...");
+
             db.collection("inventory")
                     .get()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
                             Log.d("Firestore Query", "Successfully fetched inventory data.");
+
                             for (QueryDocumentSnapshot document : task.getResult()) {
                                 Log.d("Firestore Inventory", "Document ID: " + document.getId() + ", Data: " + document.getData());
 
-                                // Start with the selected date
+                                // Fetch the daily record for the selected date
                                 fetchDailyRecordForDate(document, formattedDate);
                             }
                         } else {
@@ -670,9 +714,10 @@ public class InventoryFragment extends Fragment {
                     });
         } else {
             Log.d("Inventory Update", "Inventory data already loaded, filtering by date.");
-            filterInventoryByDate(formattedDate);
+            filterInventoryByDate(formattedDate); // Filter the inventory by date
         }
     }
+
 
     // Method to format date into Firestore's "MMMM dd, yyyy" format
     private String formatDateForFirestore(String inputDate) {
@@ -705,7 +750,7 @@ public class InventoryFragment extends Fragment {
     private void fetchDailyRecordForDate(QueryDocumentSnapshot document, String date) {
         DocumentReference dailyRecordRef = document.getReference().collection("dailyRecords").document(date); // Use date to match Firestore
 
-        Log.d("Firestore Query", "Fetching daily record for date: " + date + " in inventory ID: " + document.getId());
+     //   Log.d("Firestore Query", "Fetching daily record for date: " + date + " in inventory ID: " + document.getId());
 
         // Fetch the daily record for the specified date
         dailyRecordRef.get().addOnCompleteListener(innerTask -> {
@@ -715,7 +760,7 @@ public class InventoryFragment extends Fragment {
                     long used = dailyDoc.getLong("in_use") != null ? dailyDoc.getLong("in_use") : 0;
                     long stocks = dailyDoc.getLong("stocks") != null ? dailyDoc.getLong("stocks") : 0;
 
-                    Log.d("Firestore Daily Record", "Daily record found for " + date + ": in_use = " + used + ", stocks = " + stocks);
+                //    Log.d("Firestore Daily Record", "Daily record found for " + date + ": in_use = " + used + ", stocks = " + stocks);
 
                     // Prepare combined data for display
                     Map<String, Object> combinedData = new HashMap<>(document.getData());
@@ -726,16 +771,16 @@ public class InventoryFragment extends Fragment {
 
                     // Add to the filtered list
                     filteredList.add(combinedData);
-                    Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
+                //    Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
 
                     // Check stocks and update the UI
                     adapter.updateList(filteredList);
                     adapter.notifyDataSetChanged();
                 } else {
-                    Log.e("Firestore Error", "No daily record found for " + date + " in inventory ID: " + document.getId());
+                //    Log.e("Firestore Error", "No daily record found for " + date + " in inventory ID: " + document.getId());
                     // If no record found, check the previous date
                     String previousDate = getPreviousDate(date);
-                    Log.d("Date Check", "No record found. Checking previous date: " + previousDate);
+               //     Log.d("Date Check", "No record found. Checking previous date: " + previousDate);
                     fetchDailyRecordForDate(document, previousDate);
                 }
             } else {
