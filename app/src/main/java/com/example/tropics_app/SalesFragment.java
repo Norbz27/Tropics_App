@@ -72,11 +72,12 @@ public class SalesFragment extends Fragment {
     private Calendar calendar;
     private int targetMonth, targetYear;
     private boolean isDaily = true;
-    private TableLayout tableLayout, tableLayout2, tableLayout3, tblGcash, tblExpenses, tblTherapist;
+    private TableLayout tableLayout, tableLayout2, tableLayout3, tblGcash, tblExpenses, tblTherapist, tblAddFunds;
     private List<Employee> employeeList;
     private List<Expenses> expensesList;
     private List<Gcash> gcashList;
-    private FloatingActionButton fabExpenses, fabGcash;
+    private List<Funds> fundsList;
+    private FloatingActionButton fabExpenses, fabGcash, fabAddFunds;
     private List<Client> clientList;
     private ClientAdapter clientAdapter;
     private RecyclerView rvSearchResults;
@@ -92,6 +93,7 @@ public class SalesFragment extends Fragment {
         expensesList = new ArrayList<>();
         gcashList = new ArrayList<>();
         clientList = new ArrayList<>();
+        fundsList = new ArrayList<>();
         loadEmployeeData();
     }
 
@@ -100,6 +102,7 @@ public class SalesFragment extends Fragment {
         super.onResume();
         loadExpensesData();
         loadGcashData();
+        loadFundsData();
     }
 
     @Override
@@ -110,6 +113,7 @@ public class SalesFragment extends Fragment {
 
         fabExpenses = rootView.findViewById(R.id.fabExpenses);
         fabGcash = rootView.findViewById(R.id.fabGcash);
+        fabAddFunds = rootView.findViewById(R.id.fabAddFunds);
 
 
         EditText DatePicker = rootView.findViewById(R.id.date_picker);
@@ -119,6 +123,7 @@ public class SalesFragment extends Fragment {
         tblTherapist = rootView.findViewById(R.id.tblTherapist);
         tblGcash = rootView.findViewById(R.id.tblGcash);
         tblExpenses = rootView.findViewById(R.id.tblExpenses);
+        tblAddFunds = rootView.findViewById(R.id.tblAddFunds);
         tvDayOfWeek = rootView.findViewById(R.id.day_of_Week);
 
         DatePicker.setOnClickListener(v -> showDatePickerDialog(DatePicker));
@@ -128,6 +133,7 @@ public class SalesFragment extends Fragment {
 
         fabExpenses.setOnClickListener(v -> showExpensesDialog());
         fabGcash.setOnClickListener(v -> showGcashDialog());
+        fabAddFunds.setOnClickListener(v -> showAddFundsDialog());
 
         calendar = Calendar.getInstance();
         targetMonth = calendar.get(Calendar.MONTH); // Current month (0-indexed)
@@ -234,7 +240,67 @@ public class SalesFragment extends Fragment {
 
         return rootView;
     }
+    private void showAddFundsDialog() {
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_add_funds, null);
 
+        EditText edAmount = dialogView.findViewById(R.id.etAmount);
+        EditText edReason = dialogView.findViewById(R.id.etReason);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+        // Create an instance of Firebase Firestore
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
+        dialogBuilder.setView(dialogView);
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
+
+        btnSubmit.setOnClickListener(v -> {
+            // Get input values
+            String amount = edAmount.getText().toString().trim();
+            String reason = edReason.getText().toString().trim();
+
+            // Validate input
+            if (amount.isEmpty() || reason.isEmpty()) {
+                edAmount.setError("Enter Amount");
+                edAmount.requestFocus();
+                return;
+            }
+            if (reason.isEmpty()) {
+                edReason.setError("Enter Description");
+                edReason.requestFocus();
+                return;
+            }
+
+            // Show confirmation warning
+            new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                    .setTitle("Confirm Submission")
+                    .setMessage("Do you want to continue?")
+                    .setPositiveButton("Yes", (dialogInterface, i) -> {
+                        // Submit expense
+                        Date dateNow = new Date();
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                        Map<String, Object> expense = new HashMap<>();
+                        expense.put("amount", Double.parseDouble(amount));  // Store amount as a number
+                        expense.put("reason", reason);
+                        expense.put("timestamp", dateFormat.format(dateNow)); // Add a timestamp
+
+                        // Submit the expense to Firestore
+                        db.collection("add_funds")
+                                .add(expense)
+                                .addOnSuccessListener(documentReference -> {
+                                    Toast.makeText(getActivity(), "Fund added successfully", Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();  // Close the original dialog
+                                    loadFundsData();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(getActivity(), "Failed to add fund: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
+                    })
+                    .setNegativeButton("No", null)  // Dismiss the confirmation dialog if 'No' is clicked
+                    .show();
+        });
+    }
     private void showExpensesDialog() {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_new_expenses, null);
@@ -262,7 +328,7 @@ public class SalesFragment extends Fragment {
                 return;
             }
             if (reason.isEmpty()) {
-                edReason.setError("Enter Reason");
+                edReason.setError("Enter Description");
                 edReason.requestFocus();
                 return;
             }
@@ -270,7 +336,7 @@ public class SalesFragment extends Fragment {
             // Show confirmation warning
             new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
                     .setTitle("Confirm Submission")
-                    .setMessage("Once submitted, this expense cannot be erased. Do you want to continue?")
+                    .setMessage("Do you want to continue?")
                     .setPositiveButton("Yes", (dialogInterface, i) -> {
                         // Submit expense
                         Date dateNow = new Date();
@@ -403,6 +469,7 @@ public class SalesFragment extends Fragment {
                 tblGcash.removeViews(1, tblGcash.getChildCount() - 1);
                 tblExpenses.removeViews(1, tblExpenses.getChildCount() - 1);
                 tblTherapist.removeViews(1, tblTherapist.getChildCount() - 1);
+                tblAddFunds.removeViews(1, tblAddFunds.getChildCount() - 1);
 
                 // Filter appointments for the selected date
                 // Sort appointmentsList by appointment time
@@ -758,8 +825,10 @@ public class SalesFragment extends Fragment {
     private void displayTotalSalesWithDeductions(String selectedDate, double totalSales, double totalTherCommission) {
         double totalExpenses = 0.0;
         double totalGcash = 0.0;
+        double totalFunds = 0.0;
         List<Expenses> expensesList = getExpensesForDate(selectedDate);
         List<Gcash> gcashList = getGcashForDate(selectedDate);
+        List<Funds> fundsList = getFundsForDate(selectedDate);
         for (Expenses expense : expensesList) {
             TableRow expenseRow = new TableRow(getContext());
             expenseRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
@@ -906,9 +975,11 @@ public class SalesFragment extends Fragment {
         TableRow expenseRow = new TableRow(getContext());
         expenseRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
+        TextView tvEmp3 = createTextViewBold("");
         TextView tv1 = createTextViewBold("Total: ");
         tv1.setGravity(Gravity.RIGHT);
         TextView tvTotalExpenses = createTextViewBold(numberFormat.format(totalExpenses));
+        expenseRow.addView(tvEmp3);
         expenseRow.addView(tv1);
         expenseRow.addView(tvTotalExpenses);
         tblExpenses.addView(expenseRow);
@@ -1066,12 +1137,169 @@ public class SalesFragment extends Fragment {
         TableRow gcashRow = new TableRow(getContext());
         gcashRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
+        TextView tvEmp2 = createTextViewBold("");
         TextView tv2 = createTextViewBold("Total: ");
         tv2.setGravity(Gravity.RIGHT);
         TextView tvTotalGcash = createTextViewBold(numberFormat.format(totalGcash));
+        gcashRow.addView(tvEmp2);
         gcashRow.addView(tv2);
         gcashRow.addView(tvTotalGcash);
         tblGcash.addView(gcashRow);
+
+        for (Funds funds : fundsList) {
+            TableRow fundsRow = new TableRow(getContext());
+            fundsRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+            ImageView iconView = new ImageView(getContext());
+            Drawable icon = ContextCompat.getDrawable(getContext(), R.drawable.baseline_menu_24); // Replace with your icon
+            iconView.setImageDrawable(icon);
+            iconView.setPadding(10, 5, 5, 5);
+            fundsRow.addView(iconView); // Add icon to the row
+
+            iconView.setOnClickListener(v -> {
+                // Create a PopupMenu anchored to the iconView
+                PopupMenu popupMenu = new PopupMenu(getContext(), iconView);
+                popupMenu.getMenuInflater().inflate(R.menu.employee_item_menu, popupMenu.getMenu());
+
+                // Handle the menu item clicks
+                popupMenu.setOnMenuItemClickListener(item -> {
+                    if (item.getItemId() == R.id.action_edit) {
+                        // Inflate the custom dialog view
+                        LayoutInflater inflater = getLayoutInflater();
+                        View dialogView = inflater.inflate(R.layout.dialog_add_funds, null);
+
+                        // Initialize EditTexts and Button
+                        EditText edAmount = dialogView.findViewById(R.id.etAmount);
+                        EditText edReason = dialogView.findViewById(R.id.etReason);
+                        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+                        // Pre-fill the EditTexts with the current values
+                        edAmount.setText(String.valueOf(funds.getAmount())); // Pre-fill with current amount
+                        edReason.setText(funds.getReason()); // Pre-fill with current reason/client name
+
+                        // Create the AlertDialog
+                        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
+                        dialogBuilder.setView(dialogView);
+                        AlertDialog dialog = dialogBuilder.create();
+                        dialog.show();
+
+                        // Handle the submit button click
+                        btnSubmit.setOnClickListener(v1 -> {
+                            // Get the updated values from the EditTexts
+                            String newAmount = edAmount.getText().toString();
+                            String newReason = edReason.getText().toString();
+
+                            // Validate the input
+                            if (!newAmount.isEmpty() && !newReason.isEmpty()) {
+                                // Show confirmation dialog before proceeding with the update
+                                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                                        .setTitle("Confirm Update")
+                                        .setMessage("Are you sure you want to update this fund?")
+                                        .setPositiveButton("Update", (dialogInterface, i) -> {
+                                            // Proceed with the update if the user confirms
+                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                                            // Create a map of the updated fields
+                                            Map<String, Object> updates = new HashMap<>();
+                                            updates.put("amount", Double.parseDouble(newAmount)); // Parse amount to double
+                                            updates.put("reason", newReason);
+
+                                            // Update the Firestore document
+                                            db.collection("add_funds")
+                                                    .document(funds.getId()) // Replace with your Firestore document ID field
+                                                    .update(updates)
+                                                    .addOnSuccessListener(aVoid -> {
+                                                        Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
+                                                        dialog.dismiss(); // Close the dialog on success
+                                                        loadFundsData();
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                    });
+                                        })
+                                        .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                                            // User canceled the action, do nothing
+                                            dialogInterface.dismiss();
+                                        })
+                                        .show();
+                            } else {
+                                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+
+
+                        return true;
+
+                    } else if (item.getItemId() == R.id.action_delete) {
+                        // Create a confirmation dialog
+                        new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                                .setTitle("Confirm Deletion")
+                                .setMessage("Are you sure you want to delete this fund?")
+                                .setPositiveButton("Delete", (dialogInterface, i) -> {
+                                    // Proceed with deletion if the user confirms
+                                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                                    // Delete the Firestore document
+                                    db.collection("add_funds")
+                                            .document(funds.getId()) // Replace with your Firestore document ID field
+                                            .delete()
+                                            .addOnSuccessListener(aVoid -> {
+                                                Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
+                                                // You may also want to update your UI after deletion, e.g., remove the item from the list
+                                                loadFundsData();
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                            });
+                                })
+                                .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                                    // User canceled the action, do nothing
+                                    dialogInterface.dismiss();
+                                })
+                                .show();
+
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+
+
+                // Show the PopupMenu
+                popupMenu.show();
+            });
+
+
+            TextView reasonTextView = new TextView(getContext());
+            reasonTextView.setText(funds.getReason());
+            reasonTextView.setTextColor(Color.LTGRAY);
+            reasonTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+            reasonTextView.setPadding(10, 5, 5, 5);
+            fundsRow.addView(reasonTextView);
+
+            TextView fundsAmountTextView = new TextView(getContext());
+            fundsAmountTextView.setText(numberFormat.format(funds.getAmount()));
+            fundsAmountTextView.setTextColor(Color.LTGRAY);
+            fundsAmountTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+            fundsAmountTextView.setPadding(10, 5, 5, 5);
+            fundsRow.addView(fundsAmountTextView);
+
+            tblAddFunds.addView(fundsRow);
+
+            // Accumulate total expenses
+            totalFunds += funds.getAmount();
+        }
+        TableRow fundsRow = new TableRow(getContext());
+        fundsRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        TextView tvEmp = createTextViewBold("");
+        TextView tv10 = createTextViewBold("Total: ");
+        tv1.setGravity(Gravity.RIGHT);
+        TextView tvTotalFunds = createTextViewBold(numberFormat.format(totalFunds));
+        fundsRow.addView(tvEmp);
+        fundsRow.addView(tv10);
+        fundsRow.addView(tvTotalFunds);
+        tblAddFunds.addView(fundsRow);
 
         TableRow calc = new TableRow(getContext());
         calc.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
@@ -1117,6 +1345,7 @@ public class SalesFragment extends Fragment {
 
         double total = totalExpenses + totalGcash + totalTherCommission;
         double balance = totalSales - total;
+        double overall = balance + totalFunds;
         TableRow TotalRow = new TableRow(getContext());
         TotalRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
@@ -1181,11 +1410,62 @@ public class SalesFragment extends Fragment {
 
         TextView balTextView = new TextView(getContext());
         balTextView.setText(numberFormat.format(balance));
-        balTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-        balTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+        balTextView.setTextColor(Color.LTGRAY);
+        balTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
         balTextView.setPadding(10, 5, 5, 5);
         balSalesRow.addView(balTextView);
         tableLayout3.addView(balSalesRow);
+
+        TableRow totalFundsRow = new TableRow(getContext());
+        totalFundsRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        TextView TextView5 = new TextView(getContext());
+        TextView5.setText("Additional Funds:");
+        TextView5.setTextColor(Color.LTGRAY);
+        TextView5.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        TextView5.setPadding(10, 5, 5, 5);
+        totalFundsRow.addView(TextView5);
+
+        TextView fundTextView = new TextView(getContext());
+        fundTextView.setText(numberFormat.format(totalFunds));
+        fundTextView.setTextColor(Color.LTGRAY);
+        fundTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        fundTextView.setPadding(10, 5, 5, 5);
+        totalFundsRow.addView(fundTextView);
+        tableLayout3.addView(totalFundsRow);
+
+        TableRow UndeRow3 = new TableRow(getContext());
+        UndeRow3.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
+
+        View line5 = new View(getContext());
+        line5.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
+        line5.setBackgroundColor(Color.LTGRAY);
+
+        View line6 = new View(getContext());
+        line6.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2));  // Full width, height 10px
+        line6.setBackgroundColor(Color.LTGRAY);
+        UndeRow3.addView(line5);
+        UndeRow3.addView(line6);
+
+        tableLayout3.addView(UndeRow3);
+
+        TableRow OverallTotal = new TableRow(getContext());
+        OverallTotal.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+        TextView TextView6 = new TextView(getContext());
+        TextView6.setText("");
+        TextView6.setTextColor(Color.LTGRAY);
+        TextView6.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        TextView6.setPadding(10, 5, 5, 5);
+        OverallTotal.addView(TextView6);
+
+        TextView OverallTextView = new TextView(getContext());
+        OverallTextView.setText(numberFormat.format(overall));
+        OverallTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+        OverallTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+        OverallTextView.setPadding(10, 5, 5, 5);
+        OverallTotal.addView(OverallTextView);
+        tableLayout3.addView(OverallTotal);
     }
     private TextView createTextViewBold(String text) {
         TextView textView = new TextView(getContext());
@@ -1229,6 +1509,15 @@ public class SalesFragment extends Fragment {
         }
         return matchingGcash; // Return the list of matching expenses
     }
+    private List<Funds> getFundsForDate(String selectedDate) {
+        List<Funds> matchingFunds = new ArrayList<>();
+        for (Funds funds : fundsList) {
+            if (funds.getTimestamp().equals(selectedDate)) {
+                matchingFunds.add(funds);
+            }
+        }
+        return matchingFunds;
+    }
     private void loadEmployeeData() {
         db.collection("Employees").get()
                 .addOnCompleteListener(task -> {
@@ -1242,6 +1531,7 @@ public class SalesFragment extends Fragment {
                         fetchAppointmentData();
                         loadExpensesData();
                         loadGcashData();
+                        loadFundsData();
                     } else {
                         Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
                     }
@@ -1256,6 +1546,22 @@ public class SalesFragment extends Fragment {
                             Expenses expenses = document.toObject(Expenses.class);
                             expenses.setId(document.getId());
                             expensesList.add(expenses);
+                        }
+                        fetchAppointmentData();
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+    private void loadFundsData() {
+        db.collection("add_funds").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        fundsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Funds funds = document.toObject(Funds.class);
+                            funds.setId(document.getId());
+                            fundsList.add(funds);
                         }
                         fetchAppointmentData();
                     } else {

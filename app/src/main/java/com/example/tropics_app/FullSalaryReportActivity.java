@@ -65,6 +65,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     private List<EmployeeSalaryDetails> salaryDetailsList ;
     private List<Expenses> expensesList;
     private List<Gcash> gcashList;
+    private List<Funds> fundsList;
     private TableLayout daily_table, finalSalaryTable, breakdown_table;
     private Spinner month_spinner, year_spinner, week_num;
     private double totalSalesFtS = 0.0;
@@ -93,6 +94,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         salaryDetailsList = new ArrayList<>();
         expensesList = new ArrayList<>();
         gcashList = new ArrayList<>();
+        fundsList = new ArrayList<>();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -101,6 +103,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
         loadExpensesData();
         loadGcashData();
+        loadFundsData();
         loadAppointmentData();
         loadEmployeeData();
         loadSalaryData();
@@ -943,8 +946,10 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     private void displayTotalSalesWithDeductions(String selectedDate, double totalSales) {
         double totalExpenses = 0.0;
         double totalGcash = 0.0;
+        double totalFunds = 0.0;
         List<Expenses> expensesList = getExpensesForDate(selectedDate);
         List<Gcash> gcashList = getGcashForDate(selectedDate);
+        List<Funds> fundsList = getFundsForDate(selectedDate);
 
         for (Expenses expense : expensesList) {
             // Accumulate total expenses
@@ -955,8 +960,16 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         for (Gcash gcash : gcashList) {
             totalGcash += gcash.getAmount();
         }
+
+        for (Funds funds : fundsList) {
+            // Accumulate total expenses
+            totalFunds += funds.getAmount();
+        }
+
         double total = totalExpenses + totalGcash;
         double balance = totalSales - total;
+        double overall = balance + totalFunds;
+
         TableRow tableRow = new TableRow(this);
 
         SimpleDateFormat parser = new SimpleDateFormat("MM/dd/yyyy"); // Adjust this format to match your input date format
@@ -971,8 +984,8 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
             // Set the formatted date to TextView
             TextView dateTextView = createTextView(formattedDate);
-            TextView bal = createTextView(numberFormat.format(balance));
-            totalSalesFtS += balance;
+            TextView bal = createTextView(numberFormat.format(overall));
+            totalSalesFtS += overall;
             tableRow.addView(dateTextView);
             tableRow.addView(bal);
         } catch (Exception e) {
@@ -999,6 +1012,30 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             }
         }
         return matchingGcash; // Return the list of matching expenses
+    }
+    private List<Funds> getFundsForDate(String selectedDate) {
+        List<Funds> matchingFunds = new ArrayList<>();
+        for (Funds funds : fundsList) {
+            if (funds.getTimestamp().equals(selectedDate)) {
+                matchingFunds.add(funds);
+            }
+        }
+        return matchingFunds;
+    }
+    private void loadFundsData() {
+        db.collection("add_funds").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        fundsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Funds funds = document.toObject(Funds.class);
+                            funds.setId(document.getId());
+                            fundsList.add(funds);
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
     private void loadExpensesData() {
         db.collection("expenses").get()
