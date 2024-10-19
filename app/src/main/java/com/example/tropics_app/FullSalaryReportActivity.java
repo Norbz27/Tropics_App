@@ -468,7 +468,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
         // Parse the current date for salary calculation
         Calendar currentCalendar = Calendar.getInstance();
-        int daysPresent = Integer.parseInt(daysPresentStr);
+        int daysPresent = Integer.parseInt(daysPresentStr!= "" ? daysPresentStr : String.valueOf(0));
 
         // Calculate the total salary for the days present
         double totalSalary = salary * daysPresent;
@@ -497,7 +497,12 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     }
 
     private double getCommissionRateByDate(Employee employee, String appointmentDate) {
+        // Get commission history and ensure it is not null
         List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
+        if (commissionHistory == null) {
+            return employee.getComs() != null ? employee.getComs() : 0.0; // Return the current commission rate if history is null
+        }
+
         double commissionRate = employee.getComs() != null ? employee.getComs() : 0.0; // Default to current commission rate
 
         // Parse the appointment date
@@ -532,6 +537,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
         return commissionRate;
     }
+
 
     private void filterDataByMonthYearWeek(String selectedMonth, String selectedYear, String selectedWeekNumber) {
         Calendar calendar = Calendar.getInstance();
@@ -762,6 +768,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                         Log.d("FullSalaryReports", emp.getLateDeduction());
 
                         // Calculate the basic weekly salary and deductions
+                        String daysPresent = emp.getDaysPresent()!= "" ? emp.getDaysPresent() : "0";
                         double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
                         double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
                         double deductedWeekSal = weekSal - lateDeduction;
@@ -793,7 +800,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                         // Create TextViews for displaying employee details
                         TextView name = createTextView(emp.getEmployeeId());
                         TextView perDay = createTextView(numberFormat.format(employee.getSalary()));
-                        TextView daysPresentTextView = createTextView(emp.getDaysPresent());
+                        TextView daysPresentTextView = createTextView(daysPresent);
                         TextView weekSalary = createTextView(numberFormat.format(weekSal));
                         TextView lateDeductionTextView = createTextView(numberFormat.format(lateDeduction));
                         TextView deductedSalary = createTextView(numberFormat.format(deductedWeekSal));
