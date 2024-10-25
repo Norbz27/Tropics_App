@@ -684,16 +684,14 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 if (appointmentDate != null && (appointmentDate.after(startOfWeek) || appointmentDate.equals(startOfWeek)) && (appointmentDate.before(endOfWeek) || appointmentDate.equals(endOfWeek))) {
                     // Check for and display sub-services
                     List<Map<String, Object>> services = appointment.getServices();
-                    // Update sales per employee
                     for (Map<String, Object> service : services) {
                         Object employeeObj = service.get("assignedEmployee");
 
-                        // Check if employee is not null and not "None"
                         if (employeeObj != null && !"None".equals(employeeObj.toString())) {
                             String employee = employeeObj.toString();
-                            Log.d("FullSlaraReport", employee);
                             double totalPriceForService = (Double) service.get("servicePrice");
 
+                            // Handle sub-services
                             List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
                             if (subServices != null) {
                                 for (Map<String, Object> subService : subServices) {
@@ -705,9 +703,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                             // Update the employee's total sales
                             employeeSalesMap.put(employee, employeeSalesMap.getOrDefault(employee, 0.0) + totalPriceForService);
 
-                            // Initialize daily sales array if not already done (only for Monday to Thursday)
+                            // Ensure dailySalesMap is initialized for 7 days (Monday to Sunday)
                             if (!dailySalesMap.containsKey(employee)) {
-                                dailySalesMap.put(employee, new double[7]); // Array for 4 days of the week (Monday to Thursday)
+                                dailySalesMap.put(employee, new double[7]); // Array for 7 days (Monday to Sunday)
                             }
 
                             // Calculate which day of the week the appointment occurred
@@ -715,14 +713,19 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                             appointmentCalendar.setTime(appointmentDate);
                             int dayOfWeek = appointmentCalendar.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY; // Adjust to 0-based index (Monday = 0)
 
-                            if (dayOfWeek >= 0 && dayOfWeek < 7) { // Ensure the day is Monday to Thursday
+                            // Correct this logic to handle Sunday as well
+                            if (dayOfWeek < 0) {
+                                dayOfWeek = 6; // If it's Sunday, set index to 6
+                            }
+
+                            if (dayOfWeek >= 0 && dayOfWeek < 7) { // Ensure the day is within the range Monday-Sunday
                                 dailySalesMap.get(employee)[dayOfWeek] += totalPriceForService;
                             }
                         }
                     }
-
                 }
             }
+
 
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, month);
@@ -757,24 +760,38 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     double totalCommissionPerEmp = 0.0;
 
                     // Process sales and commissions for 7 days (weekdays and weekends)
-                    for (int i = 0; i < 7; i++) {
-                        String dateStr = sdf.format(displayCalendar2.getTime());
+                    for (int i = 0; i < 7; i++) { // Process 7 days of the week
+                        Calendar currentDayCalendar = (Calendar) displayCalendar2.clone();
+
+                        String dateStr = sdf.format(currentDayCalendar.getTime());
                         Log.d("SelectedDate", dateStr);
-                        double dailySales = dailySalesMap.get(employeeName)[i];
-                        double commissionRate = getCommissionRateByDate(employee, dateStr);
-                        //double commissionRate = employee.getComs();
-                        double dailyCommission = (dailySales * commissionRate) / 100.0;
 
-                        TextView dailySalesTextView = createTextView(numberFormat.format(dailySales));
-                        TextView dailyCommissionTextView = createTextView(numberFormat.format(dailyCommission));
+                        // Ensure that you are displaying the sales data for all 7 days, including Sunday
+                        double[] salesData = dailySalesMap.get(employeeName);
+                        if (salesData != null && salesData.length > i) {
+                            double dailySales = salesData[i];
+                            double commissionRate = getCommissionRateByDate(employee, dateStr);
+                            double dailyCommission = (dailySales * commissionRate) / 100.0;
+                            if (i == 6) { // Index 6 is Sunday
+                                Log.d("SundaySales", "Sunday sales for " + employeeName + ": " + dailySales);
+                            }
+                            // Display sales and commission for each day
+                            TextView dailySalesTextView = createTextView(numberFormat.format(dailySales));
+                            TextView dailyCommissionTextView = createTextView(numberFormat.format(dailyCommission));
 
-                        rowCommission.addView(dailySalesTextView);
-                        rowCommission.addView(dailyCommissionTextView);
+                            rowCommission.addView(dailySalesTextView);
+                            rowCommission.addView(dailyCommissionTextView);
 
-                        totalSalesPerEmp += dailySales;
-                        totalCommissionPerEmp += dailyCommission;
+                            totalSalesPerEmp += dailySales;
+                            totalCommissionPerEmp += dailyCommission;
+                        } else {
+                            Log.d("SalesData", "No sales data available for day " + i + " for employee " + employeeName);
+                        }
+
+                        // Move to the next day
                         displayCalendar2.add(Calendar.DAY_OF_MONTH, 1);
                     }
+
 
                     // Add total sales and commission for weekends
                     TextView totalSalesTextView = createTextView(numberFormat.format(totalSalesPerEmp));
@@ -945,8 +962,10 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
         Calendar calendar = Calendar.getInstance();
         Map<String, Double> employeeSalesMap = new HashMap<>(); // To store sales by employee
-        Map<String, Double> employeeCommissionMap = new HashMap<>(); // To store commission by employee
+        Map<String, Double> employeeCommissionMap = new HashMap<>();
+
         double totalSales = 0.0;
+        double totalTherCommission = 0.0;
         try {
             Date date = dateFormat.parse(selectedDate);
             if (date != null) {
@@ -972,41 +991,92 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                         if (appointmentCalendar.get(Calendar.DAY_OF_MONTH) == day &&
                                 appointmentCalendar.get(Calendar.MONTH) == month &&
                                 appointmentCalendar.get(Calendar.YEAR) == year) {
+                            String name = "";
+                            String time = "";
 
                             // Check for and display sub-services
                             List<Map<String, Object>> services = appointment.getServices();
                             for (Map<String, Object> service : services) {
                                 String assignedEmployee = (String) service.get("assignedEmployee");
-                                Log.d("SalesFragment", "Assigned Employee: " + assignedEmployee);
+                                if (assignedEmployee == null || assignedEmployee.equals("None")) {
+                                    continue;
+                                }
 
-                                if (assignedEmployee != null && !"None".equals(assignedEmployee.toString())) {
-                                    double totalPriceForParentService = (Double) service.get("servicePrice"); // Variable to hold total price for this parent service
+                                if (!appointment.getFullName().equals(name) && !appointment.getTime().equals(time)) {
+                                    name = appointment.getFullName();
+                                    time = appointment.getTime();
+                                }
 
-                                    List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
-                                    if (subServices != null) {
-                                        for (Map<String, Object> subService : subServices) {
-                                            // Get the sub-service name and price
-                                            Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                double totalPriceForParentService = (Double) service.get("servicePrice");
 
-                                            totalPriceForParentService += subServicePrice;
-
-                                        }
+                                List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                                if (subServices != null) {
+                                    for (Map<String, Object> subService : subServices) {
+                                        Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                        totalPriceForParentService += subServicePrice;
                                     }
+                                }
 
-                                    totalSales += totalPriceForParentService;
+                                totalSales += totalPriceForParentService;
+                            }
+
+                            // Process employee sales
+                            for (Map<String, Object> service : appointment.getServices()) {
+                                String employee = (String) service.get("assignedEmployee");
+                                if (employee == null || employee.equals("None")) {
+                                    continue;
+                                }
+
+                                double totalPriceForService = (Double) service.get("servicePrice");
+                                List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                                if (subServices != null) {
+                                    for (Map<String, Object> subService : subServices) {
+                                        Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                        totalPriceForService += subServicePrice;
+                                    }
+                                }
+
+                                // Update employee sales
+                                if (employeeSalesMap.containsKey(employee)) {
+                                    employeeSalesMap.put(employee, employeeSalesMap.get(employee) + totalPriceForService);
+                                } else {
+                                    employeeSalesMap.put(employee, totalPriceForService);
                                 }
                             }
                         }
                     }
                 }
 
-                displayTotalSalesWithDeductions(selectedDate, totalSales);
+                // Assuming employeeSalesMap contains employee names and their corresponding sales
+                for (Map.Entry<String, Double> entry : employeeSalesMap.entrySet()) {
+                    String employeeName = entry.getKey();
+                    double sales = entry.getValue();
+
+                    // Find the employee by name
+                    Employee employee = findEmployeeByName(employeeName);
+                    if (employee != null) {
+                        // Check if the employee is a therapist
+                        String therapistRole = employee.getTherapist();
+                        if ("Therapist".equals(therapistRole) || employee.getSalary() == 0) {
+                            // Retrieve the appropriate commission rate based on the current date
+                            double commissionRate = getCommissionRateByDate(employee, date.toString()); // Pass the current date
+                            double employeeCommission = (sales * commissionRate) / 100.0;
+                            totalTherCommission += employeeCommission;
+
+                            // Store the calculated commission in the employeeCommissionMap (if needed)
+                            employeeCommissionMap.put(employeeName, employeeCommission);
+                        }
+                    }
+                }
+
+                displayTotalSalesWithDeductions(selectedDate, totalSales, totalTherCommission);
             }
         } catch (ParseException e) {
             Log.e("SalesFragment", "Error parsing date: ", e);
         }
     }
-    private void displayTotalSalesWithDeductions(String selectedDate, double totalSales) {
+    private void displayTotalSalesWithDeductions(String selectedDate, double totalSales, double totalTherCommission) {
+        Log.d("SalesFragment", "TotalTherCom: " + totalTherCommission);
         double totalExpenses = 0.0;
         double totalGcash = 0.0;
         double totalFunds = 0.0;
@@ -1029,8 +1099,8 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             totalFunds += funds.getAmount();
         }
 
-        double total = totalExpenses + totalGcash;
-        double balance = totalSales - total;
+        double total = totalExpenses + totalGcash + totalTherCommission;
+        double balance = totalSales - total ;
         double overall = balance + totalFunds;
 
         TableRow tableRow = new TableRow(this);
@@ -1085,6 +1155,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         }
         return matchingFunds;
     }
+
     private void loadFundsData() {
         db.collection("add_funds").get()
                 .addOnCompleteListener(task -> {
