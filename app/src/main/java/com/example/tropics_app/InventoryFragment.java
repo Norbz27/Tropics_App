@@ -702,7 +702,7 @@ public class InventoryFragment extends Fragment {
                             for (QueryDocumentSnapshot document : task.getResult()) {
                                 Log.d("Firestore Inventory", "Document ID: " + document.getId() + ", Data: " + document.getData());
 
-                                // Fetch the daily record for the selected date
+                                // Start searching with today's date
                                 fetchDailyRecordForDate(document, formattedDate);
                             }
                         } else {
@@ -714,7 +714,6 @@ public class InventoryFragment extends Fragment {
             filterInventoryByDate(formattedDate); // Filter the inventory by date
         }
     }
-
 
     // Method to format date into Firestore's "MMMM dd, yyyy" format
     private String formatDateForFirestore(String inputDate) {
@@ -745,47 +744,52 @@ public class InventoryFragment extends Fragment {
 
     // Method to fetch daily record for a specific date
     private void fetchDailyRecordForDate(QueryDocumentSnapshot document, String date) {
-        DocumentReference dailyRecordRef = document.getReference().collection("dailyRecords").document(date); // Use date to match Firestore
+        DocumentReference dailyRecordRef = document.getReference().collection("dailyRecords").document(date);
 
         Log.d("Firestore Query", "Fetching daily record for date: " + date + " in inventory ID: " + document.getId());
 
-        // Fetch the daily record for the specified date
         dailyRecordRef.get().addOnCompleteListener(innerTask -> {
             if (innerTask.isSuccessful() && innerTask.getResult() != null) {
                 DocumentSnapshot dailyDoc = innerTask.getResult();
-                if (dailyDoc.exists()) {
-                    long used = dailyDoc.getLong("in_use") != null ? dailyDoc.getLong("in_use") : 0;
+                if (dailyDoc.exists() && dailyDoc.getLong("in_use") != null) {
+                    long used = dailyDoc.getLong("in_use");
                     long stocks = dailyDoc.getLong("stocks") != null ? dailyDoc.getLong("stocks") : 0;
 
-                    Log.d("Firestore Daily Record", "Daily record found for " + date + ": in_use = " + used + ", stocks = " + stocks);
+                    if (used > 0 || date.equals(getTodayDate())) { // Check for non-zero in_use or if it's today
+                        Log.d("Firestore Daily Record", "Valid daily record found for " + date + ": in_use = " + used + ", stocks = " + stocks);
 
-                    // Prepare combined data for display
-                    Map<String, Object> combinedData = new HashMap<>(document.getData());
-                    combinedData.put("id", document.getId());
-                    combinedData.put("quantity", stocks); // Stocks remaining
-                    combinedData.put("used", used); // in_use
-                    combinedData.put("date", date);
+                        // Prepare combined data for display
+                        Map<String, Object> combinedData = new HashMap<>(document.getData());
+                        combinedData.put("id", document.getId());
+                        combinedData.put("quantity", stocks); // Stocks remaining
+                        combinedData.put("used", used); // in_use
+                        combinedData.put("date", date);
 
-                    // Add to the filtered list
-                    filteredList.add(combinedData);
-                    Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
+                        // Add to the filtered list
+                        filteredList.add(combinedData);
+                        Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
 
-                    // Check stocks and update the UI
-                    adapter.updateList(filteredList);
-                    adapter.notifyDataSetChanged();
+                        // Check stocks and update the UI
+                        adapter.updateList(filteredList);
+                        adapter.notifyDataSetChanged();
+                    } else {
+                        // If `in_use` is zero and not today's date, check the previous date
+                        String previousDate = getPreviousDate(date);
+                        Log.d("Date Check", "`in_use` is zero or no data found. Checking previous date: " + previousDate);
+
+                        // Recursively fetch the record for the previous date
+                        fetchDailyRecordForDate(document, previousDate);
+                    }
                 } else {
-                    Log.e("Firestore Error", "No daily record found for " + date + " in inventory ID: " + document.getId());
-                    // If no record found, check the previous date
+                    Log.e("Firestore Error", "Error: No daily record found or `in_use` is null for " + date);
                     String previousDate = getPreviousDate(date);
-                    Log.d("Date Check", "No record found. Checking previous date: " + previousDate);
-                    fetchDailyRecordForDate(document, previousDate);
+                    fetchDailyRecordForDate(document, previousDate); // Continue searching with the previous date
                 }
             } else {
                 Log.e("Firestore Error", "Error fetching daily record: " + innerTask.getException());
             }
         });
     }
-
 
     // Method to get the previous date based on the provided date
     private String getPreviousDate(String currentDate) {
