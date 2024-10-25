@@ -333,7 +333,54 @@
                         </HorizontalScrollView>
                     </LinearLayout>
                 </LinearLayout>
-
+                <TextView
+                    android:id="@+id/tvAddFunds"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope_bold"
+                    android:text="Additional Funds"
+                    android:layout_gravity="center"
+                    android:textColor="@color/orange"
+                    android:layout_marginBottom="10dp"
+                    android:textSize="16sp" />
+                <HorizontalScrollView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="horizontal"
+                    android:layout_gravity="center"
+                    android:paddingHorizontal="5dp">
+                    <!-- Table for Sales Data -->
+                    <TableLayout
+                        android:id="@+id/tblAddFunds"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="50dp">
+                        <!-- Table Header -->
+                        <TableRow android:background="@color/gray">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=""
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Description"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Amount"
+                                android:textColor="@android:color/white"
+                                android:padding="5dp"
+                                android:fontFamily="@font/manrope_bold" />
+                        </TableRow>
+                    </TableLayout>
+                </HorizontalScrollView>
                 <TextView
                     android:id="@+id/tvTEGD"
                     android:layout_width="wrap_content"
@@ -497,7 +544,17 @@
             </LinearLayout>
         </ScrollView>
     </RelativeLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddFunds"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginRight="30dp"
+        android:layout_marginBottom="170dp"
+        android:backgroundTint="@color/orange"
 
+        app:maxImageSize="45dp"
+        app:srcCompat="@drawable/baseline_add_24" />
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabGcash"
         android:layout_width="wrap_content"

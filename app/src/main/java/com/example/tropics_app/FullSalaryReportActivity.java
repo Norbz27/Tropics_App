@@ -65,6 +65,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     private List<EmployeeSalaryDetails> salaryDetailsList ;
     private List<Expenses> expensesList;
     private List<Gcash> gcashList;
+    private List<Funds> fundsList;
     private TableLayout daily_table, finalSalaryTable, breakdown_table;
     private Spinner month_spinner, year_spinner, week_num;
     private double totalSalesFtS = 0.0;
@@ -93,6 +94,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         salaryDetailsList = new ArrayList<>();
         expensesList = new ArrayList<>();
         gcashList = new ArrayList<>();
+        fundsList = new ArrayList<>();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -101,6 +103,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
         loadExpensesData();
         loadGcashData();
+        loadFundsData();
         loadAppointmentData();
         loadEmployeeData();
         loadSalaryData();
@@ -109,6 +112,12 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                loadExpensesData();
+                loadGcashData();
+                loadFundsData();
+                loadAppointmentData();
+                loadEmployeeData();
+                loadSalaryData();
                 filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
             }
         });
@@ -135,73 +144,153 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
         // Clear previous rows if any
         employeeTable.removeViews(1, employeeTable.getChildCount() - 1);
-
+        Map<String, String> employeeDocMap = new HashMap<>();
         // Fetch employee data from Firestore
         db.collection("Employees")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            Employee employee = document.toObject(Employee.class); // Assuming you have an Employee class
-                            TableRow tableRow = new TableRow(this);
+                            Employee employee = document.toObject(Employee.class);
+                            if ("Regular".equals(employee.getTherapist()) || employee.getSalary() != 0) {
+                                // Assuming you have an Employee class
+                                TableRow tableRow = new TableRow(this);
 
-                            TextView employeeName = new TextView(this);
-                            employeeName.setText(employee.getName());
-                            employeeName.setTextSize(16);
-                            employeeName.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
-                            employeeName.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
-                            employeeName.setTextColor(getResources().getColor(android.R.color.white));
+                                TextView employeeName = new TextView(this);
+                                employeeName.setText(employee.getName());
+                                employeeName.setTextSize(16);
+                                employeeName.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
+                                employeeName.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
+                                employeeName.setTextColor(getResources().getColor(android.R.color.white));
 
-                            EditText etDaysPresent = new EditText(this);
-                            etDaysPresent.setHint("0");
-                            etDaysPresent.setBackgroundResource(R.drawable.custom_input);
-                            etDaysPresent.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
-                            etDaysPresent.setInputType(InputType.TYPE_CLASS_NUMBER);
-                            etDaysPresent.setPadding(12, 5, 12, 5);
-                            etDaysPresent.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
-                            etDaysPresent.setId(View.generateViewId());
+                                EditText etDaysPresent = new EditText(this);
+                                etDaysPresent.setHint("0");
+                                etDaysPresent.setBackgroundResource(R.drawable.custom_input);
+                                etDaysPresent.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
+                                etDaysPresent.setInputType(InputType.TYPE_CLASS_NUMBER);
+                                etDaysPresent.setPadding(12, 5, 12, 5);
+                                etDaysPresent.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
+                                etDaysPresent.setId(View.generateViewId());
 
-                            EditText etLateDeduction = new EditText(this);
-                            etLateDeduction.setHint("0");
-                            etLateDeduction.setBackgroundResource(R.drawable.custom_input);
-                            etLateDeduction.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
-                            etLateDeduction.setInputType(InputType.TYPE_CLASS_NUMBER);
-                            etLateDeduction.setPadding(12, 5, 12, 5);
-                            etLateDeduction.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
-                            etLateDeduction.setId(View.generateViewId());
+                                EditText etLateDeduction = new EditText(this);
+                                etLateDeduction.setHint("0");
+                                etLateDeduction.setBackgroundResource(R.drawable.custom_input);
+                                etLateDeduction.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
+                                etLateDeduction.setInputType(InputType.TYPE_CLASS_NUMBER);
+                                etLateDeduction.setPadding(12, 5, 12, 5);
+                                etLateDeduction.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
+                                etLateDeduction.setId(View.generateViewId());
 
-                            EditText etCADeduction = new EditText(this);
-                            etCADeduction.setHint("0");
-                            etCADeduction.setBackgroundResource(R.drawable.custom_input);
-                            etCADeduction.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
-                            etCADeduction.setInputType(InputType.TYPE_CLASS_NUMBER);
-                            etCADeduction.setPadding(12, 5, 12, 5);
-                            etCADeduction.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
-                            etCADeduction.setId(View.generateViewId());
+                                EditText etCADeduction = new EditText(this);
+                                etCADeduction.setHint("0");
+                                etCADeduction.setBackgroundResource(R.drawable.custom_input);
+                                etCADeduction.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
+                                etCADeduction.setInputType(InputType.TYPE_CLASS_NUMBER);
+                                etCADeduction.setPadding(12, 5, 12, 5);
+                                etCADeduction.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
+                                etCADeduction.setId(View.generateViewId());
+                                // Fetch salary details for this employee from Firestore
+                                db.collection("salary_details")
+                                        .whereEqualTo("employeeId", employee.getName()) // Check the employee name is correct
+                                        .whereEqualTo("month", getMonthNumber(month))
+                                        .whereEqualTo("year", year)
+                                        .whereEqualTo("week", week)
+                                        .get()
+                                        .addOnSuccessListener(queryDocumentSnapshots -> {
+                                            if (!queryDocumentSnapshots.isEmpty()) {
+                                                // Store a Map to associate employee names with their document IDs
+                                                for (QueryDocumentSnapshot salaryDoc : queryDocumentSnapshots) {
+                                                    Map<String, Object> salaryData = salaryDoc.getData();
+                                                    String employeeName3 = salaryData.get("employeeId").toString();
+                                                    String docId = salaryDoc.getId();
 
-                            // Fetch salary details for this employee from Firestore
-                            db.collection("salary_details")
-                                    .whereEqualTo("employeeId", employee.getName())
-                                    .whereEqualTo("month", getMonthNumber(month))
-                                    .whereEqualTo("year", year)
-                                    .whereEqualTo("week", week)
-                                    .get()
-                                    .addOnSuccessListener(queryDocumentSnapshots -> {
-                                        if (!queryDocumentSnapshots.isEmpty()) {
-                                            for (QueryDocumentSnapshot salaryDoc : queryDocumentSnapshots) {
-                                                Map<String, Object> salaryData = salaryDoc.getData();
-                                                etDaysPresent.setText(salaryData.get("daysPresent").toString());
-                                                etLateDeduction.setText(salaryData.get("lateDeduction").toString());
-                                                etCADeduction.setText(salaryData.get("caDeduction").toString());
-                                                // Store the document ID to update later
-                                                String docId = salaryDoc.getId();
+                                                    // Map employee names to their document IDs
+                                                    employeeDocMap.put(employeeName3, docId);
+                                                    Log.d("DEBUG", "Employee Name: " + employeeName3 + ", Document ID: " + docId);
 
-                                                // Rename variables inside onSubmit listener to avoid scope conflicts
+                                                    // Set existing data in EditTexts
+                                                    etDaysPresent.setText(salaryData.get("daysPresent").toString());
+                                                    etLateDeduction.setText(salaryData.get("lateDeduction").toString());
+                                                    etCADeduction.setText(salaryData.get("caDeduction").toString());
+                                                }
+
+                                                // Submit button click listener for updating salary details
                                                 btnSubmit.setOnClickListener(v -> {
+                                                    String currentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+                                                    // Loop through the employee table rows and update the data
+                                                    for (int i = 0; i < employeeTable.getChildCount() - 1; i++) {
+                                                        TableRow row = (TableRow) employeeTable.getChildAt(i + 1);
+                                                        Log.d("DEBUG", "Employee Doc Map when submitted: " + employeeDocMap);
+                                                        if (row.getChildCount() >= 4) { // Ensure there are enough child views
+                                                            TextView employeeNameView = (TextView) row.getChildAt(0); // Employee Name
+                                                            EditText daysPresentInput = (EditText) row.getChildAt(1); // Days Present
+                                                            EditText lateDeductionInput = (EditText) row.getChildAt(2); // Late Deduction
+                                                            EditText caDeductionInput = (EditText) row.getChildAt(3); // CA Deduction
+
+                                                            String employeeName2 = employeeNameView.getText().toString().trim();
+                                                            String daysPresent = daysPresentInput.getText().toString().trim();
+                                                            String lateDeduction = lateDeductionInput.getText().toString().trim();
+                                                            String caDeduction = caDeductionInput.getText().toString().trim();
+
+                                                            String docId = employeeDocMap.get(employeeName2);
+                                                            if (docId != null) {
+                                                                // Prepare the data for updating
+                                                                Map<String, Object> deductionData = new HashMap<>();
+                                                                deductionData.put("daysPresent", daysPresent);
+                                                                deductionData.put("lateDeduction", lateDeduction);
+                                                                deductionData.put("caDeduction", caDeduction);
+                                                                deductionData.put("timestamp", currentDate);
+
+                                                                Log.d("DEBUG", "Updating data for employee: " + employeeName2);
+                                                                Log.d("DEBUG", "Document ID being updated: " + docId);
+
+                                                                // Update the document in Firestore
+                                                                db.collection("salary_details")
+                                                                        .document(docId)
+                                                                        .update(deductionData)
+                                                                        .addOnSuccessListener(aVoid -> {
+                                                                            Log.d("DEBUG", "Successfully updated Firestore document: " + docId);
+                                                                            Toast.makeText(this, "Salary deduction data updated!", Toast.LENGTH_SHORT).show();
+                                                                            loadSalaryData();
+                                                                            filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                                        })
+                                                                        .addOnFailureListener(e -> {
+                                                                            Log.d("DEBUG", "Error updating Firestore document: " + e.getMessage());
+                                                                            Toast.makeText(this, "Error updating data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                                            loadSalaryData();
+                                                                            filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                                        });
+                                                            } else {
+                                                                Log.e("DEBUG", "No document found for employee: " + employeeName2);
+                                                                loadSalaryData();
+                                                                filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                            }
+                                                        } else {
+                                                            Log.e("DEBUG", "Row " + i + " does not contain the expected views.");
+                                                            loadSalaryData();
+                                                            filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                        }
+                                                    }
+
+                                                    // Dismiss the dialog after updating
+                                                    dialog.dismiss();
+                                                    loadSalaryData();
+                                                    filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                });
+
+                                            } else {
+                                                // If no salary data exists, set a default onSubmit listener to create a new entry
+                                                btnSubmit.setOnClickListener(v -> {
+                                                    ProgressDialog progressDialog = new ProgressDialog(this);
+                                                    progressDialog.setMessage("Uploading data...");
+                                                    progressDialog.setCancelable(false);
+                                                    progressDialog.show();
                                                     String currentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
                                                     for (int i = 0; i < employeeTable.getChildCount() - 1; i++) {
                                                         TableRow row = (TableRow) employeeTable.getChildAt(i + 1);
 
+                                                        View firstChild = row.getChildAt(0);
                                                         View secondChild = row.getChildAt(1);
                                                         View thirdChild = row.getChildAt(2);
                                                         View fourthChild = row.getChildAt(3);
@@ -209,6 +298,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                         if (secondChild instanceof EditText && thirdChild instanceof EditText && fourthChild instanceof EditText) {
 
                                                             // Use unique names in this scope
+                                                            TextView employeeNameTV = (TextView) firstChild;
                                                             EditText daysPresentInput = (EditText) secondChild;
                                                             EditText lateDeductionInput = (EditText) thirdChild;
                                                             EditText caDeductionInput = (EditText) fourthChild;
@@ -216,90 +306,58 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                             String daysPresent = daysPresentInput.getText().toString();
                                                             String lateDeduction = lateDeductionInput.getText().toString();
                                                             String caDeduction = caDeductionInput.getText().toString();
+                                                            String employeeName2 = employeeNameTV.getText().toString();
 
-                                                            // Create a map to hold the updated data
+                                                            // Create a map to hold the data
                                                             Map<String, Object> deductionData = new HashMap<>();
                                                             deductionData.put("daysPresent", daysPresent);
                                                             deductionData.put("lateDeduction", lateDeduction);
                                                             deductionData.put("caDeduction", caDeduction);
+                                                            deductionData.put("employeeId", employeeName2);
+                                                            deductionData.put("month", getMonthNumber(month));
+                                                            deductionData.put("year", year);
+                                                            deductionData.put("week", week);
                                                             deductionData.put("timestamp", currentDate);
 
-                                                            // Update the existing salary_details document
+                                                            // Add new salary_details document
                                                             db.collection("salary_details")
-                                                                    .document(docId) // Use the stored document ID
-                                                                    .update(deductionData)
-                                                                    .addOnSuccessListener(aVoid -> {
-                                                                        Toast.makeText(this, "Salary deduction data updated!", Toast.LENGTH_SHORT).show();
+                                                                    .add(deductionData)
+                                                                    .addOnSuccessListener(documentReference -> {
+                                                                        Toast.makeText(this, "Salary deduction data submitted!", Toast.LENGTH_SHORT).show();
+                                                                        loadSalaryData();
+                                                                        filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                                        progressDialog.dismiss();
                                                                     })
                                                                     .addOnFailureListener(e -> {
-                                                                        Toast.makeText(this, "Error updating data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                                        Toast.makeText(this, "Error submitting data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                                        loadSalaryData();
+                                                                        filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                                        progressDialog.dismiss();
                                                                     });
                                                         } else {
                                                             Log.e("DEBUG", "Row " + i + " does not contain the expected views.");
+                                                            loadSalaryData();
+                                                            filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                            progressDialog.dismiss();
                                                         }
                                                     }
                                                     dialog.dismiss();
+                                                    loadSalaryData();
+                                                    filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                    progressDialog.dismiss();
                                                 });
                                             }
-                                        } else {
-                                            // If no salary data exists, set a default onSubmit listener to create a new entry
-                                            btnSubmit.setOnClickListener(v -> {
-                                                String currentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-                                                for (int i = 0; i < employeeTable.getChildCount() - 1; i++) {
-                                                    TableRow row = (TableRow) employeeTable.getChildAt(i + 1);
+                                        });
 
-                                                    View secondChild = row.getChildAt(1);
-                                                    View thirdChild = row.getChildAt(2);
-                                                    View fourthChild = row.getChildAt(3);
+                                // Add views to the table row
+                                tableRow.addView(employeeName);
+                                tableRow.addView(etDaysPresent);
+                                tableRow.addView(etLateDeduction);
+                                tableRow.addView(etCADeduction);
 
-                                                    if (secondChild instanceof EditText && thirdChild instanceof EditText && fourthChild instanceof EditText) {
-
-                                                        // Use unique names in this scope
-                                                        EditText daysPresentInput = (EditText) secondChild;
-                                                        EditText lateDeductionInput = (EditText) thirdChild;
-                                                        EditText caDeductionInput = (EditText) fourthChild;
-
-                                                        String daysPresent = daysPresentInput.getText().toString();
-                                                        String lateDeduction = lateDeductionInput.getText().toString();
-                                                        String caDeduction = caDeductionInput.getText().toString();
-
-                                                        // Create a map to hold the data
-                                                        Map<String, Object> deductionData = new HashMap<>();
-                                                        deductionData.put("daysPresent", daysPresent);
-                                                        deductionData.put("lateDeduction", lateDeduction);
-                                                        deductionData.put("caDeduction", caDeduction);
-                                                        deductionData.put("employeeId", employeeList.get(i).getName());
-                                                        deductionData.put("month", getMonthNumber(month));
-                                                        deductionData.put("year", year);
-                                                        deductionData.put("week", week);
-                                                        deductionData.put("timestamp", currentDate);
-
-                                                        // Add new salary_details document
-                                                        db.collection("salary_details")
-                                                                .add(deductionData)
-                                                                .addOnSuccessListener(documentReference -> {
-                                                                    Toast.makeText(this, "Salary deduction data submitted!", Toast.LENGTH_SHORT).show();
-                                                                })
-                                                                .addOnFailureListener(e -> {
-                                                                    Toast.makeText(this, "Error submitting data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                                });
-                                                    } else {
-                                                        Log.e("DEBUG", "Row " + i + " does not contain the expected views.");
-                                                    }
-                                                }
-                                                dialog.dismiss();
-                                            });
-                                        }
-                                    });
-
-                            // Add views to the table row
-                            tableRow.addView(employeeName);
-                            tableRow.addView(etDaysPresent);
-                            tableRow.addView(etLateDeduction);
-                            tableRow.addView(etCADeduction);
-
-                            // Add the table row to the TableLayout
-                            employeeTable.addView(tableRow);
+                                // Add the table row to the TableLayout
+                                employeeTable.addView(tableRow);
+                            }
                         }
                     } else {
                         Log.e("DEBUG", "Error getting documents: ", task.getException());
@@ -465,7 +523,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
         // Parse the current date for salary calculation
         Calendar currentCalendar = Calendar.getInstance();
-        int daysPresent = Integer.parseInt(daysPresentStr);
+        int daysPresent = Integer.parseInt(daysPresentStr!= "" ? daysPresentStr : String.valueOf(0));
 
         // Calculate the total salary for the days present
         double totalSalary = salary * daysPresent;
@@ -494,7 +552,12 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     }
 
     private double getCommissionRateByDate(Employee employee, String appointmentDate) {
+        // Get commission history and ensure it is not null
         List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
+        if (commissionHistory == null) {
+            return employee.getComs() != null ? employee.getComs() : 0.0; // Return the current commission rate if history is null
+        }
+
         double commissionRate = employee.getComs() != null ? employee.getComs() : 0.0; // Default to current commission rate
 
         // Parse the appointment date
@@ -530,7 +593,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         return commissionRate;
     }
 
+
     private void filterDataByMonthYearWeek(String selectedMonth, String selectedYear, String selectedWeekNumber) {
+
         Calendar calendar = Calendar.getInstance();
         totalSalesFtS = 0.0;
         Map<String, Double> employeeSalesMap = new HashMap<>(); // To store total sales by employee
@@ -619,16 +684,14 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 if (appointmentDate != null && (appointmentDate.after(startOfWeek) || appointmentDate.equals(startOfWeek)) && (appointmentDate.before(endOfWeek) || appointmentDate.equals(endOfWeek))) {
                     // Check for and display sub-services
                     List<Map<String, Object>> services = appointment.getServices();
-                    // Update sales per employee
                     for (Map<String, Object> service : services) {
                         Object employeeObj = service.get("assignedEmployee");
 
-                        // Check if employee is not null and not "None"
                         if (employeeObj != null && !"None".equals(employeeObj.toString())) {
                             String employee = employeeObj.toString();
-                            Log.d("FullSlaraReport", employee);
                             double totalPriceForService = (Double) service.get("servicePrice");
 
+                            // Handle sub-services
                             List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
                             if (subServices != null) {
                                 for (Map<String, Object> subService : subServices) {
@@ -640,9 +703,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                             // Update the employee's total sales
                             employeeSalesMap.put(employee, employeeSalesMap.getOrDefault(employee, 0.0) + totalPriceForService);
 
-                            // Initialize daily sales array if not already done (only for Monday to Thursday)
+                            // Ensure dailySalesMap is initialized for 7 days (Monday to Sunday)
                             if (!dailySalesMap.containsKey(employee)) {
-                                dailySalesMap.put(employee, new double[7]); // Array for 4 days of the week (Monday to Thursday)
+                                dailySalesMap.put(employee, new double[7]); // Array for 7 days (Monday to Sunday)
                             }
 
                             // Calculate which day of the week the appointment occurred
@@ -650,14 +713,19 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                             appointmentCalendar.setTime(appointmentDate);
                             int dayOfWeek = appointmentCalendar.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY; // Adjust to 0-based index (Monday = 0)
 
-                            if (dayOfWeek >= 0 && dayOfWeek < 7) { // Ensure the day is Monday to Thursday
+                            // Correct this logic to handle Sunday as well
+                            if (dayOfWeek < 0) {
+                                dayOfWeek = 6; // If it's Sunday, set index to 6
+                            }
+
+                            if (dayOfWeek >= 0 && dayOfWeek < 7) { // Ensure the day is within the range Monday-Sunday
                                 dailySalesMap.get(employee)[dayOfWeek] += totalPriceForService;
                             }
                         }
                     }
-
                 }
             }
+
 
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, month);
@@ -692,24 +760,38 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     double totalCommissionPerEmp = 0.0;
 
                     // Process sales and commissions for 7 days (weekdays and weekends)
-                    for (int i = 0; i < 7; i++) {
-                        String dateStr = sdf.format(displayCalendar2.getTime());
+                    for (int i = 0; i < 7; i++) { // Process 7 days of the week
+                        Calendar currentDayCalendar = (Calendar) displayCalendar2.clone();
+
+                        String dateStr = sdf.format(currentDayCalendar.getTime());
                         Log.d("SelectedDate", dateStr);
-                        double dailySales = dailySalesMap.get(employeeName)[i];
-                        double commissionRate = getCommissionRateByDate(employee, dateStr);
-                        //double commissionRate = employee.getComs();
-                        double dailyCommission = (dailySales * commissionRate) / 100.0;
 
-                        TextView dailySalesTextView = createTextView(numberFormat.format(dailySales));
-                        TextView dailyCommissionTextView = createTextView(numberFormat.format(dailyCommission));
+                        // Ensure that you are displaying the sales data for all 7 days, including Sunday
+                        double[] salesData = dailySalesMap.get(employeeName);
+                        if (salesData != null && salesData.length > i) {
+                            double dailySales = salesData[i];
+                            double commissionRate = getCommissionRateByDate(employee, dateStr);
+                            double dailyCommission = (dailySales * commissionRate) / 100.0;
+                            if (i == 6) { // Index 6 is Sunday
+                                Log.d("SundaySales", "Sunday sales for " + employeeName + ": " + dailySales);
+                            }
+                            // Display sales and commission for each day
+                            TextView dailySalesTextView = createTextView(numberFormat.format(dailySales));
+                            TextView dailyCommissionTextView = createTextView(numberFormat.format(dailyCommission));
 
-                        rowCommission.addView(dailySalesTextView);
-                        rowCommission.addView(dailyCommissionTextView);
+                            rowCommission.addView(dailySalesTextView);
+                            rowCommission.addView(dailyCommissionTextView);
 
-                        totalSalesPerEmp += dailySales;
-                        totalCommissionPerEmp += dailyCommission;
+                            totalSalesPerEmp += dailySales;
+                            totalCommissionPerEmp += dailyCommission;
+                        } else {
+                            Log.d("SalesData", "No sales data available for day " + i + " for employee " + employeeName);
+                        }
+
+                        // Move to the next day
                         displayCalendar2.add(Calendar.DAY_OF_MONTH, 1);
                     }
+
 
                     // Add total sales and commission for weekends
                     TextView totalSalesTextView = createTextView(numberFormat.format(totalSalesPerEmp));
@@ -759,6 +841,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                         Log.d("FullSalaryReports", emp.getLateDeduction());
 
                         // Calculate the basic weekly salary and deductions
+                        String daysPresent = emp.getDaysPresent()!= "" ? emp.getDaysPresent() : "0";
                         double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
                         double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
                         double deductedWeekSal = weekSal - lateDeduction;
@@ -790,7 +873,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                         // Create TextViews for displaying employee details
                         TextView name = createTextView(emp.getEmployeeId());
                         TextView perDay = createTextView(numberFormat.format(employee.getSalary()));
-                        TextView daysPresentTextView = createTextView(emp.getDaysPresent());
+                        TextView daysPresentTextView = createTextView(daysPresent);
                         TextView weekSalary = createTextView(numberFormat.format(weekSal));
                         TextView lateDeductionTextView = createTextView(numberFormat.format(lateDeduction));
                         TextView deductedSalary = createTextView(numberFormat.format(deductedWeekSal));
@@ -879,8 +962,10 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
         Calendar calendar = Calendar.getInstance();
         Map<String, Double> employeeSalesMap = new HashMap<>(); // To store sales by employee
-        Map<String, Double> employeeCommissionMap = new HashMap<>(); // To store commission by employee
+        Map<String, Double> employeeCommissionMap = new HashMap<>();
+
         double totalSales = 0.0;
+        double totalTherCommission = 0.0;
         try {
             Date date = dateFormat.parse(selectedDate);
             if (date != null) {
@@ -906,45 +991,98 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                         if (appointmentCalendar.get(Calendar.DAY_OF_MONTH) == day &&
                                 appointmentCalendar.get(Calendar.MONTH) == month &&
                                 appointmentCalendar.get(Calendar.YEAR) == year) {
+                            String name = "";
+                            String time = "";
 
                             // Check for and display sub-services
                             List<Map<String, Object>> services = appointment.getServices();
                             for (Map<String, Object> service : services) {
                                 String assignedEmployee = (String) service.get("assignedEmployee");
-                                Log.d("SalesFragment", "Assigned Employee: " + assignedEmployee);
+                                if (assignedEmployee == null || assignedEmployee.equals("None")) {
+                                    continue;
+                                }
 
-                                if (assignedEmployee != null && !"None".equals(assignedEmployee.toString())) {
-                                    double totalPriceForParentService = (Double) service.get("servicePrice"); // Variable to hold total price for this parent service
+                                if (!appointment.getFullName().equals(name) && !appointment.getTime().equals(time)) {
+                                    name = appointment.getFullName();
+                                    time = appointment.getTime();
+                                }
 
-                                    List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
-                                    if (subServices != null) {
-                                        for (Map<String, Object> subService : subServices) {
-                                            // Get the sub-service name and price
-                                            Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                double totalPriceForParentService = (Double) service.get("servicePrice");
 
-                                            totalPriceForParentService += subServicePrice;
-
-                                        }
+                                List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                                if (subServices != null) {
+                                    for (Map<String, Object> subService : subServices) {
+                                        Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                        totalPriceForParentService += subServicePrice;
                                     }
+                                }
 
-                                    totalSales += totalPriceForParentService;
+                                totalSales += totalPriceForParentService;
+                            }
+
+                            // Process employee sales
+                            for (Map<String, Object> service : appointment.getServices()) {
+                                String employee = (String) service.get("assignedEmployee");
+                                if (employee == null || employee.equals("None")) {
+                                    continue;
+                                }
+
+                                double totalPriceForService = (Double) service.get("servicePrice");
+                                List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                                if (subServices != null) {
+                                    for (Map<String, Object> subService : subServices) {
+                                        Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                        totalPriceForService += subServicePrice;
+                                    }
+                                }
+
+                                // Update employee sales
+                                if (employeeSalesMap.containsKey(employee)) {
+                                    employeeSalesMap.put(employee, employeeSalesMap.get(employee) + totalPriceForService);
+                                } else {
+                                    employeeSalesMap.put(employee, totalPriceForService);
                                 }
                             }
                         }
                     }
                 }
 
-                displayTotalSalesWithDeductions(selectedDate, totalSales);
+                // Assuming employeeSalesMap contains employee names and their corresponding sales
+                for (Map.Entry<String, Double> entry : employeeSalesMap.entrySet()) {
+                    String employeeName = entry.getKey();
+                    double sales = entry.getValue();
+
+                    // Find the employee by name
+                    Employee employee = findEmployeeByName(employeeName);
+                    if (employee != null) {
+                        // Check if the employee is a therapist
+                        String therapistRole = employee.getTherapist();
+                        if ("Therapist".equals(therapistRole) || employee.getSalary() == 0) {
+                            // Retrieve the appropriate commission rate based on the current date
+                            double commissionRate = getCommissionRateByDate(employee, date.toString()); // Pass the current date
+                            double employeeCommission = (sales * commissionRate) / 100.0;
+                            totalTherCommission += employeeCommission;
+
+                            // Store the calculated commission in the employeeCommissionMap (if needed)
+                            employeeCommissionMap.put(employeeName, employeeCommission);
+                        }
+                    }
+                }
+
+                displayTotalSalesWithDeductions(selectedDate, totalSales, totalTherCommission);
             }
         } catch (ParseException e) {
             Log.e("SalesFragment", "Error parsing date: ", e);
         }
     }
-    private void displayTotalSalesWithDeductions(String selectedDate, double totalSales) {
+    private void displayTotalSalesWithDeductions(String selectedDate, double totalSales, double totalTherCommission) {
+        Log.d("SalesFragment", "TotalTherCom: " + totalTherCommission);
         double totalExpenses = 0.0;
         double totalGcash = 0.0;
+        double totalFunds = 0.0;
         List<Expenses> expensesList = getExpensesForDate(selectedDate);
         List<Gcash> gcashList = getGcashForDate(selectedDate);
+        List<Funds> fundsList = getFundsForDate(selectedDate);
 
         for (Expenses expense : expensesList) {
             // Accumulate total expenses
@@ -955,8 +1093,16 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         for (Gcash gcash : gcashList) {
             totalGcash += gcash.getAmount();
         }
-        double total = totalExpenses + totalGcash;
-        double balance = totalSales - total;
+
+        for (Funds funds : fundsList) {
+            // Accumulate total expenses
+            totalFunds += funds.getAmount();
+        }
+
+        double total = totalExpenses + totalGcash + totalTherCommission;
+        double balance = totalSales - total ;
+        double overall = balance + totalFunds;
+
         TableRow tableRow = new TableRow(this);
 
         SimpleDateFormat parser = new SimpleDateFormat("MM/dd/yyyy"); // Adjust this format to match your input date format
@@ -971,8 +1117,8 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
             // Set the formatted date to TextView
             TextView dateTextView = createTextView(formattedDate);
-            TextView bal = createTextView(numberFormat.format(balance));
-            totalSalesFtS += balance;
+            TextView bal = createTextView(numberFormat.format(overall));
+            totalSalesFtS += overall;
             tableRow.addView(dateTextView);
             tableRow.addView(bal);
         } catch (Exception e) {
@@ -999,6 +1145,31 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             }
         }
         return matchingGcash; // Return the list of matching expenses
+    }
+    private List<Funds> getFundsForDate(String selectedDate) {
+        List<Funds> matchingFunds = new ArrayList<>();
+        for (Funds funds : fundsList) {
+            if (funds.getTimestamp().equals(selectedDate)) {
+                matchingFunds.add(funds);
+            }
+        }
+        return matchingFunds;
+    }
+
+    private void loadFundsData() {
+        db.collection("add_funds").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        fundsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Funds funds = document.toObject(Funds.class);
+                            funds.setId(document.getId());
+                            fundsList.add(funds);
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
     private void loadExpensesData() {
         db.collection("expenses").get()
