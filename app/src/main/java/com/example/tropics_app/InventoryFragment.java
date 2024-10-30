@@ -285,13 +285,6 @@ public class InventoryFragment extends Fragment {
         String documentId = (String) item.get("id");
         String todayDate = getTodayDate();
 
-        // Disable the ability to update for any date that is not today
-        if (!todayDate.equals(getTodayDate())) {
-            Toast.makeText(getContext(), "You can only update stocks for today", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Retrieve the last available stocks and in_use
         db.collection("inventory").document(documentId)
                 .collection("dailyRecords")
                 .orderBy("date", Query.Direction.DESCENDING)
