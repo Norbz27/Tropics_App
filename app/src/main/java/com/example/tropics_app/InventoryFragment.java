@@ -31,6 +31,7 @@ import android.widget.Toast;
 import java.util.Date;
 
 import com.google.android.gms.tasks.Tasks;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -135,13 +136,17 @@ public class InventoryFragment extends Fragment {
             }
 
             @Override
+            public void onRemoveClick(Map<String, Object> item) {
+                showRemoveQuantityDialog(item);
+            }
+
+            @Override
             public void onUseClick(Map<String, Object> item) {
                 showUpdateQuantityDialog(item);
             }
 
             @Override
             public void onDeleteClick(Map<String, Object> item) {
-                // Show a confirmation dialog and delete the item
                 showDeleteConfirmationDialog(item);
             }
         });
@@ -198,6 +203,164 @@ public class InventoryFragment extends Fragment {
         adapter.notifyDataSetChanged(); // Notify the adapter of data changes
     }
 
+
+    private boolean isInventoryDataLoaded = false; // Flag to control inventory loading
+
+    private String getTodayDate() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy"); // Adjust the format as needed
+        return dateFormat.format(Calendar.getInstance().getTime());
+    }
+
+    private void loadUsedItemsForDate(String selectedDate) {
+        if (selectedDate == null || selectedDate.isEmpty()) {
+            selectedDate = getYesterdayDate();
+            Log.d("Date Selection", "No date selected, using yesterday's date: " + selectedDate);
+        } else {
+            Log.d("Date Selection", "Selected date: " + selectedDate);
+        }
+
+        String formattedDate = formatDateForFirestore(selectedDate);
+        Log.d("Date Formatting", "Formatted date for Firestore: " + formattedDate);
+
+        filteredList.clear(); // Clear the filtered list before loading new data
+        Log.d("Inventory Update", "Cleared filtered list.");
+
+        if (!isInventoryDataLoaded) {
+            Log.d("Firestore Query", "Fetching inventory data from Firestore...");
+
+            db.collection("inventory")
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Log.d("Firestore Query", "Successfully fetched inventory data.");
+
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                Log.d("Firestore Inventory", "Document ID: " + document.getId() + ", Data: " + document.getData());
+
+                                // Start searching with today's date
+                                fetchDailyRecordForDate(document, formattedDate);
+                            }
+                        } else {
+                            Log.e("Firestore Error", "Error fetching inventory: " + task.getException());
+                        }
+                    });
+        } else {
+            Log.d("Inventory Update", "Inventory data already loaded, filtering by date.");
+            filterInventoryByDate(formattedDate); // Filter the inventory by date
+        }
+    }
+
+    // Method to format date into Firestore's "MMMM dd, yyyy" format
+    private String formatDateForFirestore(String inputDate) {
+        // Firestore date format: "MMMM dd, yyyy"
+        DateTimeFormatter firestoreFormat = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.getDefault());
+
+        // Other possible input formats
+        DateTimeFormatter inputFormat1 = DateTimeFormatter.ofPattern("MM/dd/yyyy", Locale.getDefault()); // e.g., 10/07/2024
+        DateTimeFormatter inputFormat2 = DateTimeFormatter.ofPattern("M/d/yyyy", Locale.getDefault());   // e.g., 10/7/2024
+
+        try {
+            // Try to parse the input date in the MM/dd/yyyy format
+            LocalDate parsedDate;
+            try {
+                parsedDate = LocalDate.parse(inputDate, inputFormat1);
+            } catch (DateTimeParseException e) {
+                // If the first format fails, try the M/d/yyyy format
+                parsedDate = LocalDate.parse(inputDate, inputFormat2);
+            }
+
+            // Return the date formatted in Firestore format
+            return parsedDate.format(firestoreFormat);
+        } catch (DateTimeParseException e) {
+            Log.e("Date Parsing Error", "Error parsing input date: " + e.getMessage());
+            return inputDate; // Return the original date if parsing fails
+        }
+    }
+
+    // Method to fetch daily record for a specific date
+
+    private void fetchDailyRecordForDate(QueryDocumentSnapshot document, String date) {
+        DocumentReference dailyRecordRef = document.getReference().collection("dailyRecords").document(date);
+        Log.d("Firestore Query", "Fetching daily record for date: " + date + " in inventory ID: " + document.getId());
+
+        dailyRecordRef.get().addOnCompleteListener(innerTask -> {
+            if (innerTask.isSuccessful() && innerTask.getResult() != null) {
+                DocumentSnapshot dailyDoc = innerTask.getResult();
+                if (dailyDoc.exists()) {
+                    long used = dailyDoc.getLong("in_use") != null ? dailyDoc.getLong("in_use") : 0;
+                    long stocks = dailyDoc.getLong("stocks") != null ? dailyDoc.getLong("stocks") : 0;
+
+                    if (used > 0 || date.equals(getTodayDate())) { // Check non-zero in_use or today's date
+                        Log.d("Firestore Daily Record", "Valid daily record for " + date + ": in_use = " + used + ", stocks = " + stocks);
+
+                        // Prepare data for display
+                        Map<String, Object> combinedData = new HashMap<>(document.getData());
+                        combinedData.put("id", document.getId());
+                        combinedData.put("quantity", stocks);
+                        combinedData.put("used", used);
+                        combinedData.put("date", date);
+
+                        // Update filtered list and UI
+                        filteredList.add(combinedData);
+                        Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
+                        adapter.updateList(filteredList);
+                        adapter.notifyDataSetChanged();
+                    } else {
+                        // If in_use is zero and not today's date, check the previous date
+                        String previousDate = getPreviousDate(date);
+                        Log.d("Date Check", "in_use is zero or no data found. Checking previous date: " + previousDate);
+                        fetchDailyRecordForDate(document, previousDate);
+                    }
+                } else {
+                    Log.e("Firestore Error", "No daily record found for " + date + " in inventory ID: " + document.getId());
+                    String previousDate = getPreviousDate(date);
+                    Log.d("Date Check", "No record found. Checking previous date: " + previousDate);
+                    fetchDailyRecordForDate(document, previousDate);
+                }
+            } else {
+                Log.e("Firestore Error", "Error fetching daily record: " + innerTask.getException());
+            }
+        });
+    }
+
+    // Method to get the previous date based on the provided date
+    private String getPreviousDate(String currentDate) {
+        DateTimeFormatter formatterFirestore = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.getDefault());
+
+        // Parse the current date using Firestore's expected format
+        LocalDate date = LocalDate.parse(currentDate, formatterFirestore);
+
+        // Get the previous date and return it in Firestore format
+        return date.minusDays(1).format(formatterFirestore);
+    }
+
+
+    private String getYesterdayDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()); // Use the same format as in Firestore
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, -1); // Subtract one day
+        return sdf.format(calendar.getTime()); // Return formatted date
+    }
+
+    private void filterInventoryByDate(String selectedDate) {
+        // Here you can filter the inventory based on the selected date
+        List<Map<String, Object>> filteredByDate = new ArrayList<>();
+
+        for (Map<String, Object> item : filteredList) {
+            if (item.get("date").equals(selectedDate)) {
+                filteredByDate.add(item);
+            }
+        }
+
+        // Sort the filtered items, if needed
+        Collections.sort(filteredByDate, (a, b) -> 0); // Currently does not sort; implement as needed
+
+        // Update the adapter with the filtered items
+        adapter.updateList(filteredByDate);
+        adapter.notifyDataSetChanged();
+    }
+
+
     /* private void loadInventoryData() {
          db.collection("inventory")
                  .addSnapshotListener(new EventListener<QuerySnapshot>() {
@@ -230,6 +393,63 @@ public class InventoryFragment extends Fragment {
                  });
      }
 */
+    private void showRemoveQuantityDialog(Map<String, Object> item) {
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        EditText etProductQuantity = dialogView.findViewById(R.id.etProductQuantity);
+        Button btnRemoveQuantity = dialogView.findViewById(R.id.btnAddProduct);
+
+        btnRemoveQuantity.setOnClickListener(v -> {
+            String quantityStr = etProductQuantity.getText().toString();
+
+            if (quantityStr.isEmpty()) {
+                Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
+            } else {
+                int quantityToRemove = Integer.parseInt(quantityStr);
+                removeStocks(item, quantityToRemove);
+                dialog.dismiss();
+            }
+        });
+    }
+    private void removeStocks(Map<String, Object> item, int quantityToRemove) {
+        String documentId = (String) item.get("id");
+
+        db.collection("inventory").document(documentId)
+                .collection("dailyRecords")
+                .orderBy("date", Query.Direction.DESCENDING)
+                .limit(1)
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                        DocumentSnapshot latestSnapshot = task.getResult().getDocuments().get(0);
+                        String latestDate = latestSnapshot.getId(); // Get the ID of the latest document (date)
+                        int latestInUse = latestSnapshot.getLong("in_use") != null ? latestSnapshot.getLong("in_use").intValue() : 0;
+
+                        int newInUse = latestInUse - quantityToRemove;
+
+                        Map<String, Object> updateFields = new HashMap<>();
+                        updateFields.put("in_use", newInUse);
+
+                        db.collection("inventory").document(documentId).collection("dailyRecords")
+                                .document(latestDate).update(updateFields)
+                                .addOnCompleteListener(updateTask -> {
+                                    if (updateTask.isSuccessful()) {
+                                        Toast.makeText(getContext(), "In-use quantity updated successfully", Toast.LENGTH_SHORT).show();
+                                        loadUsedItemsForDate(latestDate);
+                                    } else {
+                                        Toast.makeText(getContext(), "Failed to update in-use quantity: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    } else {
+                        Toast.makeText(getContext(), "No usage records found", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
 
     private void showAddQuantityDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
@@ -664,163 +884,6 @@ public class InventoryFragment extends Fragment {
             Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
         }
     }
-
-    private boolean isInventoryDataLoaded = false; // Flag to control inventory loading
-
-    private String getTodayDate() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy"); // Adjust the format as needed
-        return dateFormat.format(Calendar.getInstance().getTime());
-    }
-
-    private void loadUsedItemsForDate(String selectedDate) {
-        if (selectedDate == null || selectedDate.isEmpty()) {
-            selectedDate = getYesterdayDate();
-            Log.d("Date Selection", "No date selected, using yesterday's date: " + selectedDate);
-        } else {
-            Log.d("Date Selection", "Selected date: " + selectedDate);
-        }
-
-        String formattedDate = formatDateForFirestore(selectedDate);
-        Log.d("Date Formatting", "Formatted date for Firestore: " + formattedDate);
-
-        filteredList.clear(); // Clear the filtered list before loading new data
-        Log.d("Inventory Update", "Cleared filtered list.");
-
-        if (!isInventoryDataLoaded) {
-            Log.d("Firestore Query", "Fetching inventory data from Firestore...");
-
-            db.collection("inventory")
-                    .get()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Log.d("Firestore Query", "Successfully fetched inventory data.");
-
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Log.d("Firestore Inventory", "Document ID: " + document.getId() + ", Data: " + document.getData());
-
-                                // Start searching with today's date
-                                fetchDailyRecordForDate(document, formattedDate);
-                            }
-                        } else {
-                            Log.e("Firestore Error", "Error fetching inventory: " + task.getException());
-                        }
-                    });
-        } else {
-            Log.d("Inventory Update", "Inventory data already loaded, filtering by date.");
-            filterInventoryByDate(formattedDate); // Filter the inventory by date
-        }
-    }
-
-    // Method to format date into Firestore's "MMMM dd, yyyy" format
-    private String formatDateForFirestore(String inputDate) {
-        // Firestore date format: "MMMM dd, yyyy"
-        DateTimeFormatter firestoreFormat = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.getDefault());
-
-        // Other possible input formats
-        DateTimeFormatter inputFormat1 = DateTimeFormatter.ofPattern("MM/dd/yyyy", Locale.getDefault()); // e.g., 10/07/2024
-        DateTimeFormatter inputFormat2 = DateTimeFormatter.ofPattern("M/d/yyyy", Locale.getDefault());   // e.g., 10/7/2024
-
-        try {
-            // Try to parse the input date in the MM/dd/yyyy format
-            LocalDate parsedDate;
-            try {
-                parsedDate = LocalDate.parse(inputDate, inputFormat1);
-            } catch (DateTimeParseException e) {
-                // If the first format fails, try the M/d/yyyy format
-                parsedDate = LocalDate.parse(inputDate, inputFormat2);
-            }
-
-            // Return the date formatted in Firestore format
-            return parsedDate.format(firestoreFormat);
-        } catch (DateTimeParseException e) {
-            Log.e("Date Parsing Error", "Error parsing input date: " + e.getMessage());
-            return inputDate; // Return the original date if parsing fails
-        }
-    }
-
-    // Method to fetch daily record for a specific date
-
-    private void fetchDailyRecordForDate(QueryDocumentSnapshot document, String date) {
-        DocumentReference dailyRecordRef = document.getReference().collection("dailyRecords").document(date);
-        Log.d("Firestore Query", "Fetching daily record for date: " + date + " in inventory ID: " + document.getId());
-
-        dailyRecordRef.get().addOnCompleteListener(innerTask -> {
-            if (innerTask.isSuccessful() && innerTask.getResult() != null) {
-                DocumentSnapshot dailyDoc = innerTask.getResult();
-                if (dailyDoc.exists()) {
-                    long used = dailyDoc.getLong("in_use") != null ? dailyDoc.getLong("in_use") : 0;
-                    long stocks = dailyDoc.getLong("stocks") != null ? dailyDoc.getLong("stocks") : 0;
-
-                    if (used > 0 || date.equals(getTodayDate())) { // Check non-zero in_use or today's date
-                        Log.d("Firestore Daily Record", "Valid daily record for " + date + ": in_use = " + used + ", stocks = " + stocks);
-
-                        // Prepare data for display
-                        Map<String, Object> combinedData = new HashMap<>(document.getData());
-                        combinedData.put("id", document.getId());
-                        combinedData.put("quantity", stocks);
-                        combinedData.put("used", used);
-                        combinedData.put("date", date);
-
-                        // Update filtered list and UI
-                        filteredList.add(combinedData);
-                        Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
-                        adapter.updateList(filteredList);
-                        adapter.notifyDataSetChanged();
-                    } else {
-                        // If in_use is zero and not today's date, check the previous date
-                        String previousDate = getPreviousDate(date);
-                        Log.d("Date Check", "in_use is zero or no data found. Checking previous date: " + previousDate);
-                        fetchDailyRecordForDate(document, previousDate);
-                    }
-                } else {
-                    Log.e("Firestore Error", "No daily record found for " + date + " in inventory ID: " + document.getId());
-                    String previousDate = getPreviousDate(date);
-                    Log.d("Date Check", "No record found. Checking previous date: " + previousDate);
-                    fetchDailyRecordForDate(document, previousDate);
-                }
-            } else {
-                Log.e("Firestore Error", "Error fetching daily record: " + innerTask.getException());
-            }
-        });
-    }
-
-    // Method to get the previous date based on the provided date
-    private String getPreviousDate(String currentDate) {
-        DateTimeFormatter formatterFirestore = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.getDefault());
-
-        // Parse the current date using Firestore's expected format
-        LocalDate date = LocalDate.parse(currentDate, formatterFirestore);
-
-        // Get the previous date and return it in Firestore format
-        return date.minusDays(1).format(formatterFirestore);
-    }
-
-
-    private String getYesterdayDate() {
-        SimpleDateFormat sdf = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()); // Use the same format as in Firestore
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, -1); // Subtract one day
-        return sdf.format(calendar.getTime()); // Return formatted date
-    }
-
-    private void filterInventoryByDate(String selectedDate) {
-        // Here you can filter the inventory based on the selected date
-        List<Map<String, Object>> filteredByDate = new ArrayList<>();
-
-        for (Map<String, Object> item : filteredList) {
-            if (item.get("date").equals(selectedDate)) {
-                filteredByDate.add(item);
-            }
-        }
-
-        // Sort the filtered items, if needed
-        Collections.sort(filteredByDate, (a, b) -> 0); // Currently does not sort; implement as needed
-
-        // Update the adapter with the filtered items
-        adapter.updateList(filteredByDate);
-        adapter.notifyDataSetChanged();
-    }
-
 
 
     @Override

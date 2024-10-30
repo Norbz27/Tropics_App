@@ -160,6 +160,12 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
                     longClickListener.onAddClick(inventoryList.get(position));
                 }
                 return true;
+            } else if (id == R.id.action_remove) {
+                // add stocks
+                if (longClickListener != null) {
+                    longClickListener.onRemoveClick(inventoryList.get(position));
+                }
+                return true;
             }else if (id == R.id.action_subtract) {
                 // subtract stocks and add on in use
                 if (longClickListener != null) {
@@ -185,6 +191,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
     public interface OnItemLongClickListener {
         void onAddClick(Map<String, Object> item);
         void onEditClick(Map<String, Object> item);
+        void onRemoveClick(Map<String, Object> item);
         void onUseClick(Map<String, Object> item);
         void onDeleteClick(Map<String, Object> item);
     }

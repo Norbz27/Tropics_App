@@ -9,6 +9,10 @@
         android:fontFamily="@font/manrope"
         android:title="Add" />
     <item
+        android:id="@+id/action_remove"
+        android:fontFamily="@font/manrope"
+        android:title="Remove Used Item" />
+    <item
         android:id="@+id/action_edit"
         android:fontFamily="@font/manrope"
         android:title="Edit Name" />
