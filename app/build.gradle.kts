@@ -48,10 +48,13 @@ dependencies {
     implementation ("com.github.bumptech.glide:glide:4.12.0")
     implementation(libs.firebase.ml.vision)
     implementation(libs.swiperefreshlayout)
+    implementation(libs.room.common)
+    implementation(libs.room.runtime)
     annotationProcessor ("com.github.bumptech.glide:compiler:4.12.0")
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    annotationProcessor(libs.room.compiler)
 }

@@ -15,6 +15,9 @@ firebaseFirestore = "25.1.0"
 firebaseStorage = "21.0.0"
 firebaseMlVision = "24.1.0"
 swiperefreshlayout = "1.1.0"
+roomCommon = "2.6.1"
+roomRuntime = "2.6.1"
+roomCompiler = "2.6.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -31,6 +34,9 @@ firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
 firebase-ml-vision = { group = "com.google.firebase", name = "firebase-ml-vision", version.ref = "firebaseMlVision" }
 swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+room-common = { group = "androidx.room", name = "room-common", version.ref = "roomCommon" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
