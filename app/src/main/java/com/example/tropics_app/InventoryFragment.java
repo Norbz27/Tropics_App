@@ -443,22 +443,22 @@ public class InventoryFragment extends Fragment {
                         int latestStocks = latestSnapshot.getLong("stocks") != null ? latestSnapshot.getLong("stocks").intValue() : 0;
                         int latestInUse = latestSnapshot.getLong("in_use") != null ? latestSnapshot.getLong("in_use").intValue() : 0;
 
-                        // Ensure there is enough in-use quantity to remove
+
                         if (quantityToRemove > latestInUse) {
                             Toast.makeText(getContext(), "Not enough in-use quantity to remove", Toast.LENGTH_SHORT).show();
                             return;
                         }
 
-                        // Calculate new values
+
                         int newInUse = latestInUse - quantityToRemove;
                         int newStocks = latestStocks + quantityToRemove; // Assuming stocks are increased when removing from in-use
 
-                        // Prepare the update fields
+
                         Map<String, Object> updateFields = new HashMap<>();
                         updateFields.put("in_use", newInUse);
                         updateFields.put("stocks", newStocks);
 
-                        // Update the document in Firestore
+
                         db.collection("inventory").document(documentId).collection("dailyRecords")
                                 .document(latestDate).update(updateFields)
                                 .addOnCompleteListener(updateTask -> {
