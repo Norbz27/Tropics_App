@@ -94,6 +94,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         return inventoryList.size();
     }
 
+
     public void updateList(List<Map<String, Object>> newList) {
         inventoryList = new ArrayList<>(newList);
         notifyDataSetChanged();
@@ -137,11 +138,16 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
             menu.findItem(R.id.action_add).setEnabled(false);
             menu.findItem(R.id.action_subtract).setEnabled(false);
             menu.findItem(R.id.action_delete).setEnabled(false);
-        }else {
+            menu.findItem(R.id.action_removestocks).setEnabled(false);
+
+
+        } else {
             menu.findItem(R.id.action_edit).setEnabled(true);
             menu.findItem(R.id.action_add).setEnabled(true);
             menu.findItem(R.id.action_subtract).setEnabled(true);
             menu.findItem(R.id.action_delete).setEnabled(true);
+            menu.findItem(R.id.action_removestocks).setEnabled(true);
+
             Log.d("InventoryAdapter", "Trues");
         }
 
@@ -155,19 +161,19 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
                 }
                 return true;
             } else if (id == R.id.action_add) {
-                // add stocks
+                // Add stocks
                 if (longClickListener != null) {
                     longClickListener.onAddClick(inventoryList.get(position));
                 }
                 return true;
             } else if (id == R.id.action_remove) {
-                // add stocks
+                // Remove stocks
                 if (longClickListener != null) {
                     longClickListener.onRemoveClick(inventoryList.get(position));
                 }
                 return true;
-            }else if (id == R.id.action_subtract) {
-                // subtract stocks and add on in use
+            } else if (id == R.id.action_subtract) {
+                // Subtract stocks and add on in use
                 if (longClickListener != null) {
                     longClickListener.onUseClick(inventoryList.get(position));
                 }
@@ -176,6 +182,12 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
                 // Call the delete action
                 if (longClickListener != null) {
                     longClickListener.onDeleteClick(inventoryList.get(position));
+                }
+                return true;
+            } else if (id == R.id.action_removestocks) {
+                // Call the remove stocks action
+                if (longClickListener != null) {
+                    longClickListener.onRemoveinUsed(inventoryList.get(position)); // Assuming you want to call onRemoveinUsed here
                 }
                 return true;
             } else {
@@ -194,5 +206,6 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         void onRemoveClick(Map<String, Object> item);
         void onUseClick(Map<String, Object> item);
         void onDeleteClick(Map<String, Object> item);
+        void onRemoveinUsed(Map<String, Object> item);
     }
 }

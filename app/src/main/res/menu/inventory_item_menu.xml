@@ -3,15 +3,19 @@
     <item
         android:id="@+id/action_subtract"
         android:fontFamily="@font/manrope"
-        android:title="Use" />
+        android:title="Use Stocks" />
     <item
         android:id="@+id/action_add"
         android:fontFamily="@font/manrope"
-        android:title="Add" />
+        android:title="Add Stocks" />
     <item
         android:id="@+id/action_remove"
         android:fontFamily="@font/manrope"
         android:title="Remove Used Item" />
+    <item
+        android:id="@+id/action_removestocks"
+        android:fontFamily="@font/manrope"
+        android:title="Subtract Stocks" />
     <item
         android:id="@+id/action_edit"
         android:fontFamily="@font/manrope"
