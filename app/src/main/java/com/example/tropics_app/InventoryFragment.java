@@ -88,7 +88,7 @@ public class InventoryFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_inventory, container, false);
-        swipeRefreshLayout = view.findViewById(R.id.refreshlayout);
+        //swipeRefreshLayout = view.findViewById(R.id.refreshlayout);
         searchView = view.findViewById(R.id.searchView);
         searchView.setOnClickListener(v -> searchView.setIconified(false));
 
@@ -106,13 +106,13 @@ public class InventoryFragment extends Fragment {
         adapter = new InventoryAdapter(getContext(), filteredList); // Use filteredList
         rvInventory.setAdapter(adapter);
 
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        /*swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 // Call method to refresh data
                 loadUsedItemsForDate(getTodayDate());
             }
-        });
+        });*/
         Date currentDate = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("MM/d/yyyy");
         String formattedDate = sdf.format(currentDate);

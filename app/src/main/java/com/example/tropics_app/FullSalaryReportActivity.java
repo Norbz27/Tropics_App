@@ -530,22 +530,28 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
         // Iterate through salary history to find the appropriate salary based on the date
         try {
-            for (Map<String, Object> history : salaryHistory) {
-                String changeDateStr = (String) history.get("dateChanged");
-                double salaryAtChange = ((Number) history.get("salary")).doubleValue(); // Handle both Long and Double
+            if (salaryHistory != null) { // Add null check here
+                for (Map<String, Object> history : salaryHistory) {
+                    String changeDateStr = (String) history.get("dateChanged");
+                    double salaryAtChange = ((Number) history.get("salary")).doubleValue(); // Handle both Long and Double
 
-                // Parse the change date
-                Date changeDate = sdf.parse(changeDateStr);
-                Date currentDate = currentCalendar.getTime();
+                    // Parse the change date
+                    Date changeDate = sdf.parse(changeDateStr);
+                    Date currentDate = currentCalendar.getTime();
 
-                // If the change date is before or equal to the current date, use this salary
-                if (changeDate != null && !changeDate.after(currentDate)) {
-                    salary = salaryAtChange; // Update salary to the most recent one before or equal to current date
+                    // If the change date is before or equal to the current date, use this salary
+                    if (changeDate != null && !changeDate.after(currentDate)) {
+                        salary = salaryAtChange; // Update salary to the most recent one before or equal to current date
+                    }
                 }
+            } else {
+                // Handle the case where salaryHistory is null
+                System.out.println("salaryHistory is null");
             }
         } catch (ParseException e) {
             e.printStackTrace();
         }
+
 
         // Calculate total salary for the given number of days present
         return salary * daysPresent;
