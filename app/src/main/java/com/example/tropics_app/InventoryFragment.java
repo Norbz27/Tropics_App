@@ -57,6 +57,7 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.Transaction;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -444,7 +445,6 @@ public class InventoryFragment extends Fragment {
                 .get().addOnCompleteListener(task -> {
                     if (task.isSuccessful() && !task.getResult().isEmpty()) {
                         DocumentSnapshot latestSnapshot = task.getResult().getDocuments().get(0);
-                        String latestDate = latestSnapshot.getId(); // Get the ID of the latest document (date)
                         int latestStocks = latestSnapshot.getLong("stocks") != null ? latestSnapshot.getLong("stocks").intValue() : 0;
                         int latestInUse = latestSnapshot.getLong("in_use") != null ? latestSnapshot.getLong("in_use").intValue() : 0;
 
@@ -457,6 +457,12 @@ public class InventoryFragment extends Fragment {
                         // Calculate new in-use quantity
                         int newInUse = latestInUse - quantityToRemove; // Decrease in-use by the quantity to remove
 
+                        // Check if new in-use quantity is less than 1
+                        if (newInUse < 1) {
+                            Toast.makeText(getContext(), "Cannot remove items, at least 1 item must remain in use", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
                         // Retrieve today's record
                         db.collection("inventory").document(documentId)
                                 .collection("dailyRecords").document(todayDate)
@@ -468,7 +474,7 @@ public class InventoryFragment extends Fragment {
                                         if (todaySnapshot.exists()) {
                                             // Prepare the update fields for today's record
                                             Map<String, Object> updateFields = new HashMap<>();
-                                            updateFields.put("in_use", newInUse);
+                                            updateFields.put("in_use", newInUse); // Update in-use quantity
 
                                             // Update today's record in Firestore
                                             db.collection("inventory").document(documentId).collection("dailyRecords")
@@ -509,7 +515,6 @@ public class InventoryFragment extends Fragment {
                     }
                 });
     }
-
     private void showRemoveStocks(Map<String, Object> item) {
         // Inflate the custom dialog layout
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
@@ -576,6 +581,12 @@ public class InventoryFragment extends Fragment {
                                             // Update today's stock
                                             int newTodayStocks = todayStocks - quantityToRemove;
 
+                                            // Ensure we don't set stocks to negative
+                                            if (newTodayStocks < 0) {
+                                                Toast.makeText(getContext(), "Not enough stock available to remove", Toast.LENGTH_SHORT).show();
+                                                return;
+                                            }
+
                                             // Prepare the update fields
                                             Map<String, Object> updateFields = new HashMap<>();
                                             updateFields.put("stocks", newTodayStocks);
@@ -592,7 +603,7 @@ public class InventoryFragment extends Fragment {
                                                         }
                                                     });
                                         } else {
-                                            // If no today record, create a new one based on the latest available values
+                                            // If no record for today, create a new one based on the latest available values
                                             int newStocks = latestStocks - quantityToRemove; // Ensure stocks don't go negative
 
                                             // Ensure we don't create a record with negative stocks
@@ -682,82 +693,64 @@ public class InventoryFragment extends Fragment {
         String documentId = (String) item.get("id");
         String todayDate = getTodayDate();
 
+        // First, retrieve the latest document snapshot outside the transaction
         db.collection("inventory").document(documentId)
                 .collection("dailyRecords")
                 .orderBy("date", Query.Direction.DESCENDING)
                 .limit(1)
-                .get().addOnCompleteListener(task -> {
+                .get()
+                .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && !task.getResult().isEmpty()) {
-                        DocumentSnapshot latestSnapshot = task.getResult().getDocuments().get(0);
-                        int latestStocks = latestSnapshot.getLong("stocks") != null ? latestSnapshot.getLong("stocks").intValue() : 0;
-                        int latestInUse = latestSnapshot.getLong("in_use") != null ? latestSnapshot.getLong("in_use").intValue() : 0;
+                        DocumentSnapshot latestDoc = task.getResult().getDocuments().get(0);
+                        DocumentReference latestDocRef = latestDoc.getReference();
 
-                        // Retrieve today's record
-                        db.collection("inventory").document(documentId)
-                                .collection("dailyRecords").document(todayDate)
-                                .get().addOnCompleteListener(todayTask -> {
-                                    if (todayTask.isSuccessful() && todayTask.getResult() != null && todayTask.getResult().exists()) {
-                                        DocumentSnapshot todaySnapshot = todayTask.getResult();
-                                        int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
+                        // Start a Firestore transaction
+                        db.runTransaction(new Transaction.Function<Void>() {
+                            @Override
+                            public Void apply(Transaction transaction) throws FirebaseFirestoreException {
+                                // Get the latest stocks and in_use values
+                                int latestStocks = latestDoc.getLong("stocks") != null ? latestDoc.getLong("stocks").intValue() : 0;
+                                int latestInUse = latestDoc.getLong("in_use") != null ? latestDoc.getLong("in_use").intValue() : 0;
 
-                                        // Ensure there is enough stock to use
-                                        if (quantityToUpdate > todayStocks) {
-                                            Toast.makeText(getContext(), "Not enough stock available", Toast.LENGTH_SHORT).show();
-                                            return;
-                                        }
+                                // Retrieve today's record
+                                DocumentReference todayDocRef = db.collection("inventory").document(documentId)
+                                        .collection("dailyRecords").document(todayDate);
+                                DocumentSnapshot todaySnapshot = transaction.get(todayDocRef);
 
-                                        // Update today's stock and in_use
-                                        int newTodayStocks = todayStocks - quantityToUpdate;
-                                        int newInUse = latestInUse + quantityToUpdate;
+                                int todayStocks = todaySnapshot.exists() ? todaySnapshot.getLong("stocks").intValue() : 0;
 
-                                        // Prepare the update fields
-                                        Map<String, Object> updateFields = new HashMap<>();
-                                        updateFields.put("stocks", newTodayStocks);
-                                        updateFields.put("in_use", newInUse);
+                                // Ensure there is enough stock to use
+                                if (quantityToUpdate > todayStocks) {
+                                    throw new FirebaseFirestoreException("Not enough stock available", FirebaseFirestoreException.Code.ABORTED);
+                                }
 
-                                        // Update today's stock in Firestore
-                                        db.collection("inventory").document(documentId).collection("dailyRecords")
-                                                .document(todayDate).update(updateFields)
-                                                .addOnCompleteListener(updateTask -> {
-                                                    if (updateTask.isSuccessful()) {
-                                                        Toast.makeText(getContext(), "Stock updated successfully", Toast.LENGTH_SHORT).show();
-                                                        loadUsedItemsForDate(todayDate);
-                                                    } else {
-                                                        Toast.makeText(getContext(), "Failed to update stock: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                    }
-                                                });
-                                    } else {
-                                        // If no today record, create a new one based on the latest available values
-                                        int newStocks = latestStocks - quantityToUpdate; // Ensure stocks don't go negative
-                                        int newInUse = latestInUse + quantityToUpdate;
+                                // Calculate new stocks and in_use
+                                int newTodayStocks = todayStocks - quantityToUpdate;
+                                int newInUse = latestInUse + quantityToUpdate;
 
-                                        Map<String, Object> newRecord = new HashMap<>();
-                                        newRecord.put("date", todayDate);
-                                        newRecord.put("stocks", newStocks);
-                                        newRecord.put("in_use", newInUse);
+                                // Prepare the update fields
+                                Map<String, Object> updateFields = new HashMap<>();
+                                updateFields.put("stocks", newTodayStocks);
+                                updateFields.put("in_use", newInUse);
 
-                                        // Set the new document in Firestore
-                                        db.collection("inventory").document(documentId).collection("dailyRecords")
-                                                .document(todayDate).set(newRecord)
-                                                .addOnCompleteListener(createTask -> {
-                                                    if (createTask.isSuccessful()) {
-                                                        Toast.makeText(getContext(), "Stock created and updated successfully", Toast.LENGTH_SHORT).show();
-                                                        loadUsedItemsForDate(todayDate);
-                                                    } else {
-                                                        Toast.makeText(getContext(), "Failed to create stock record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                    }
-                                                });
-                                    }
-                                });
+                                // Update today's stock in Firestore
+                                transaction.set(todayDocRef, updateFields, SetOptions.merge());
+
+                                return null; // Return null to indicate success
+                            }
+                        }).addOnCompleteListener(transactionTask -> {
+                            if (transactionTask.isSuccessful()) {
+                                Toast.makeText(getContext(), "Stock updated successfully", Toast.LENGTH_SHORT).show();
+                                loadUsedItemsForDate(todayDate);
+                            } else {
+                                Toast.makeText(getContext(), "Failed to update stock: " + transactionTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
                     } else {
                         Toast.makeText(getContext(), "No stock records found", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
-
-
-
-
     // add stocks i guess
     private void addQuantityToFirestore(Map<String, Object> item, int quantityToAdd, int inUseToAdd) {
         String documentId = (String) item.get("id");
@@ -811,7 +804,7 @@ public class InventoryFragment extends Fragment {
                                         } else {
                                             // If no today record, create a new one with yesterday's stock and add today's values
                                             int updatedTodayStocks = yesterdayStocks + quantityToAdd; // Use yesterday's stock as the base
-                                            int updatedTodayInUse = yesterdayInUse + inUseToAdd; // Only add today's in_use
+                                            int updatedTodayInUse = yesterdayInUse + inUseToAdd; // Use yesterday's in_use as the base
 
                                             // Create a new record for today
                                             Map<String, Object> newRecord = new HashMap<>();
