@@ -41,7 +41,14 @@
             android:textColor="@color/sub_text"
             android:textColorHint="@color/sub_text"
             android:textSize="14sp" />
-
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="20dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:layout_centerInParent="true"/>
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvInventory"
             android:layout_width="match_parent"

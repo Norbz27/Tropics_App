@@ -121,6 +121,8 @@ public class SubServiceAdapter extends RecyclerView.Adapter<SubServiceAdapter.Vi
         // Hide the 'add' and 'subtract' menu items if needed
         menu.findItem(R.id.action_add).setVisible(false);  // To hide 'add'
         menu.findItem(R.id.action_subtract).setVisible(false);  // To hide 'subtract'
+        menu.findItem(R.id.action_removestocks).setVisible(false);  // To hide 'subtract'
+        menu.findItem(R.id.action_remove).setVisible(false);  // To hide ''
 
         popupMenu.setOnMenuItemClickListener(menuItem -> {
             int id = menuItem.getItemId();

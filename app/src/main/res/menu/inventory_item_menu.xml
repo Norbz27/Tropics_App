@@ -15,7 +15,7 @@
     <item
         android:id="@+id/action_removestocks"
         android:fontFamily="@font/manrope"
-        android:title="Subtract Stocks" />
+        android:title="Remove Stocks Item" />
     <item
         android:id="@+id/action_edit"
         android:fontFamily="@font/manrope"

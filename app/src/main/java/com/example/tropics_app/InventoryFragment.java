@@ -2,20 +2,15 @@ package com.example.tropics_app;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import android.annotation.SuppressLint;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.ParseException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -26,18 +21,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
-import java.util.Date;
 
-import androidx.lifecycle.ViewModelProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.gms.tasks.Tasks;
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.Timestamp;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -47,23 +37,15 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.SetOptions;
-import com.google.firebase.firestore.Transaction;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -144,13 +126,10 @@ public class InventoryFragment extends Fragment {
             }
 
             @Override
-            public void onEditClick(Map<String, Object> item) {
-                // Show the edit dialog
-                showEditProductDialog(item);
-            }
+            public void onEditClick(Map<String, Object> item) {showEditProductDialog(item);}
 
             @Override
-            public void onRemoveClick(Map<String, Object> item) {
+            public void onRemoveInUsedClick(Map<String, Object> item) {
                 showRemoveQuantityDialog(item);
             }
 
@@ -160,14 +139,10 @@ public class InventoryFragment extends Fragment {
             }
 
             @Override
-            public void onDeleteClick(Map<String, Object> item) {
-                showDeleteConfirmationDialog(item);
-            }
+            public void onDeleteClick(Map<String, Object> item) {showDeleteConfirmationDialog(item);}
 
             @Override
-            public void onRemoveinUsed(Map<String, Object> item) {
-                showRemoveStocks(item);
-            }
+            public void onRemoveStockClick(Map<String, Object> item) {showRemoveStocks(item);}
         });
 
         // Pass the view parameter to the setupSearchView method
@@ -222,15 +197,62 @@ public class InventoryFragment extends Fragment {
         adapter.notifyDataSetChanged(); // Notify the adapter of data changes
     }
 
+    private boolean isInventoryDataLoaded = false;
 
-    private boolean isInventoryDataLoaded = false; // Flag to control inventory loading
-
+    // Method to get today's date in Firestore format
     private String getTodayDate() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy"); // Adjust the format as needed
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
         return dateFormat.format(Calendar.getInstance().getTime());
     }
 
+    // Method to get yesterday's date in Firestore format
+    private String getYesterdayDate() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, -1); // Subtract one day
+        return dateFormat.format(calendar.getTime());
+    }
+
+    // Method to format a given date string into Firestore format
+    private String formatDateForFirestore(String inputDate) {
+        SimpleDateFormat firestoreFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
+        SimpleDateFormat inputFormat1 = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // e.g., 10/07/2024
+        SimpleDateFormat inputFormat2 = new SimpleDateFormat("M/d/yyyy", Locale.getDefault());   // e.g., 10/7/2024
+
+        try {
+            // Try parsing with the first format
+            return firestoreFormat.format(inputFormat1.parse(inputDate));
+        } catch (Exception e1) {
+            try {
+                // If the first format fails, try the second format
+                return firestoreFormat.format(inputFormat2.parse(inputDate));
+            } catch (Exception e2) {
+                // Return the original input if parsing fails
+                Log.e("Date Parsing Error", "Error parsing input date: " + e2.getMessage());
+                return inputDate;
+            }
+        }
+    }
+
+    // Method to get the previous date in Firestore format based on a given date string
+    private String getPreviousDate(String currentDate) {
+        SimpleDateFormat firestoreFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
+        Calendar calendar = Calendar.getInstance();
+
+        try {
+            calendar.setTime(firestoreFormat.parse(currentDate));
+            calendar.add(Calendar.DAY_OF_MONTH, -1); // Subtract one day
+            return firestoreFormat.format(calendar.getTime());
+        } catch (Exception e) {
+            Log.e("Date Parsing Error", "Error parsing current date: " + e.getMessage());
+            return currentDate; // Return the original date if parsing fails
+        }
+    }
+
+
     private void loadUsedItemsForDate(String selectedDate) {
+        // Hide loading indicator when task completes
+
         if (selectedDate == null || selectedDate.isEmpty()) {
             selectedDate = getYesterdayDate();
             Log.d("Date Selection", "No date selected, using yesterday's date: " + selectedDate);
@@ -258,6 +280,7 @@ public class InventoryFragment extends Fragment {
 
                                 // Start searching with today's date
                                 fetchDailyRecordForDate(document, formattedDate);
+                                showLoading(false);
                             }
                         } else {
                             Log.e("Firestore Error", "Error fetching inventory: " + task.getException());
@@ -269,38 +292,9 @@ public class InventoryFragment extends Fragment {
         }
     }
 
-    // Method to format date into Firestore's "MMMM dd, yyyy" format
-    private String formatDateForFirestore(String inputDate) {
-        // Firestore date format: "MMMM dd, yyyy"
-        DateTimeFormatter firestoreFormat = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.getDefault());
-
-        // Other possible input formats
-        DateTimeFormatter inputFormat1 = DateTimeFormatter.ofPattern("MM/dd/yyyy", Locale.getDefault()); // e.g., 10/07/2024
-        DateTimeFormatter inputFormat2 = DateTimeFormatter.ofPattern("M/d/yyyy", Locale.getDefault());   // e.g., 10/7/2024
-
-        try {
-            // Try to parse the input date in the MM/dd/yyyy format
-            LocalDate parsedDate;
-            try {
-                parsedDate = LocalDate.parse(inputDate, inputFormat1);
-            } catch (DateTimeParseException e) {
-                // If the first format fails, try the M/d/yyyy format
-                parsedDate = LocalDate.parse(inputDate, inputFormat2);
-            }
-
-            // Return the date formatted in Firestore format
-            return parsedDate.format(firestoreFormat);
-        } catch (DateTimeParseException e) {
-            Log.e("Date Parsing Error", "Error parsing input date: " + e.getMessage());
-            return inputDate; // Return the original date if parsing fails
-        }
-    }
-
-    // Method to fetch daily record for a specific date
-
     private void fetchDailyRecordForDate(QueryDocumentSnapshot document, String date) {
         DocumentReference dailyRecordRef = document.getReference().collection("dailyRecords").document(date);
-        Log.d("Firestore Query", "Fetching daily record for date: " + date + " in inventory ID: " + document.getId());
+        //Log.d("Firestore Query", "Fetching daily record for date: " + date + " in inventory ID: " + document.getId());
 
         dailyRecordRef.get().addOnCompleteListener(innerTask -> {
             if (innerTask.isSuccessful() && innerTask.getResult() != null) {
@@ -310,7 +304,7 @@ public class InventoryFragment extends Fragment {
                     long stocks = dailyDoc.getLong("stocks") != null ? dailyDoc.getLong("stocks") : 0;
 
                     if (used > 0 || date.equals(getTodayDate())) { // Check non-zero in_use or today's date
-                        Log.d("Firestore Daily Record", "Valid daily record for " + date + ": in_use = " + used + ", stocks = " + stocks);
+                        //Log.d("Firestore Daily Record", "Valid daily record for " + date + ": in_use = " + used + ", stocks = " + stocks);
 
                         // Prepare data for display
                         Map<String, Object> combinedData = new HashMap<>(document.getData());
@@ -321,44 +315,25 @@ public class InventoryFragment extends Fragment {
 
                         // Update filtered list and UI
                         filteredList.add(combinedData);
-                        Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
+                        //Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
                         adapter.updateList(filteredList);
                         adapter.notifyDataSetChanged();
                     } else {
                         // If in_use is zero and not today's date, check the previous date
                         String previousDate = getPreviousDate(date);
-                        Log.d("Date Check", "in_use is zero or no data found. Checking previous date: " + previousDate);
+                        //Log.d("Date Check", "in_use is zero or no data found. Checking previous date: " + previousDate);
                         fetchDailyRecordForDate(document, previousDate);
                     }
                 } else {
-                    Log.e("Firestore Error", "No daily record found for " + date + " in inventory ID: " + document.getId());
+                    //Log.e("Firestore Error", "No daily record found for " + date + " in inventory ID: " + document.getId());
                     String previousDate = getPreviousDate(date);
-                    Log.d("Date Check", "No record found. Checking previous date: " + previousDate);
+                    //Log.d("Date Check", "No record found. Checking previous date: " + previousDate);
                     fetchDailyRecordForDate(document, previousDate);
                 }
             } else {
-                Log.e("Firestore Error", "Error fetching daily record: " + innerTask.getException());
+                //Log.e("Firestore Error", "Error fetching daily record: " + innerTask.getException());
             }
         });
-    }
-
-    // Method to get the previous date based on the provided date
-    private String getPreviousDate(String currentDate) {
-        DateTimeFormatter formatterFirestore = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.getDefault());
-
-        // Parse the current date using Firestore's expected format
-        LocalDate date = LocalDate.parse(currentDate, formatterFirestore);
-
-        // Get the previous date and return it in Firestore format
-        return date.minusDays(1).format(formatterFirestore);
-    }
-
-
-    private String getYesterdayDate() {
-        SimpleDateFormat sdf = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()); // Use the same format as in Firestore
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, -1); // Subtract one day
-        return sdf.format(calendar.getTime()); // Return formatted date
     }
 
     private void filterInventoryByDate(String selectedDate) {
@@ -398,123 +373,140 @@ public class InventoryFragment extends Fragment {
                 Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
             } else {
                 int quantityToRemove = Integer.parseInt(quantityStr);
-                removeStocks(item, quantityToRemove);
+                showLoading(true);
+                removeInUsed(item, quantityToRemove);
                 dialog.dismiss();
             }
         });
     }
 
-    private void ShowRemoveStockDialog(Map<String, Object> item){
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
-
-        // Create the AlertDialog Builder
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
-        builder.setView(dialogView);
-
-        // Create the AlertDialog
-        AlertDialog dialog = builder.create();
-        dialog.show();
-
-        // Find the EditText and Button in the dialog layout
-        EditText etProductQuantity = dialogView.findViewById(R.id.etProductQuantity);
-        Button btnUpdateQuantity = dialogView.findViewById(R.id.btnAddProduct);
-
-        // Set the button click listener
-        btnUpdateQuantity.setOnClickListener(v -> {
-            String quantityStr = etProductQuantity.getText().toString();
-
-            if (quantityStr.isEmpty()) {
-                Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
-            } else {
-                int quantityToRemove = Integer.parseInt(quantityStr);
-                // Call the method to remove stocks
-                onRemoveinUsed(item, quantityToRemove);
-                dialog.dismiss();
-            }
-        });
-    }
-    private void removeStocks(Map<String, Object> item, int quantityToRemove) {
+    private void removeInUsed(Map<String, Object> item, int quantityToRemove) {
         String documentId = (String) item.get("id");
         String todayDate = getTodayDate();
+        Log.d("Remove Stocks", "Document ID: " + documentId + ", Today's Date: " + todayDate + ", Quantity to remove: " + quantityToRemove);
 
-        // Retrieve the latest stock record
-        db.collection("inventory").document(documentId)
-                .collection("dailyRecords")
-                .orderBy("date", Query.Direction.DESCENDING)
-                .limit(1)
-                .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
-                        DocumentSnapshot latestSnapshot = task.getResult().getDocuments().get(0);
-                        int latestStocks = latestSnapshot.getLong("stocks") != null ? latestSnapshot.getLong("stocks").intValue() : 0;
-                        int latestInUse = latestSnapshot.getLong("in_use") != null ? latestSnapshot.getLong("in_use").intValue() : 0;
+        if (documentId != null) {
+            // Retrieve all daily records
+            db.collection("inventory").document(documentId)
+                    .collection("dailyRecords")
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            List<DocumentSnapshot> documents = task.getResult().getDocuments();
 
-                        // Ensure there is enough in-use quantity to remove
-                        if (quantityToRemove > latestInUse) {
-                            Toast.makeText(getContext(), "Not enough in-use quantity to remove", Toast.LENGTH_SHORT).show();
-                            return;
+                            // Sort documents by date (descending) in code
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM dd, yyyy", Locale.getDefault());
+                            documents.sort((doc1, doc2) -> {
+                                try {
+                                    return dateFormat.parse(doc2.getString("date"))
+                                            .compareTo(dateFormat.parse(doc1.getString("date")));
+                                } catch (Exception e) {
+                                    Log.e("Date Sorting Error", "Error parsing dates: " + e.getMessage());
+                                    return 0;
+                                }
+                            });
+
+                            // Process the latest document (first document after sorting)
+                            if (!documents.isEmpty()) {
+                                DocumentSnapshot latestDoc = documents.get(0);
+
+                                // Get the latest stock and in_use values
+                                int latestStocks = latestDoc.getLong("stocks") != null ? latestDoc.getLong("stocks").intValue() : 0;
+                                int latestInUse = latestDoc.getLong("in_use") != null ? latestDoc.getLong("in_use").intValue() : 0;
+
+                                // Retrieve today's record
+                                db.collection("inventory").document(documentId)
+                                        .collection("dailyRecords").document(todayDate)
+                                        .get().addOnCompleteListener(todayTask -> {
+                                            if (todayTask.isSuccessful() && todayTask.getResult() != null) {
+                                                DocumentSnapshot todaySnapshot = todayTask.getResult();
+
+                                                // If there's a record for today
+                                                if (todaySnapshot.exists()) {
+                                                    int todayUsed = todaySnapshot.getLong("in_use") != null ? todaySnapshot.getLong("in_use").intValue() : 0;
+
+                                                    // Ensure there is enough stock to remove
+                                                    if (quantityToRemove > todayUsed) {
+                                                        Toast.makeText(getContext(), "Not enough used available to remove", Toast.LENGTH_SHORT).show();
+                                                        showLoading(false);
+                                                        return;
+                                                    }
+
+                                                    // Update today's stock
+                                                    int newTodayUsed = todayUsed - quantityToRemove;
+
+                                                    // Ensure stocks do not go negative
+                                                    if (newTodayUsed <= 0) {
+                                                        Toast.makeText(getContext(), "Not enough used available to remove", Toast.LENGTH_SHORT).show();
+                                                        showLoading(false);
+                                                        return;
+                                                    }
+
+                                                    // Prepare the update fields
+                                                    Map<String, Object> updateFields = new HashMap<>();
+                                                    updateFields.put("in_use", newTodayUsed);
+
+                                                    // Update today's stock in Firestore
+                                                    db.collection("inventory").document(documentId).collection("dailyRecords")
+                                                            .document(todayDate).update(updateFields)
+                                                            .addOnCompleteListener(updateTask -> {
+                                                                if (updateTask.isSuccessful()) {
+                                                                    Toast.makeText(getContext(), "Used updated successfully for today", Toast.LENGTH_SHORT).show();
+                                                                    loadUsedItemsForDate(todayDate);
+                                                                } else {
+                                                                    Toast.makeText(getContext(), "Failed to update used: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                                    showLoading(false);
+                                                                }
+                                                            });
+                                                } else {
+                                                    // If no record for today, create a new one based on the latest available values
+                                                    int newUsed = latestInUse - quantityToRemove; // Ensure stocks don't go negative
+
+                                                    // Ensure stocks do not go negative when creating today's record
+                                                    if (newUsed <= 0) {
+                                                        Toast.makeText(getContext(), "Not enough used available to proceed", Toast.LENGTH_SHORT).show();
+                                                        showLoading(false);
+                                                        return;
+                                                    }
+
+                                                    // Create a new record for today, including the latest in_use value
+                                                    Map<String, Object> newRecord = new HashMap<>();
+                                                    newRecord.put("date", todayDate);
+                                                    newRecord.put("stocks", latestStocks);
+                                                    newRecord.put("in_use", newUsed); // Add the latest in_use value
+
+                                                    // Set the new document in Firestore
+                                                    db.collection("inventory").document(documentId).collection("dailyRecords")
+                                                            .document(todayDate).set(newRecord)
+                                                            .addOnCompleteListener(createTask -> {
+                                                                if (createTask.isSuccessful()) {
+                                                                    Toast.makeText(getContext(), "Used removed for today successfully", Toast.LENGTH_SHORT).show();
+                                                                    loadUsedItemsForDate(todayDate);
+                                                                } else {
+                                                                    Toast.makeText(getContext(), "Failed to removed used record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                                    showLoading(false);
+                                                                }
+                                                            });
+                                                }
+                                            } else {
+                                                Toast.makeText(getContext(), "Failed to retrieve today's record: " + todayTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                showLoading(false);
+                                            }
+                                        });
+                            } else {
+                                Toast.makeText(getContext(), "No used records found", Toast.LENGTH_SHORT).show();
+                                showLoading(false);
+                            }
+                        } else {
+                            Toast.makeText(getContext(), "Failed to retrieve records: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            showLoading(false);
                         }
-
-                        // Calculate new in-use quantity
-                        int newInUse = latestInUse - quantityToRemove; // Decrease in-use by the quantity to remove
-
-                        // Check if new in-use quantity is less than 1
-                        if (newInUse < 1) {
-                            Toast.makeText(getContext(), "Cannot remove items, at least 1 item must remain in use", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-
-                        // Retrieve today's record
-                        db.collection("inventory").document(documentId)
-                                .collection("dailyRecords").document(todayDate)
-                                .get().addOnCompleteListener(todayTask -> {
-                                    if (todayTask.isSuccessful() && todayTask.getResult() != null) {
-                                        DocumentSnapshot todaySnapshot = todayTask.getResult();
-
-                                        // If there's a record for today
-                                        if (todaySnapshot.exists()) {
-                                            // Prepare the update fields for today's record
-                                            Map<String, Object> updateFields = new HashMap<>();
-                                            updateFields.put("in_use", newInUse); // Update in-use quantity
-
-                                            // Update today's record in Firestore
-                                            db.collection("inventory").document(documentId).collection("dailyRecords")
-                                                    .document(todayDate).update(updateFields)
-                                                    .addOnCompleteListener(updateTask -> {
-                                                        if (updateTask.isSuccessful()) {
-                                                            Toast.makeText(getContext(), "In-use quantity updated successfully for today", Toast.LENGTH_SHORT).show();
-                                                            loadUsedItemsForDate(todayDate);
-                                                        } else {
-                                                            Toast.makeText(getContext(), "Failed to update in-use quantity: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-                                        } else {
-                                            // If no record for today, create a new one based on the latest available values
-                                            Map<String, Object> newRecord = new HashMap<>();
-                                            newRecord.put("date", todayDate);
-                                            newRecord.put("stocks", latestStocks); // Use the latest stocks
-                                            newRecord.put("in_use", newInUse); // Use the new in-use value
-
-                                            // Set the new document in Firestore
-                                            db.collection("inventory").document(documentId).collection("dailyRecords")
-                                                    .document(todayDate).set(newRecord)
-                                                    .addOnCompleteListener(createTask -> {
-                                                        if (createTask.isSuccessful()) {
-                                                            Toast.makeText(getContext(), "New record created for today successfully", Toast.LENGTH_SHORT).show();
-                                                            loadUsedItemsForDate(todayDate);
-                                                        } else {
-                                                            Toast.makeText(getContext(), "Failed to create stock record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-                                        }
-                                    } else {
-                                        Toast.makeText(getContext(), "Failed to retrieve today's record: " + todayTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                    } else {
-                        Toast.makeText(getContext(), "No usage records found", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                    });
+        } else {
+            Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
+        }
     }
+
     private void showRemoveStocks(Map<String, Object> item) {
         // Inflate the custom dialog layout
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
@@ -540,105 +532,141 @@ public class InventoryFragment extends Fragment {
             } else {
                 int quantityToRemove = Integer.parseInt(quantityStr);
                 // Call the method to remove stocks
-                onRemoveinUsed(item, quantityToRemove);
+                showLoading(true);
+                onRemoveStocks(item, quantityToRemove);
                 dialog.dismiss();
             }
         });
     }
 
-    private void onRemoveinUsed(Map<String, Object> item, int quantityToRemove) {
+    private void onRemoveStocks(Map<String, Object> item, int quantityToRemove) {
         String documentId = (String) item.get("id");
         String todayDate = getTodayDate();
+        Log.d("Remove Stocks", "Document ID: " + documentId + ", Today's Date: " + todayDate + ", Quantity to remove: " + quantityToRemove);
 
-        // Retrieve the latest stock record
-        db.collection("inventory").document(documentId)
-                .collection("dailyRecords")
-                .orderBy("date", Query.Direction.DESCENDING)
-                .limit(1)
-                .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
-                        DocumentSnapshot latestSnapshot = task.getResult().getDocuments().get(0);
-                        int latestStocks = latestSnapshot.getLong("stocks") != null ? latestSnapshot.getLong("stocks").intValue() : 0;
-                        int latestInUse = latestSnapshot.getLong("in_use") != null ? latestSnapshot.getLong("in_use").intValue() : 0;
+        if (documentId != null) {
+            // Retrieve all daily records
+            db.collection("inventory").document(documentId)
+                    .collection("dailyRecords")
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            List<DocumentSnapshot> documents = task.getResult().getDocuments();
 
-                        // Retrieve today's record
-                        db.collection("inventory").document(documentId)
-                                .collection("dailyRecords").document(todayDate)
-                                .get().addOnCompleteListener(todayTask -> {
-                                    if (todayTask.isSuccessful() && todayTask.getResult() != null) {
-                                        DocumentSnapshot todaySnapshot = todayTask.getResult();
+                            // Sort documents by date (descending) in code
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM dd, yyyy", Locale.getDefault());
+                            documents.sort((doc1, doc2) -> {
+                                try {
+                                    return dateFormat.parse(doc2.getString("date"))
+                                            .compareTo(dateFormat.parse(doc1.getString("date")));
+                                } catch (Exception e) {
+                                    Log.e("Date Sorting Error", "Error parsing dates: " + e.getMessage());
+                                    return 0;
+                                }
+                            });
 
-                                        // If there's a record for today
-                                        if (todaySnapshot.exists()) {
-                                            int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
+                            // Process the latest document (first document after sorting)
+                            if (!documents.isEmpty()) {
+                                DocumentSnapshot latestDoc = documents.get(0);
 
-                                            // Ensure there is enough stock to remove
-                                            if (quantityToRemove > todayStocks) {
-                                                Toast.makeText(getContext(), "Not enough stock available to remove", Toast.LENGTH_SHORT).show();
-                                                return;
+                                // Get the latest stock and in_use values
+                                int latestStocks = latestDoc.getLong("stocks") != null ? latestDoc.getLong("stocks").intValue() : 0;
+                                int latestInUse = latestDoc.getLong("in_use") != null ? latestDoc.getLong("in_use").intValue() : 0;
+
+                                // Retrieve today's record
+                                db.collection("inventory").document(documentId)
+                                        .collection("dailyRecords").document(todayDate)
+                                        .get().addOnCompleteListener(todayTask -> {
+                                            if (todayTask.isSuccessful() && todayTask.getResult() != null) {
+                                                DocumentSnapshot todaySnapshot = todayTask.getResult();
+
+                                                // If there's a record for today
+                                                if (todaySnapshot.exists()) {
+                                                    int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
+
+                                                    // Ensure there is enough stock to remove
+                                                    if (quantityToRemove > todayStocks) {
+                                                        Toast.makeText(getContext(), "Not enough stock available to remove", Toast.LENGTH_SHORT).show();
+                                                        showLoading(false);
+                                                        return;
+                                                    }
+
+                                                    // Update today's stock
+                                                    int newTodayStocks = todayStocks - quantityToRemove;
+
+                                                    // Ensure stocks do not go negative
+                                                    if (newTodayStocks <= 0) {
+                                                        Toast.makeText(getContext(), "Not enough stock available to remove", Toast.LENGTH_SHORT).show();
+                                                        showLoading(false);
+                                                        return;
+                                                    }
+
+                                                    // Prepare the update fields
+                                                    Map<String, Object> updateFields = new HashMap<>();
+                                                    updateFields.put("stocks", newTodayStocks);
+
+                                                    // Update today's stock in Firestore
+                                                    db.collection("inventory").document(documentId).collection("dailyRecords")
+                                                            .document(todayDate).update(updateFields)
+                                                            .addOnCompleteListener(updateTask -> {
+                                                                if (updateTask.isSuccessful()) {
+                                                                    Toast.makeText(getContext(), "Stock updated successfully for today", Toast.LENGTH_SHORT).show();
+                                                                    loadUsedItemsForDate(todayDate);
+                                                                } else {
+                                                                    Toast.makeText(getContext(), "Failed to update stock: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                                    showLoading(false);
+                                                                }
+                                                            });
+                                                } else {
+                                                    // If no record for today, create a new one based on the latest available values
+                                                    int newStocks = latestStocks - quantityToRemove; // Ensure stocks don't go negative
+
+                                                    // Ensure stocks do not go negative when creating today's record
+                                                    if (newStocks <= 0) {
+                                                        Toast.makeText(getContext(), "Not enough stock available to proceed", Toast.LENGTH_SHORT).show();
+                                                        showLoading(false);
+                                                        return;
+                                                    }
+
+                                                    // Create a new record for today, including the latest in_use value
+                                                    Map<String, Object> newRecord = new HashMap<>();
+                                                    newRecord.put("date", todayDate);
+                                                    newRecord.put("stocks", newStocks);
+                                                    newRecord.put("in_use", latestInUse); // Add the latest in_use value
+
+                                                    // Set the new document in Firestore
+                                                    db.collection("inventory").document(documentId).collection("dailyRecords")
+                                                            .document(todayDate).set(newRecord)
+                                                            .addOnCompleteListener(createTask -> {
+                                                                if (createTask.isSuccessful()) {
+                                                                    Toast.makeText(getContext(), "Stock removed for today successfully", Toast.LENGTH_SHORT).show();
+                                                                    loadUsedItemsForDate(todayDate);
+                                                                } else {
+                                                                    Toast.makeText(getContext(), "Failed to remove stock record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                                    showLoading(false);
+                                                                }
+                                                            });
+                                                }
+                                            } else {
+                                                Toast.makeText(getContext(), "Failed to retrieve today's record: " + todayTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                showLoading(false);
                                             }
-
-                                            // Update today's stock
-                                            int newTodayStocks = todayStocks - quantityToRemove;
-
-                                            // Ensure we don't set stocks to negative
-                                            if (newTodayStocks < 0) {
-                                                Toast.makeText(getContext(), "Not enough stock available to remove", Toast.LENGTH_SHORT).show();
-                                                return;
-                                            }
-
-                                            // Prepare the update fields
-                                            Map<String, Object> updateFields = new HashMap<>();
-                                            updateFields.put("stocks", newTodayStocks);
-
-                                            // Update today's stock in Firestore
-                                            db.collection("inventory").document(documentId).collection("dailyRecords")
-                                                    .document(todayDate).update(updateFields)
-                                                    .addOnCompleteListener(updateTask -> {
-                                                        if (updateTask.isSuccessful()) {
-                                                            Toast.makeText(getContext(), "Stock updated successfully for today", Toast.LENGTH_SHORT).show();
-                                                            loadUsedItemsForDate(todayDate);
-                                                        } else {
-                                                            Toast.makeText(getContext(), "Failed to update stock: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-                                        } else {
-                                            // If no record for today, create a new one based on the latest available values
-                                            int newStocks = latestStocks - quantityToRemove; // Ensure stocks don't go negative
-
-                                            // Ensure we don't create a record with negative stocks
-                                            if (newStocks < 0) {
-                                                Toast.makeText(getContext(), "Not enough stock available to create today's record", Toast.LENGTH_SHORT).show();
-                                                return;
-                                            }
-
-                                            // Create a new record for today, including the latest in_use value
-                                            Map<String, Object> newRecord = new HashMap<>();
-                                            newRecord.put("date", todayDate);
-                                            newRecord.put("stocks", newStocks);
-                                            newRecord.put("in_use", latestInUse); // Add the latest in_use value
-
-                                            // Set the new document in Firestore
-                                            db.collection("inventory").document(documentId).collection("dailyRecords")
-                                                    .document(todayDate).set(newRecord)
-                                                    .addOnCompleteListener(createTask -> {
-                                                        if (createTask.isSuccessful()) {
-                                                            Toast.makeText(getContext(), "Stock created for today successfully", Toast.LENGTH_SHORT).show();
-                                                            loadUsedItemsForDate(todayDate);
-                                                        } else {
-                                                            Toast.makeText(getContext(), "Failed to create stock record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-                                        }
-                                    } else {
-                                        Toast.makeText(getContext(), "Failed to retrieve today's record: " + todayTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                    } else {
-                        Toast.makeText(getContext(), "No stock records found", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                                        });
+                            } else {
+                                Toast.makeText(getContext(), "No stock records found", Toast.LENGTH_SHORT).show();
+                                showLoading(false);
+                            }
+                        } else {
+                            Toast.makeText(getContext(), "Failed to retrieve records: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            showLoading(false);
+                        }
+                    });
+        } else {
+            Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
+            showLoading(false);
+        }
     }
+
     private void showAddQuantityDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
@@ -657,13 +685,24 @@ public class InventoryFragment extends Fragment {
                 Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
             } else {
                 int quantityToAdd = Integer.parseInt(quantityStr);
-                int inUseToAdd = 0; // You can change this value as needed
-                addQuantityToFirestore(item, quantityToAdd, inUseToAdd); // Updated to include inUseToAdd
+                showLoading(true);
+                addQuantityToFirestore(item, quantityToAdd); // Updated to include inUseToAdd
                 dialog.dismiss();
             }
         });
     }
     //
+    private void showLoading(boolean isLoading) {
+        // This assumes you have a ProgressBar defined in your layout
+        ProgressBar progressBar = getActivity().findViewById(R.id.progressBar);
+
+        if (isLoading) {
+            progressBar.setVisibility(View.VISIBLE); // Show the progress bar
+        } else {
+            progressBar.setVisibility(View.GONE); // Hide the progress bar
+        }
+    }
+
     private void showUpdateQuantityDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
@@ -682,155 +721,243 @@ public class InventoryFragment extends Fragment {
                 Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
             } else {
                 int quantityToUpdate = Integer.parseInt(quantityStr);
+                // Show loading indicator
+                showLoading(true);
+
                 // Choose action (subtract from stocks and add to in_use)
-                updateStocksAndInUse(item, quantityToUpdate);
+                updateStocksAndInUse(item, quantityToUpdate, dialog);
                 dialog.dismiss();
             }
         });
     }
+
     // code to use stocks
-    private void updateStocksAndInUse(Map<String, Object> item, int quantityToUpdate) {
+    private void updateStocksAndInUse(Map<String, Object> item, int quantityToUpdate, AlertDialog dialog) {
         String documentId = (String) item.get("id");
         String todayDate = getTodayDate();
+
+        // Retrieve all daily records
         db.collection("inventory").document(documentId)
                 .collection("dailyRecords")
-                .orderBy("date", Query.Direction.DESCENDING)
-                .limit(1)
                 .get()
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
-                        DocumentSnapshot latestDoc = task.getResult().getDocuments().get(0);
-                        DocumentReference latestDocRef = latestDoc.getReference();
-                        db.runTransaction(new Transaction.Function<Void>() {
-                            @Override
-                            public Void apply(Transaction transaction) throws FirebaseFirestoreException {
-                                int latestStocks = latestDoc.getLong("stocks") != null ? latestDoc.getLong("stocks").intValue() : 0;
-                                int latestInUse = latestDoc.getLong("in_use") != null ? latestDoc.getLong("in_use").intValue() : 0;
-                                DocumentReference todayDocRef = db.collection("inventory").document(documentId)
-                                        .collection("dailyRecords").document(todayDate);
-                                DocumentSnapshot todaySnapshot = transaction.get(todayDocRef);
-                                int todayStocks;
-                                if (todaySnapshot.exists()) {
-                                    todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
-                                } else {
-                                    todayStocks = latestStocks;
-                                }
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        List<DocumentSnapshot> documents = task.getResult().getDocuments();
 
-                                // Ensure there is enough stock to use
-                                if (quantityToUpdate > todayStocks) {
-                                    throw new FirebaseFirestoreException("Not enough stock available", FirebaseFirestoreException.Code.ABORTED);
-                                }
-
-                                // Calculate new stocks and in_use
-                                int newTodayStocks = todayStocks - quantityToUpdate;
-                                int newInUse = latestInUse + quantityToUpdate;
-
-                                // Prepare the update fields
-                                Map<String, Object> updateFields = new HashMap<>();
-                                updateFields.put("stocks", newTodayStocks);
-                                updateFields.put("in_use", newInUse);
-
-                                // Update today's stock in Firestore
-                                transaction.set(todayDocRef, updateFields, SetOptions.merge());
-
-                                return null; // Return null to indicate success
-                            }
-                        }).addOnCompleteListener(transactionTask -> {
-                            if (transactionTask.isSuccessful()) {
-                                Toast.makeText(getContext(), "Stock updated successfully", Toast.LENGTH_SHORT).show();
-                                loadUsedItemsForDate(todayDate);
-                            } else {
-                                Toast.makeText(getContext(), "Failed to update stock: " + transactionTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        // Sort documents by date (descending)
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("MM dd, yyyy", Locale.getDefault());
+                        documents.sort((doc1, doc2) -> {
+                            try {
+                                return dateFormat.parse(doc2.getString("date"))
+                                        .compareTo(dateFormat.parse(doc1.getString("date")));
+                            } catch (Exception e) {
+                                Log.e("Date Sorting Error", "Error parsing dates: " + e.getMessage());
+                                return 0;
                             }
                         });
+
+                        // Process the latest document
+                        if (!documents.isEmpty()) {
+                            DocumentSnapshot latestDoc = documents.get(0);
+                            int latestStocks = latestDoc.getLong("stocks") != null ? latestDoc.getLong("stocks").intValue() : 0;
+                            int latestInUse = latestDoc.getLong("in_use") != null ? latestDoc.getLong("in_use").intValue() : 0;
+                            Log.d("Latest Date: ", "Date: " + latestDoc + ", Stocks: " + latestStocks + ", In Use: " + latestInUse);
+                            // Ensure there is enough stock to update
+                            if (quantityToUpdate > latestStocks) {
+                                Toast.makeText(getContext(), "Not enough stock available", Toast.LENGTH_SHORT).show();
+                                showLoading(false);
+                                return;
+                            }
+
+                            // Calculate new stocks and in_use
+                            int newTodayStocks = latestStocks - quantityToUpdate;
+                            int newInUse = latestInUse + quantityToUpdate;
+
+                            // Retrieve today's record
+                            db.collection("inventory").document(documentId)
+                                    .collection("dailyRecords").document(todayDate)
+                                    .get()
+                                    .addOnCompleteListener(todayTask -> {
+                                        if (todayTask.isSuccessful() && todayTask.getResult() != null) {
+                                            DocumentSnapshot todaySnapshot = todayTask.getResult();
+
+                                            int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
+                                            int todayInUse = todaySnapshot.getLong("in_use") != null ? todaySnapshot.getLong("in_use").intValue() : 0;
+                                            int newTodayStocks2 = todayStocks - quantityToUpdate;
+                                            int newInUse2 = todayInUse + quantityToUpdate;
+                                            // If there's a record for today
+                                            if (todaySnapshot.exists()) {
+                                                // Prepare the update fields for today's record
+                                                Map<String, Object> updateFields = new HashMap<>();
+                                                updateFields.put("stocks", newTodayStocks2); // Update stocks
+                                                updateFields.put("in_use", newInUse2); // Update in_use quantity
+
+                                                // Update today's record in Firestore
+                                                db.collection("inventory").document(documentId)
+                                                        .collection("dailyRecords")
+                                                        .document(todayDate).update(updateFields)
+                                                        .addOnCompleteListener(updateTask -> {
+                                                            if (updateTask.isSuccessful()) {
+                                                                Toast.makeText(getContext(), "Stock updated successfully for today", Toast.LENGTH_SHORT).show();
+                                                                loadUsedItemsForDate(todayDate);
+                                                            } else {
+                                                                Toast.makeText(getContext(), "Failed to update stock: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                                showLoading(false);
+                                                            }
+                                                        });
+                                            } else {
+                                                // If no record for today, create a new one
+                                                Map<String, Object> newRecord = new HashMap<>();
+                                                newRecord.put("date", todayDate);
+                                                newRecord.put("stocks", newTodayStocks); // Use the latest stocks
+                                                newRecord.put("in_use", newInUse); // Use the new in-use value
+
+                                                // Set the new document in Firestore
+                                                db.collection("inventory").document(documentId)
+                                                        .collection("dailyRecords")
+                                                        .document(todayDate).set(newRecord)
+                                                        .addOnCompleteListener(createTask -> {
+                                                            if (createTask.isSuccessful()) {
+                                                                Toast.makeText(getContext(), "New record created for today successfully", Toast.LENGTH_SHORT).show();
+                                                                loadUsedItemsForDate(todayDate);
+                                                            } else {
+                                                                Toast.makeText(getContext(), "Failed to create stock record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                                showLoading(false);
+                                                            }
+                                                        });
+                                            }
+                                        } else {
+                                            Toast.makeText(getContext(), "Failed to retrieve today's record: " + todayTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                            showLoading(false);
+                                        }
+                                    });
+                        } else {
+                            Toast.makeText(getContext(), "No stock records found", Toast.LENGTH_SHORT).show();
+                            showLoading(false);
+                        }
                     } else {
-                        Toast.makeText(getContext(), "No stock records found", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Failed to retrieve records: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        showLoading(false);
                     }
                 });
     }
+
+
     // add stocks i guess
-    private void addQuantityToFirestore(Map<String, Object> item, int quantityToAdd, int inUseToAdd) {
+    private void addQuantityToFirestore(Map<String, Object> item, int quantityToAdd) {
         String documentId = (String) item.get("id");
         String todayDate = getTodayDate();
         String yesterdayDate = getYesterdayDate();
 
         if (documentId != null) {
-            // Fetch yesterday's stock and in_use
+            // Retrieve all daily records
             db.collection("inventory").document(documentId)
-                    .collection("dailyRecords").document(yesterdayDate)
-                    .get().addOnCompleteListener(yesterdayTask -> {
-                        if (yesterdayTask.isSuccessful() && yesterdayTask.getResult() != null) {
-                            DocumentSnapshot yesterdaySnapshot = yesterdayTask.getResult();
-                            int yesterdayStocks = yesterdaySnapshot.getLong("stocks") != null ? yesterdaySnapshot.getLong("stocks").intValue() : 0;
-                            int yesterdayInUse = yesterdaySnapshot.getLong("in_use") != null ? yesterdaySnapshot.getLong("in_use").intValue() : 0;
+                    .collection("dailyRecords")
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            List<DocumentSnapshot> documents = task.getResult().getDocuments();
 
-                            // Fetch today's stock and in_use (if exists)
-                            db.collection("inventory").document(documentId)
-                                    .collection("dailyRecords").document(todayDate)
-                                    .get().addOnCompleteListener(todayTask -> {
-                                        if (todayTask.isSuccessful() && todayTask.getResult() != null && todayTask.getResult().exists()) {
-                                            DocumentSnapshot todaySnapshot = todayTask.getResult();
-                                            int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
-                                            int todayInUse = todaySnapshot.getLong("in_use") != null ? todaySnapshot.getLong("in_use").intValue() : 0;
+                            // Sort documents by date (descending) in code
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM dd, yyyy", Locale.getDefault());
+                            documents.sort((doc1, doc2) -> {
+                                try {
+                                    return dateFormat.parse(doc2.getString("date"))
+                                            .compareTo(dateFormat.parse(doc1.getString("date")));
+                                } catch (Exception e) {
+                                    Log.e("Date Sorting Error", "Error parsing dates: " + e.getMessage());
+                                    return 0;
+                                }
+                            });
 
-                                            // Check if the date is today before modifying
-                                            if (todayDate.equals(getTodayDate())) {
-                                                // Update today's stock and in_use
-                                                int updatedTodayStocks = todayStocks + quantityToAdd;
-                                                int updatedTodayInUse = todayInUse + inUseToAdd;
+                            // Process the latest document (first document after sorting)
+                            if (!documents.isEmpty()) {
+                                DocumentSnapshot latestDoc = documents.get(0);
 
-                                                // Prepare the update
-                                                Map<String, Object> updateFields = new HashMap<>();
-                                                updateFields.put("stocks", updatedTodayStocks);
-                                                updateFields.put("in_use", updatedTodayInUse);
+                                // Get yesterday's stock and in_use values from the latest document
+                                int yesterdayStocks = latestDoc.getLong("stocks") != null ? latestDoc.getLong("stocks").intValue() : 0;
+                                int yesterdayInUse = latestDoc.getLong("in_use") != null ? latestDoc.getLong("in_use").intValue() : 0;
 
-                                                // Update Firestore document for today
-                                                db.collection("inventory").document(documentId).collection("dailyRecords")
-                                                        .document(todayDate).update(updateFields)
-                                                        .addOnCompleteListener(updateTask -> {
-                                                            if (updateTask.isSuccessful()) {
-                                                                Toast.makeText(getContext(), "Stock updated successfully", Toast.LENGTH_SHORT).show();
-                                                                loadUsedItemsForDate(todayDate);
-                                                            } else {
-                                                                Toast.makeText(getContext(), "Failed to update stock and usage: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                            }
-                                                        });
+                                // Retrieve today's record
+                                db.collection("inventory").document(documentId)
+                                        .collection("dailyRecords").document(todayDate)
+                                        .get().addOnCompleteListener(todayTask -> {
+                                            if (todayTask.isSuccessful() && todayTask.getResult() != null) {
+                                                DocumentSnapshot todaySnapshot = todayTask.getResult();
+
+                                                // If there's a record for today
+                                                if (todaySnapshot.exists()) {
+                                                    // Get today's stock and in_use values
+                                                    int todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
+                                                    int todayInUse = todaySnapshot.getLong("in_use") != null ? todaySnapshot.getLong("in_use").intValue() : 0;
+
+                                                    // Check if the date is today before modifying
+                                                    if (todayDate.equals(getTodayDate())) {
+                                                        // Update today's stock
+                                                        int updatedTodayStocks = todayStocks + quantityToAdd;
+
+                                                        // Prepare the update
+                                                        Map<String, Object> updateFields = new HashMap<>();
+                                                        updateFields.put("stocks", updatedTodayStocks);
+
+
+                                                        // Update Firestore document for today
+                                                        db.collection("inventory").document(documentId).collection("dailyRecords")
+                                                                .document(todayDate).update(updateFields)
+                                                                .addOnCompleteListener(updateTask -> {
+                                                                    if (updateTask.isSuccessful()) {
+                                                                        Toast.makeText(getContext(), "Stock updated successfully", Toast.LENGTH_SHORT).show();
+                                                                        loadUsedItemsForDate(todayDate);
+                                                                    } else {
+                                                                        Toast.makeText(getContext(), "Failed to update stock: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                                        showLoading(false);
+                                                                    }
+                                                                });
+                                                    } else {
+                                                        Toast.makeText(getContext(), "Cannot edit data for previous dates", Toast.LENGTH_SHORT).show();
+                                                    }
+                                                } else {
+                                                    // If no record for today, create a new one based on the latest available values
+                                                    int updatedTodayStocks = yesterdayStocks + quantityToAdd; // Use yesterday's stock as the base
+
+                                                    // Create a new record for today
+                                                    Map<String, Object> newRecord = new HashMap<>();
+                                                    newRecord.put("date", todayDate);
+                                                    newRecord.put("stocks", updatedTodayStocks);
+                                                    newRecord.put("in_use", yesterdayInUse);
+
+                                                    // Set the new document in Firestore
+                                                    db.collection("inventory").document(documentId).collection("dailyRecords")
+                                                            .document(todayDate).set(newRecord)
+                                                            .addOnCompleteListener(createTask -> {
+                                                                if (createTask.isSuccessful()) {
+                                                                    Toast.makeText(getContext(), "New stock record created successfully", Toast.LENGTH_SHORT).show();
+                                                                    loadUsedItemsForDate(todayDate);
+                                                                } else {
+                                                                    Toast.makeText(getContext(), "Failed to create stock record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                                    showLoading(false);
+                                                                }
+                                                            });
+                                                }
                                             } else {
-                                                Toast.makeText(getContext(), "Cannot edit data for previous dates", Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(getContext(), "Failed to retrieve today's record: " + todayTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                showLoading(false);
                                             }
-                                        } else {
-                                            // If no today record, create a new one with yesterday's stock and add today's values
-                                            int updatedTodayStocks = yesterdayStocks + quantityToAdd; // Use yesterday's stock as the base
-                                            int updatedTodayInUse = yesterdayInUse + inUseToAdd; // Use yesterday's in_use as the base
-
-                                            // Create a new record for today
-                                            Map<String, Object> newRecord = new HashMap<>();
-                                            newRecord.put("date", todayDate);
-                                            newRecord.put("stocks", updatedTodayStocks);
-                                            newRecord.put("in_use", updatedTodayInUse);
-
-                                            // Set the new document in Firestore
-                                            db.collection("inventory").document(documentId).collection("dailyRecords")
-                                                    .document(todayDate).set(newRecord)
-                                                    .addOnCompleteListener(createTask -> {
-                                                        if (createTask.isSuccessful()) {
-                                                            Toast.makeText(getContext(), "New stock and usage record created successfully", Toast.LENGTH_SHORT).show();
-                                                            loadUsedItemsForDate(todayDate);
-                                                        } else {
-                                                            Toast.makeText(getContext(), "Failed to create stock and usage record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-                                        }
-                                    });
+                                        });
+                            } else {
+                                Toast.makeText(getContext(), "No stock records found", Toast.LENGTH_SHORT).show();
+                                showLoading(false);
+                            }
                         } else {
-                            Toast.makeText(getContext(), "Failed to retrieve yesterday's stock and usage records", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Failed to retrieve records: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            showLoading(false);
                         }
                     });
         } else {
             Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
+            showLoading(false);
         }
     }
-
 
 
     private void showAddProductDialog() {
@@ -979,6 +1106,7 @@ public class InventoryFragment extends Fragment {
             if (newProductName.isEmpty()) {
                 Toast.makeText(getContext(), "Please fill out the field", Toast.LENGTH_SHORT).show();
             } else {
+                showLoading(true);
                 updateProductNameInFirestore(item, newProductName);
                 dialog.dismiss();
             }
@@ -1013,6 +1141,7 @@ public class InventoryFragment extends Fragment {
                 .setMessage("Are you sure you want to delete " + item.get("name") + "?")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     // Delete the product from Firestore
+                    showLoading(true);
                     deleteProductFromFirestore(item);
                 })
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())

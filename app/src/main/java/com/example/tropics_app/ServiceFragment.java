@@ -228,7 +228,6 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
 
         builder.setView(container);
 
-
         // Placeholder for buttons
         builder.setPositiveButton("Delete", null);
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());

@@ -66,7 +66,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         holder.tvStocks.setText("Stocks: " + (stocks != null ? stocks : "N/A"));
 
         // Set color based on stocks value
-        if ("0".equals(stocks)) {
+        if (Integer.parseInt(stocks) <= 3) {
             holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark)); // Set to red
         } else {
             holder.tvStocks.setTextColor(ContextCompat.getColor(context, android.R.color.white)); // Set to default color
@@ -169,7 +169,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
             } else if (id == R.id.action_remove) {
                 // Remove stocks
                 if (longClickListener != null) {
-                    longClickListener.onRemoveClick(inventoryList.get(position));
+                    longClickListener.onRemoveInUsedClick(inventoryList.get(position));
                 }
                 return true;
             } else if (id == R.id.action_subtract) {
@@ -187,7 +187,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
             } else if (id == R.id.action_removestocks) {
                 // Call the remove stocks action
                 if (longClickListener != null) {
-                    longClickListener.onRemoveinUsed(inventoryList.get(position)); // Assuming you want to call onRemoveinUsed here
+                    longClickListener.onRemoveStockClick(inventoryList.get(position)); // Assuming you want to call onRemoveinUsed here
                 }
                 return true;
             } else {
@@ -203,9 +203,9 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
     public interface OnItemLongClickListener {
         void onAddClick(Map<String, Object> item);
         void onEditClick(Map<String, Object> item);
-        void onRemoveClick(Map<String, Object> item);
+        void onRemoveInUsedClick(Map<String, Object> item);
         void onUseClick(Map<String, Object> item);
         void onDeleteClick(Map<String, Object> item);
-        void onRemoveinUsed(Map<String, Object> item);
+        void onRemoveStockClick(Map<String, Object> item);
     }
 }
