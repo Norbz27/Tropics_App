@@ -12,13 +12,16 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.SearchView;
 import android.widget.Toast;
 
@@ -212,21 +215,62 @@ public class ServiceFragment extends Fragment implements ServiceAdapter.OnItemCl
         // Create an EditText for user input
         EditText input = new EditText(getContext());
         input.setInputType(InputType.TYPE_CLASS_TEXT);
-        builder.setView(input);
 
-        builder.setPositiveButton("Delete", (dialog, which) -> {
-                    // Check if the user input matches "DELETE"
-                    String userInput = input.getText().toString().trim();
-                    if ("DELETE".equalsIgnoreCase(userInput)) {
-                        deleteServiceFromFirestore(item);
-                    } else {
-                        // Optionally, show a message if the input was incorrect
-                        Toast.makeText(getContext(), "Type 'DELETE' to confirm.", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+// Wrap the EditText in a container with padding
+        FrameLayout container = new FrameLayout(getContext());
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(30, 0, 30, 0); // Set horizontal margin
+        input.setLayoutParams(params);
+        container.addView(input);
 
-        builder.create().show();
+        builder.setView(container);
+
+
+        // Placeholder for buttons
+        builder.setPositiveButton("Delete", null);
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+
+        AlertDialog dialog = builder.create();
+
+        dialog.setOnShowListener(dlg -> {
+            // Get the Delete button
+            Button deleteButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            // Disable the Delete button initially
+            deleteButton.setEnabled(false);
+
+            // Add a TextWatcher to the EditText to enable the button only when "DELETE" is typed
+            input.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    // Enable the button only if input matches "DELETE"
+                    deleteButton.setEnabled("DELETE".equalsIgnoreCase(s.toString().trim()));
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
+            });
+        });
+
+        // Set Delete button click listener inside the dialog.show() to ensure it's not null
+        dialog.show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            // Check if input matches "DELETE" (extra check, though it's handled in TextWatcher)
+            String userInput = input.getText().toString().trim();
+            if ("DELETE".equalsIgnoreCase(userInput)) {
+                deleteServiceFromFirestore(item);
+                dialog.dismiss();
+            } else {
+                Toast.makeText(getContext(), "Type 'DELETE' to confirm.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 
