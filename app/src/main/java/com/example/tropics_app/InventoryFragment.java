@@ -692,8 +692,6 @@ public class InventoryFragment extends Fragment {
     private void updateStocksAndInUse(Map<String, Object> item, int quantityToUpdate) {
         String documentId = (String) item.get("id");
         String todayDate = getTodayDate();
-
-        // First, retrieve the latest document snapshot outside the transaction
         db.collection("inventory").document(documentId)
                 .collection("dailyRecords")
                 .orderBy("date", Query.Direction.DESCENDING)
@@ -703,21 +701,20 @@ public class InventoryFragment extends Fragment {
                     if (task.isSuccessful() && !task.getResult().isEmpty()) {
                         DocumentSnapshot latestDoc = task.getResult().getDocuments().get(0);
                         DocumentReference latestDocRef = latestDoc.getReference();
-
-                        // Start a Firestore transaction
                         db.runTransaction(new Transaction.Function<Void>() {
                             @Override
                             public Void apply(Transaction transaction) throws FirebaseFirestoreException {
-                                // Get the latest stocks and in_use values
                                 int latestStocks = latestDoc.getLong("stocks") != null ? latestDoc.getLong("stocks").intValue() : 0;
                                 int latestInUse = latestDoc.getLong("in_use") != null ? latestDoc.getLong("in_use").intValue() : 0;
-
-                                // Retrieve today's record
                                 DocumentReference todayDocRef = db.collection("inventory").document(documentId)
                                         .collection("dailyRecords").document(todayDate);
                                 DocumentSnapshot todaySnapshot = transaction.get(todayDocRef);
-
-                                int todayStocks = todaySnapshot.exists() ? todaySnapshot.getLong("stocks").intValue() : 0;
+                                int todayStocks;
+                                if (todaySnapshot.exists()) {
+                                    todayStocks = todaySnapshot.getLong("stocks") != null ? todaySnapshot.getLong("stocks").intValue() : 0;
+                                } else {
+                                    todayStocks = latestStocks;
+                                }
 
                                 // Ensure there is enough stock to use
                                 if (quantityToUpdate > todayStocks) {
