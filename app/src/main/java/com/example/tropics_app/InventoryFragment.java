@@ -191,10 +191,8 @@ public class InventoryFragment extends Fragment {
         }
 
         filteredList.clear();
-        filteredList.addAll(filteredResults); // Update the filtered list with results
 
-        adapter.updateList(filteredList); // Update the adapter with the filtered list
-        adapter.notifyDataSetChanged(); // Notify the adapter of data changes
+        filterInventoryByDate(filteredResults);
     }
 
     private boolean isInventoryDataLoaded = false;
@@ -266,30 +264,23 @@ public class InventoryFragment extends Fragment {
         filteredList.clear(); // Clear the filtered list before loading new data
         Log.d("Inventory Update", "Cleared filtered list.");
 
-        if (!isInventoryDataLoaded) {
-            Log.d("Firestore Query", "Fetching inventory data from Firestore...");
+        db.collection("inventory")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("Firestore Query", "Successfully fetched inventory data.");
 
-            db.collection("inventory")
-                    .get()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Log.d("Firestore Query", "Successfully fetched inventory data.");
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Log.d("Firestore Inventory", "Document ID: " + document.getId() + ", Data: " + document.getData());
 
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Log.d("Firestore Inventory", "Document ID: " + document.getId() + ", Data: " + document.getData());
-
-                                // Start searching with today's date
-                                fetchDailyRecordForDate(document, formattedDate);
-                                showLoading(false);
-                            }
-                        } else {
-                            Log.e("Firestore Error", "Error fetching inventory: " + task.getException());
+                            // Start searching with today's date
+                            fetchDailyRecordForDate(document, formattedDate);
+                            showLoading(false);
                         }
-                    });
-        } else {
-            Log.d("Inventory Update", "Inventory data already loaded, filtering by date.");
-            filterInventoryByDate(formattedDate); // Filter the inventory by date
-        }
+                    } else {
+                        Log.e("Firestore Error", "Error fetching inventory: " + task.getException());
+                    }
+                });
     }
 
     private void fetchDailyRecordForDate(QueryDocumentSnapshot document, String date) {
@@ -316,8 +307,7 @@ public class InventoryFragment extends Fragment {
                         // Update filtered list and UI
                         filteredList.add(combinedData);
                         //Log.d("Inventory Update", "Filtered list updated with data: " + combinedData);
-                        adapter.updateList(filteredList);
-                        adapter.notifyDataSetChanged();
+                        filterInventoryByDate(filteredList);
                     } else {
                         // If in_use is zero and not today's date, check the previous date
                         String previousDate = getPreviousDate(date);
@@ -334,26 +324,25 @@ public class InventoryFragment extends Fragment {
                 //Log.e("Firestore Error", "Error fetching daily record: " + innerTask.getException());
             }
         });
+
     }
 
-    private void filterInventoryByDate(String selectedDate) {
-        // Here you can filter the inventory based on the selected date
-        List<Map<String, Object>> filteredByDate = new ArrayList<>();
+    private void filterInventoryByDate(List<Map<String, Object>> filteredByDate) {
+        // Sort the filtered items alphabetically by "name"
+        Collections.sort(filteredByDate, (a, b) -> {
+            String nameA = (String) a.get("name");
+            String nameB = (String) b.get("name");
 
-        for (Map<String, Object> item : filteredList) {
-            if (item.get("date").equals(selectedDate)) {
-                filteredByDate.add(item);
-            }
-        }
+            if (nameA == null) nameA = "";
+            if (nameB == null) nameB = "";
 
-        // Sort the filtered items, if needed
-        Collections.sort(filteredByDate, (a, b) -> 0); // Currently does not sort; implement as needed
+            return nameA.compareToIgnoreCase(nameB); // Case-insensitive alphabetical order
+        });
 
-        // Update the adapter with the filtered items
+        // Update the adapter with the sorted and filtered items
         adapter.updateList(filteredByDate);
         adapter.notifyDataSetChanged();
     }
-
 
     private void showRemoveQuantityDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
@@ -379,7 +368,6 @@ public class InventoryFragment extends Fragment {
             }
         });
     }
-
     private void removeInUsed(Map<String, Object> item, int quantityToRemove) {
         String documentId = (String) item.get("id");
         String todayDate = getTodayDate();
@@ -452,7 +440,18 @@ public class InventoryFragment extends Fragment {
                                                             .addOnCompleteListener(updateTask -> {
                                                                 if (updateTask.isSuccessful()) {
                                                                     Toast.makeText(getContext(), "Used updated successfully for today", Toast.LENGTH_SHORT).show();
-                                                                    loadUsedItemsForDate(todayDate);
+
+                                                                    // Update the item in the filtered list
+                                                                    for (Map<String, Object> inventoryItem : filteredList) {
+                                                                        if (inventoryItem.get("id").equals(documentId)) {
+                                                                            inventoryItem.put("used", newTodayUsed);  // Update the "used" value
+                                                                            break;
+                                                                        }
+                                                                    }
+
+                                                                    // Notify the adapter about the item change
+                                                                    adapter.notifyItemChanged(filteredList.indexOf(item));
+                                                                    showLoading(false);
                                                                 } else {
                                                                     Toast.makeText(getContext(), "Failed to update used: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                                     showLoading(false);
@@ -481,7 +480,18 @@ public class InventoryFragment extends Fragment {
                                                             .addOnCompleteListener(createTask -> {
                                                                 if (createTask.isSuccessful()) {
                                                                     Toast.makeText(getContext(), "Used removed for today successfully", Toast.LENGTH_SHORT).show();
-                                                                    loadUsedItemsForDate(todayDate);
+
+                                                                    // Update the item in the filtered list
+                                                                    for (Map<String, Object> inventoryItem : filteredList) {
+                                                                        if (inventoryItem.get("id").equals(documentId)) {
+                                                                            inventoryItem.put("used", newUsed);  // Update the "used" value
+                                                                            break;
+                                                                        }
+                                                                    }
+
+                                                                    // Notify the adapter about the item change
+                                                                    adapter.notifyItemChanged(filteredList.indexOf(item));
+                                                                    showLoading(false);
                                                                 } else {
                                                                     Toast.makeText(getContext(), "Failed to removed used record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                                     showLoading(false);
@@ -610,8 +620,19 @@ public class InventoryFragment extends Fragment {
                                                             .document(todayDate).update(updateFields)
                                                             .addOnCompleteListener(updateTask -> {
                                                                 if (updateTask.isSuccessful()) {
-                                                                    Toast.makeText(getContext(), "Stock updated successfully for today", Toast.LENGTH_SHORT).show();
-                                                                    loadUsedItemsForDate(todayDate);
+                                                                    Toast.makeText(getContext(), "Used removed for today successfully", Toast.LENGTH_SHORT).show();
+
+                                                                    // Update the item in the filtered list
+                                                                    for (Map<String, Object> inventoryItem : filteredList) {
+                                                                        if (inventoryItem.get("id").equals(documentId)) {
+                                                                            inventoryItem.put("quantity", newTodayStocks);  // Update the "used" value
+                                                                            break;
+                                                                        }
+                                                                    }
+
+                                                                    // Notify the adapter about the item change
+                                                                    adapter.notifyItemChanged(filteredList.indexOf(item));
+                                                                    showLoading(false);
                                                                 } else {
                                                                     Toast.makeText(getContext(), "Failed to update stock: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                                     showLoading(false);
@@ -639,8 +660,19 @@ public class InventoryFragment extends Fragment {
                                                             .document(todayDate).set(newRecord)
                                                             .addOnCompleteListener(createTask -> {
                                                                 if (createTask.isSuccessful()) {
-                                                                    Toast.makeText(getContext(), "Stock removed for today successfully", Toast.LENGTH_SHORT).show();
-                                                                    loadUsedItemsForDate(todayDate);
+                                                                    Toast.makeText(getContext(), "Used removed for today successfully", Toast.LENGTH_SHORT).show();
+
+                                                                    // Update the item in the filtered list
+                                                                    for (Map<String, Object> inventoryItem : filteredList) {
+                                                                        if (inventoryItem.get("id").equals(documentId)) {
+                                                                            inventoryItem.put("quantity", newStocks);  // Update the "used" value
+                                                                            break;
+                                                                        }
+                                                                    }
+
+                                                                    // Notify the adapter about the item change
+                                                                    adapter.notifyItemChanged(filteredList.indexOf(item));
+                                                                    showLoading(false);
                                                                 } else {
                                                                     Toast.makeText(getContext(), "Failed to remove stock record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                                     showLoading(false);
@@ -763,15 +795,7 @@ public class InventoryFragment extends Fragment {
                             int latestInUse = latestDoc.getLong("in_use") != null ? latestDoc.getLong("in_use").intValue() : 0;
                             Log.d("Latest Date: ", "Date: " + latestDoc + ", Stocks: " + latestStocks + ", In Use: " + latestInUse);
                             // Ensure there is enough stock to update
-                            if (quantityToUpdate > latestStocks) {
-                                Toast.makeText(getContext(), "Not enough stock available", Toast.LENGTH_SHORT).show();
-                                showLoading(false);
-                                return;
-                            }
 
-                            // Calculate new stocks and in_use
-                            int newTodayStocks = latestStocks - quantityToUpdate;
-                            int newInUse = latestInUse + quantityToUpdate;
 
                             // Retrieve today's record
                             db.collection("inventory").document(documentId)
@@ -798,14 +822,35 @@ public class InventoryFragment extends Fragment {
                                                         .document(todayDate).update(updateFields)
                                                         .addOnCompleteListener(updateTask -> {
                                                             if (updateTask.isSuccessful()) {
-                                                                Toast.makeText(getContext(), "Stock updated successfully for today", Toast.LENGTH_SHORT).show();
-                                                                loadUsedItemsForDate(todayDate);
+                                                                Toast.makeText(getContext(), "Used removed for today successfully", Toast.LENGTH_SHORT).show();
+
+                                                                // Update the item in the filtered list
+                                                                for (Map<String, Object> inventoryItem : filteredList) {
+                                                                    if (inventoryItem.get("id").equals(documentId)) {
+                                                                        inventoryItem.put("quantity", newTodayStocks2);
+                                                                        inventoryItem.put("in_use", newInUse2);
+                                                                        break;
+                                                                    }
+                                                                }
+
+                                                                // Notify the adapter about the item change
+                                                                adapter.notifyItemChanged(filteredList.indexOf(item));
+                                                                showLoading(false);
                                                             } else {
                                                                 Toast.makeText(getContext(), "Failed to update stock: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                                 showLoading(false);
                                                             }
                                                         });
                                             } else {
+                                                if (quantityToUpdate > latestStocks) {
+                                                    Toast.makeText(getContext(), "Not enough stock available", Toast.LENGTH_SHORT).show();
+                                                    showLoading(false);
+                                                    return;
+                                                }
+
+                                                // Calculate new stocks and in_use
+                                                int newTodayStocks = latestStocks - quantityToUpdate;
+                                                int newInUse = latestInUse + quantityToUpdate;
                                                 // If no record for today, create a new one
                                                 Map<String, Object> newRecord = new HashMap<>();
                                                 newRecord.put("date", todayDate);
@@ -818,8 +863,20 @@ public class InventoryFragment extends Fragment {
                                                         .document(todayDate).set(newRecord)
                                                         .addOnCompleteListener(createTask -> {
                                                             if (createTask.isSuccessful()) {
-                                                                Toast.makeText(getContext(), "New record created for today successfully", Toast.LENGTH_SHORT).show();
-                                                                loadUsedItemsForDate(todayDate);
+                                                                Toast.makeText(getContext(), "Used removed for today successfully", Toast.LENGTH_SHORT).show();
+
+                                                                // Update the item in the filtered list
+                                                                for (Map<String, Object> inventoryItem : filteredList) {
+                                                                    if (inventoryItem.get("id").equals(documentId)) {
+                                                                        inventoryItem.put("quantity", newTodayStocks);
+                                                                        inventoryItem.put("in_use", newInUse);
+                                                                        break;
+                                                                    }
+                                                                }
+
+                                                                // Notify the adapter about the item change
+                                                                adapter.notifyItemChanged(filteredList.indexOf(item));
+                                                                showLoading(false);
                                                             } else {
                                                                 Toast.makeText(getContext(), "Failed to create stock record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                                 showLoading(false);
@@ -906,8 +963,19 @@ public class InventoryFragment extends Fragment {
                                                                 .document(todayDate).update(updateFields)
                                                                 .addOnCompleteListener(updateTask -> {
                                                                     if (updateTask.isSuccessful()) {
-                                                                        Toast.makeText(getContext(), "Stock updated successfully", Toast.LENGTH_SHORT).show();
-                                                                        loadUsedItemsForDate(todayDate);
+                                                                        Toast.makeText(getContext(), "Used removed for today successfully", Toast.LENGTH_SHORT).show();
+
+                                                                        // Update the item in the filtered list
+                                                                        for (Map<String, Object> inventoryItem : filteredList) {
+                                                                            if (inventoryItem.get("id").equals(documentId)) {
+                                                                                inventoryItem.put("quantity", updatedTodayStocks);
+                                                                                break;
+                                                                            }
+                                                                        }
+
+                                                                        // Notify the adapter about the item change
+                                                                        adapter.notifyItemChanged(filteredList.indexOf(item));
+                                                                        showLoading(false);
                                                                     } else {
                                                                         Toast.makeText(getContext(), "Failed to update stock: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                                         showLoading(false);
@@ -931,8 +999,19 @@ public class InventoryFragment extends Fragment {
                                                             .document(todayDate).set(newRecord)
                                                             .addOnCompleteListener(createTask -> {
                                                                 if (createTask.isSuccessful()) {
-                                                                    Toast.makeText(getContext(), "New stock record created successfully", Toast.LENGTH_SHORT).show();
-                                                                    loadUsedItemsForDate(todayDate);
+                                                                    Toast.makeText(getContext(), "Used removed for today successfully", Toast.LENGTH_SHORT).show();
+
+                                                                    // Update the item in the filtered list
+                                                                    for (Map<String, Object> inventoryItem : filteredList) {
+                                                                        if (inventoryItem.get("id").equals(documentId)) {
+                                                                            inventoryItem.put("quantity", updatedTodayStocks);
+                                                                            break;
+                                                                        }
+                                                                    }
+
+                                                                    // Notify the adapter about the item change
+                                                                    adapter.notifyItemChanged(filteredList.indexOf(item));
+                                                                    showLoading(false);
                                                                 } else {
                                                                     Toast.makeText(getContext(), "Failed to create stock record: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                                                     showLoading(false);
@@ -987,7 +1066,6 @@ public class InventoryFragment extends Fragment {
 
             if (name.isEmpty() || quantity.isEmpty()) {
                 Toast.makeText(getContext(), "Please fill out all fields", Toast.LENGTH_SHORT).show();
-                loadUsedItemsForDate(getTodayDate());
             } else {
                 // Upload image and then add product
                 uploadImageToFirebase(name, quantity);
@@ -1062,7 +1140,7 @@ public class InventoryFragment extends Fragment {
                     public void onComplete(@NonNull Task<DocumentReference> task) {
                         if (task.isSuccessful()) {
                             DocumentReference productRef = task.getResult();
-                            loadUsedItemsForDate(getTodayDate());
+
                             // Track the initial stocks in the dailyRecords collection
                             Map<String, Object> dailyRecord = new HashMap<>();
                             dailyRecord.put("date", getTodayDate());
@@ -1073,7 +1151,21 @@ public class InventoryFragment extends Fragment {
                             productRef.collection("dailyRecords").document(getTodayDate()).set(dailyRecord)
                                     .addOnCompleteListener(recordTask -> {
                                         if (recordTask.isSuccessful()) {
+                                            // If the record is successfully added to Firestore
                                             Toast.makeText(getContext(), "Product added successfully", Toast.LENGTH_SHORT).show();
+
+                                            // Update the local list with the new product
+                                            Map<String, Object> newProduct = new HashMap<>(product);
+                                            newProduct.put("id", productRef.getId());
+                                            newProduct.put("quantity", Long.parseLong(stocks));
+                                            newProduct.put("used", 0);
+                                            newProduct.put("date", getTodayDate());
+
+                                            // Add the new product to filteredList
+                                            filteredList.add(newProduct);
+
+                                            filterInventoryByDate(filteredList);
+
                                         } else {
                                             Log.e("Firestore Error", "Failed to add daily record: " + recordTask.getException().getMessage());
                                         }
@@ -1085,6 +1177,7 @@ public class InventoryFragment extends Fragment {
                     }
                 });
     }
+
 
     // Show a dialog to edit the product
     private void showEditProductDialog(Map<String, Object> item) {
@@ -1121,9 +1214,14 @@ public class InventoryFragment extends Fragment {
                     .update("name", newProductName)
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
+                            // Update the local list with the new name
+                            item.put("name", newProductName);
+
+                            // Notify the adapter that the name has changed
+                            adapter.updateList(filteredList);
+                            adapter.notifyDataSetChanged();
+
                             Toast.makeText(getContext(), "Product name updated successfully", Toast.LENGTH_SHORT).show();
-                            //loadInventoryData(); // Refresh the inventory list if needed
-                            loadUsedItemsForDate(getTodayDate());
                         } else {
                             Toast.makeText(getContext(), "Failed to update name: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -1133,8 +1231,6 @@ public class InventoryFragment extends Fragment {
         }
     }
 
-
-    // Show a confirmation dialog to delete the product
     private void showDeleteConfirmationDialog(Map<String, Object> item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
         builder.setTitle("Delete Product")
@@ -1164,8 +1260,14 @@ public class InventoryFragment extends Fragment {
                                     .delete()
                                     .addOnCompleteListener(deleteTask -> {
                                         if (deleteTask.isSuccessful()) {
+                                            // Remove the item from local list
+                                            filteredList.remove(item);
+
+                                            // Notify the adapter to refresh the UI
+                                            adapter.updateList(filteredList);
+                                            adapter.notifyDataSetChanged();
+
                                             Toast.makeText(getContext(), "Deleted: " + item.get("name"), Toast.LENGTH_SHORT).show();
-                                            loadUsedItemsForDate(getTodayDate());
                                         } else {
                                             Toast.makeText(getContext(), "Failed to delete: " + deleteTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                         }
@@ -1178,7 +1280,6 @@ public class InventoryFragment extends Fragment {
             Toast.makeText(getContext(), "Document ID is missing", Toast.LENGTH_SHORT).show();
         }
     }
-
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
