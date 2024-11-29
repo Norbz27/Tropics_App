@@ -215,7 +215,7 @@ public class InventoryFragment extends Fragment {
     private String formatDateForFirestore(String inputDate) {
         SimpleDateFormat firestoreFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
         SimpleDateFormat inputFormat1 = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // e.g., 10/07/2024
-        SimpleDateFormat inputFormat2 = new SimpleDateFormat("M/d/yyyy", Locale.getDefault());   // e.g., 10/7/2024
+        SimpleDateFormat inputFormat2 = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());   // e.g., 10/7/2024
 
         try {
             // Try parsing with the first format
@@ -328,7 +328,7 @@ public class InventoryFragment extends Fragment {
     }
 
     private void filterInventoryByDate(List<Map<String, Object>> filteredByDate) {
-        // Sort the filtered items alphabetically by "name"
+        // Sort the filtered items with letters first and numbers at the end
         Collections.sort(filteredByDate, (a, b) -> {
             String nameA = (String) a.get("name");
             String nameB = (String) b.get("name");
@@ -336,13 +336,25 @@ public class InventoryFragment extends Fragment {
             if (nameA == null) nameA = "";
             if (nameB == null) nameB = "";
 
-            return nameA.compareToIgnoreCase(nameB); // Case-insensitive alphabetical order
+            // Check if names start with a letter or a number
+            boolean isLetterA = Character.isLetter(nameA.isEmpty() ? ' ' : nameA.charAt(0));
+            boolean isLetterB = Character.isLetter(nameB.isEmpty() ? ' ' : nameB.charAt(0));
+
+            if (isLetterA && !isLetterB) {
+                return -1; // Letters before numbers
+            } else if (!isLetterA && isLetterB) {
+                return 1; // Numbers after letters
+            } else {
+                // Case-insensitive comparison for the same category
+                return nameA.compareToIgnoreCase(nameB);
+            }
         });
 
         // Update the adapter with the sorted and filtered items
         adapter.updateList(filteredByDate);
         adapter.notifyDataSetChanged();
     }
+
 
     private void showRemoveQuantityDialog(Map<String, Object> item) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_quantity_product, null);
@@ -383,7 +395,7 @@ public class InventoryFragment extends Fragment {
                             List<DocumentSnapshot> documents = task.getResult().getDocuments();
 
                             // Sort documents by date (descending) in code
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM dd, yyyy", Locale.getDefault());
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
                             documents.sort((doc1, doc2) -> {
                                 try {
                                     return dateFormat.parse(doc2.getString("date"))
@@ -423,12 +435,6 @@ public class InventoryFragment extends Fragment {
                                                     // Update today's stock
                                                     int newTodayUsed = todayUsed - quantityToRemove;
 
-                                                    // Ensure stocks do not go negative
-                                                    if (newTodayUsed <= 0) {
-                                                        Toast.makeText(getContext(), "Not enough used available to remove", Toast.LENGTH_SHORT).show();
-                                                        showLoading(false);
-                                                        return;
-                                                    }
 
                                                     // Prepare the update fields
                                                     Map<String, Object> updateFields = new HashMap<>();
@@ -459,15 +465,15 @@ public class InventoryFragment extends Fragment {
                                                             });
                                                 } else {
                                                     // If no record for today, create a new one based on the latest available values
-                                                    int newUsed = latestInUse - quantityToRemove; // Ensure stocks don't go negative
+
 
                                                     // Ensure stocks do not go negative when creating today's record
-                                                    if (newUsed <= 0) {
+                                                    if (quantityToRemove > latestInUse) {
                                                         Toast.makeText(getContext(), "Not enough used available to proceed", Toast.LENGTH_SHORT).show();
                                                         showLoading(false);
                                                         return;
                                                     }
-
+                                                    int newUsed = latestInUse - quantityToRemove; // Ensure stocks don't go negative
                                                     // Create a new record for today, including the latest in_use value
                                                     Map<String, Object> newRecord = new HashMap<>();
                                                     newRecord.put("date", todayDate);
@@ -564,25 +570,25 @@ public class InventoryFragment extends Fragment {
                             List<DocumentSnapshot> documents = task.getResult().getDocuments();
 
                             // Sort documents by date (descending) in code
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM dd, yyyy", Locale.getDefault());
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
                             documents.sort((doc1, doc2) -> {
                                 try {
                                     return dateFormat.parse(doc2.getString("date"))
                                             .compareTo(dateFormat.parse(doc1.getString("date")));
                                 } catch (Exception e) {
                                     Log.e("Date Sorting Error", "Error parsing dates: " + e.getMessage());
-                                    return 0;
+                                    return 0; // If parsing fails, consider them equal
                                 }
                             });
 
-                            // Process the latest document (first document after sorting)
+// Process the latest document (first document after sorting)
                             if (!documents.isEmpty()) {
                                 DocumentSnapshot latestDoc = documents.get(0);
 
                                 // Get the latest stock and in_use values
                                 int latestStocks = latestDoc.getLong("stocks") != null ? latestDoc.getLong("stocks").intValue() : 0;
                                 int latestInUse = latestDoc.getLong("in_use") != null ? latestDoc.getLong("in_use").intValue() : 0;
-
+                                Log.d("Remove Stocks", "Latest stocks: " + latestDoc);
                                 // Retrieve today's record
                                 db.collection("inventory").document(documentId)
                                         .collection("dailyRecords").document(todayDate)
@@ -603,13 +609,6 @@ public class InventoryFragment extends Fragment {
 
                                                     // Update today's stock
                                                     int newTodayStocks = todayStocks - quantityToRemove;
-
-                                                    // Ensure stocks do not go negative
-                                                    if (newTodayStocks <= 0) {
-                                                        Toast.makeText(getContext(), "Not enough stock available to remove", Toast.LENGTH_SHORT).show();
-                                                        showLoading(false);
-                                                        return;
-                                                    }
 
                                                     // Prepare the update fields
                                                     Map<String, Object> updateFields = new HashMap<>();
@@ -643,7 +642,7 @@ public class InventoryFragment extends Fragment {
                                                     int newStocks = latestStocks - quantityToRemove; // Ensure stocks don't go negative
 
                                                     // Ensure stocks do not go negative when creating today's record
-                                                    if (newStocks <= 0) {
+                                                    if (quantityToRemove > latestStocks) {
                                                         Toast.makeText(getContext(), "Not enough stock available to proceed", Toast.LENGTH_SHORT).show();
                                                         showLoading(false);
                                                         return;
@@ -777,7 +776,7 @@ public class InventoryFragment extends Fragment {
                         List<DocumentSnapshot> documents = task.getResult().getDocuments();
 
                         // Sort documents by date (descending)
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("MM dd, yyyy", Locale.getDefault());
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
                         documents.sort((doc1, doc2) -> {
                             try {
                                 return dateFormat.parse(doc2.getString("date"))
@@ -828,7 +827,7 @@ public class InventoryFragment extends Fragment {
                                                                 for (Map<String, Object> inventoryItem : filteredList) {
                                                                     if (inventoryItem.get("id").equals(documentId)) {
                                                                         inventoryItem.put("quantity", newTodayStocks2);
-                                                                        inventoryItem.put("in_use", newInUse2);
+                                                                        inventoryItem.put("used", newInUse2);
                                                                         break;
                                                                     }
                                                                 }
@@ -869,7 +868,7 @@ public class InventoryFragment extends Fragment {
                                                                 for (Map<String, Object> inventoryItem : filteredList) {
                                                                     if (inventoryItem.get("id").equals(documentId)) {
                                                                         inventoryItem.put("quantity", newTodayStocks);
-                                                                        inventoryItem.put("in_use", newInUse);
+                                                                        inventoryItem.put("used", newInUse);
                                                                         break;
                                                                     }
                                                                 }
@@ -916,7 +915,7 @@ public class InventoryFragment extends Fragment {
                             List<DocumentSnapshot> documents = task.getResult().getDocuments();
 
                             // Sort documents by date (descending) in code
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM dd, yyyy", Locale.getDefault());
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
                             documents.sort((doc1, doc2) -> {
                                 try {
                                     return dateFormat.parse(doc2.getString("date"))

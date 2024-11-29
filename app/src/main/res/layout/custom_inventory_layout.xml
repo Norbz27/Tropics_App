@@ -24,34 +24,54 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/manrope_semibold"
-            android:text="Item Name"
-            android:textSize="16sp"
+            android:text="0.07C Wispy 14, 13, 12, 11, 10mm (each)"
+            android:textSize="17sp"
             android:layout_marginBottom="8dp"
             android:textColor="@color/white"
-            android:layout_toRightOf="@id/imageViewLetter"/>
+            android:layout_toRightOf="@id/imageViewLetter"
+            android:layout_alignParentTop="true"
+            android:layout_toLeftOf="@id/Rv1"/>
 
-        <TextView
-            android:id="@+id/tvInUse"
-            android:layout_width="wrap_content"
+        <!-- Vertical Line Divider -->
+        <View
+            android:id="@+id/verticalDivider"
+            android:layout_width="1dp"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope"
-            android:layout_below="@id/tvItemName"
-            android:textSize="14sp"
-            android:text="In Use: 100"
-            android:textColor="@color/white"
-            android:layout_toRightOf="@id/imageViewLetter"/>
+            android:layout_toLeftOf="@id/Rv1"
+            android:layout_alignTop="@id/Rv1"
+            android:layout_alignBottom="@id/Rv1"
+            android:background="#3C3C3C"/>
 
-        <TextView
-            android:id="@+id/tvStocks"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:id="@+id/Rv1"
+            android:layout_width="80dp"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/manrope"
-            android:text="Stock: 100"
-            android:textColor="@color/white"
-            android:textSize="14sp"
+            android:layout_marginLeft="4dp"
             android:layout_alignParentRight="true"
-            android:layout_below="@id/tvItemName"/>
+            android:layout_alignParentTop="true">
+
+            <TextView
+                android:id="@+id/tvStocks"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/manrope"
+                android:text="Stock: 100"
+                android:textColor="@color/white"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvInUse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/manrope"
+                android:text="In Use: 5"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:layout_marginTop="5dp"
+                android:layout_below="@id/tvStocks" />
+        </RelativeLayout>
     </RelativeLayout>
+
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"

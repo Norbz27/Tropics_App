@@ -73,7 +73,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         }
 
         // Set the in_use text with null check
-        holder.tvInUse.setText("Used: " + (in_use != null ? in_use : "N/A"));
+        holder.tvInUse.setText("In Use: " + (in_use != null ? in_use : "N/A"));
 
         // Load the image using Glide with null check for imageUrl
         Glide.with(context)
@@ -139,14 +139,14 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
             menu.findItem(R.id.action_subtract).setEnabled(false);
             menu.findItem(R.id.action_delete).setEnabled(false);
             menu.findItem(R.id.action_removestocks).setEnabled(false);
-
-
+            menu.findItem(R.id.action_remove).setEnabled(false);
         } else {
             menu.findItem(R.id.action_edit).setEnabled(true);
             menu.findItem(R.id.action_add).setEnabled(true);
             menu.findItem(R.id.action_subtract).setEnabled(true);
             menu.findItem(R.id.action_delete).setEnabled(true);
             menu.findItem(R.id.action_removestocks).setEnabled(true);
+            menu.findItem(R.id.action_remove).setEnabled(true);
 
             Log.d("InventoryAdapter", "Trues");
         }
