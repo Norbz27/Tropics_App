@@ -1649,7 +1649,7 @@ public class SalesFragment extends Fragment {
     }
 
     private void setDailyData(List<Appointment> appointmentsList, int targetMonth, int targetYear) {
-        ArrayList<Entry> dailyEntries = new ArrayList<>();
+        /*ArrayList<Entry> dailyEntries = new ArrayList<>();
         Map<Integer, Float> dailySales = new HashMap<>();
 
         float totalSales = 0f;
@@ -1756,12 +1756,12 @@ public class SalesFragment extends Fragment {
         leftAxis.setTextColor(Color.WHITE); // Set Y-axis text color to white
         lineChart.getAxisRight().setEnabled(false);
 
-        lineChart.invalidate(); // Refresh the chart
+        lineChart.invalidate(); // Refresh the chart*/
     }
 
 
     private void setMonthlyData(List<Appointment> appointmentsList, int selectedYear) {
-        ArrayList<Entry> monthlyEntries = new ArrayList<>();
+        /*ArrayList<Entry> monthlyEntries = new ArrayList<>();
         Map<Integer, Float> monthlySales = new HashMap<>();
 
         float totalSales = 0f;
@@ -1874,6 +1874,8 @@ public class SalesFragment extends Fragment {
         lineChart.getAxisRight().setEnabled(false);
 
         lineChart.invalidate(); // Refresh the chart
+
+         */
     }
     private void searchClientByFirstName(String firstName) {
         if (firstName.isEmpty()) {
