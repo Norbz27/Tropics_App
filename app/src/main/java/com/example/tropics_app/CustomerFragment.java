@@ -2,6 +2,7 @@ package com.example.tropics_app;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.os.Bundle;
 
@@ -16,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.SearchView;
 import android.widget.TextView;
 
@@ -25,9 +27,14 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,6 +61,46 @@ public class CustomerFragment extends Fragment {
         // Use view to find the SearchView in the layout
         searchView = view.findViewById(R.id.searchView);
         rvCustomer = view.findViewById(R.id.rvCustomer);
+        Date currentDate = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String formattedDate = sdf.format(currentDate);
+        loadCustomerData(formattedDate);
+
+        EditText datePicker = view.findViewById(R.id.date_picker);
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat outputFormat = new SimpleDateFormat("MM/d/yyyy", Locale.getDefault());
+
+        try {
+            Date date = inputFormat.parse(formattedDate);
+            String formattedDate2 = outputFormat.format(date);
+            datePicker.setText(formattedDate2);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        datePicker.setOnClickListener(v -> {
+            final Calendar calendar = Calendar.getInstance();
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+            DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(), R.style.datepicker, (view1, year1, monthOfYear, dayOfMonth) -> {
+                String selectedDate = year1 + "-" + (monthOfYear + 1) + "-" + dayOfMonth;
+                SimpleDateFormat inputFormat1 = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                SimpleDateFormat outputFormat1 = new SimpleDateFormat("MM/d/yyyy", Locale.getDefault());
+
+                try {
+                    Date date = inputFormat1.parse(selectedDate);
+                    String formattedDate2 = outputFormat1.format(date);
+                    datePicker.setText(formattedDate2);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+
+                loadCustomerData(selectedDate);
+            }, year, month, day);
+            datePickerDialog.show();
+        });
 
         rvCustomer.setLayoutManager(new LinearLayoutManager(getContext()));
         customerList = new ArrayList<>();
@@ -68,7 +115,7 @@ public class CustomerFragment extends Fragment {
         searchView.setOnClickListener(v -> searchView.setIconified(false));
 
         setupSearchView();
-        loadCustomerData();
+
         return view;
     }
     private void reloadFragment() {
@@ -169,8 +216,9 @@ public class CustomerFragment extends Fragment {
                 });
     }
 
-    private void loadCustomerData() {
+    private void loadCustomerData(String selectedDate) {
         db.collection("appointments")
+                .whereEqualTo("date", selectedDate) // Filter by selected date
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @SuppressLint("NotifyDataSetChanged")
                     @Override
@@ -200,9 +248,10 @@ public class CustomerFragment extends Fragment {
                             adapter.updateList(filteredList);
                         } else {
                             filteredList.clear();
-                            adapter.notifyDataSetChanged();
+                            adapter.updateList(filteredList);
                         }
                     }
                 });
     }
+
 }
