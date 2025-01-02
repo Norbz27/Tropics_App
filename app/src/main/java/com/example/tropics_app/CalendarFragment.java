@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -117,7 +118,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                 reloadFragment(); // Call the reload method here
             }
         };
-        requireActivity().getOnBackPressedDispatcher().addCallback(this, callback);
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), callback);
         return view;
     }
     private void reloadFragment() {
@@ -454,14 +455,16 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     private void showAppointmentOptionsDialog(Appointment appointment) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
         builder.setTitle("Options")
-                .setItems(new CharSequence[]{"Edit Client Info", "Edit Selected Service", "Delete"}, (dialog, optionIndex) -> {
+                .setItems(new CharSequence[]{"Edit Client Info", "Edit Selected Service", "Edit Time", "Delete"}, (dialog, optionIndex) -> {
                     if (optionIndex == 0) {
                         // Handle "Edit" action
                         showEditClientDialog(appointment); // Method to edit client information
-                    }else if (optionIndex == 1) {
+                    } else if (optionIndex == 1) {
                         // Handle "Edit" action
                         viewServices(appointment); // Method to view/edit services
-                    } else if (optionIndex == 2) {
+                    } else if(optionIndex == 2){
+                        showEditTimeDialog(appointment);
+                    }else if (optionIndex == 3) {
                         // Handle "Delete" action
                         new AlertDialog.Builder(getActivity())
                                 .setTitle("Delete Appointment")
@@ -590,7 +593,68 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         });
     }
 
+    private void showEditTimeDialog(Appointment appointment) {
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_edit_time, null);
 
+        // Initialize your input fields
+        TimePicker timePicker = dialogView.findViewById(R.id.timePicker);
+        Button btnClose = dialogView.findViewById(R.id.btnClose);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+        String selectedTime = appointment.getTime();
+        if (selectedTime != null) {
+            String[] timeParts = selectedTime.split(":");
+            int hour = Integer.parseInt(timeParts[0]);
+            int minute = Integer.parseInt(timeParts[1]);
+
+            timePicker.setHour(hour);
+            timePicker.setMinute(minute);
+        }
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        dialogBuilder.setView(dialogView);
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
+
+        // Close button
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+
+
+        // Submit button
+        btnSubmit.setOnClickListener(v -> {
+            // Get the selected hour and minute from the TimePicker
+            int hour = timePicker.getHour();
+            int minute = timePicker.getMinute();
+
+            // Format the time as a string (e.g., "HH:mm")
+            String newTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
+
+            // Update the appointment object locally (optional, if needed)
+            //appointment.setTime(newTime);
+            ProgressDialog progressDialog = new ProgressDialog(getContext());
+            progressDialog.setMessage("Loading...");
+            progressDialog.setCancelable(false); // Disable dismissing the dialog on back button press
+            progressDialog.show();
+            // Update the specific document in the "appointments" collection
+            db.collection("appointments")
+                    .document(appointment.getId()) // Use the document ID from the appointment object
+                    .update("time", newTime) // Update the "time" field
+                    .addOnSuccessListener(aVoid -> {
+                        // Notify the user of success (e.g., Toast message)
+
+                        loadAppointmentData(selectedDate);
+                        progressDialog.dismiss();
+                        Toast.makeText(getActivity(), "Time updated successfully", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss(); // Close the dialog
+                    })
+                    .addOnFailureListener(e -> {
+                        // Handle the error (e.g., Toast message)
+                        Toast.makeText(getActivity(), "Failed to update time: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        });
+
+    }
     private void deleteAppointment(Appointment appointment) {
         db.collection("appointments").document(appointment.getId())
                 .delete()
