@@ -103,6 +103,7 @@ public class SalesFragment extends Fragment {
         loadExpensesData();
         loadGcashData();
         loadFundsData();
+        //fetchAppointmentData();
     }
 
     @Override
@@ -127,9 +128,17 @@ public class SalesFragment extends Fragment {
         tvDayOfWeek = rootView.findViewById(R.id.day_of_Week);
 
         DatePicker.setOnClickListener(v -> showDatePickerDialog(DatePicker));
-        Date dateNow = new Date();
+        Calendar calendarCur = Calendar.getInstance();
+        int hour = calendarCur.get(Calendar.HOUR_OF_DAY); // Get the current hour (24-hour format)
+
+        if (hour < 1) { // If the current time is before 1 AM
+            calendarCur.add(Calendar.DAY_OF_YEAR, -1); // Move the date to yesterday
+        }
+
+        Date date = calendarCur.getTime(); // Get the updated date
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
-        DatePicker.setText(dateFormat.format(dateNow));
+        String formattedDate = dateFormat.format(date);
+        DatePicker.setText(formattedDate); // Set the formatted date to your DatePicker
 
         fabExpenses.setOnClickListener(v -> showExpensesDialog());
         fabGcash.setOnClickListener(v -> showGcashDialog());
@@ -278,12 +287,20 @@ public class SalesFragment extends Fragment {
                     .setMessage("Do you want to continue?")
                     .setPositiveButton("Yes", (dialogInterface, i) -> {
                         // Submit expense
-                        Date dateNow = new Date();
+                        Calendar calendarCur = Calendar.getInstance();
+                        int hour = calendarCur.get(Calendar.HOUR_OF_DAY); // Get the current hour (24-hour format)
+
+                        if (hour < 1) { // If the current time is before 1 AM
+                            calendarCur.add(Calendar.DAY_OF_YEAR, -1); // Move the date to yesterday
+                        }
+
+                        Date date = calendarCur.getTime(); // Get the updated date
                         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                        String formattedDate = dateFormat.format(date);
                         Map<String, Object> expense = new HashMap<>();
                         expense.put("amount", Double.parseDouble(amount));  // Store amount as a number
                         expense.put("reason", reason);
-                        expense.put("timestamp", dateFormat.format(dateNow)); // Add a timestamp
+                        expense.put("timestamp", formattedDate); // Add a timestamp
 
                         // Submit the expense to Firestore
                         db.collection("add_funds")
@@ -339,12 +356,20 @@ public class SalesFragment extends Fragment {
                     .setMessage("Do you want to continue?")
                     .setPositiveButton("Yes", (dialogInterface, i) -> {
                         // Submit expense
-                        Date dateNow = new Date();
+                        Calendar calendarCur = Calendar.getInstance();
+                        int hour = calendarCur.get(Calendar.HOUR_OF_DAY); // Get the current hour (24-hour format)
+
+                        if (hour < 1) { // If the current time is before 1 AM
+                            calendarCur.add(Calendar.DAY_OF_YEAR, -1); // Move the date to yesterday
+                        }
+
+                        Date date = calendarCur.getTime(); // Get the updated date
                         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                        String formattedDate = dateFormat.format(date);
                         Map<String, Object> expense = new HashMap<>();
                         expense.put("amount", Double.parseDouble(amount));  // Store amount as a number
                         expense.put("reason", reason);
-                        expense.put("timestamp", dateFormat.format(dateNow)); // Add a timestamp
+                        expense.put("timestamp", formattedDate); // Add a timestamp
 
                         // Submit the expense to Firestore
                         db.collection("expenses")
@@ -415,13 +440,21 @@ public class SalesFragment extends Fragment {
                     .setMessage("Do you want to continue?")
                     .setPositiveButton("Yes", (dialogInterface, i) -> {
                         // Submit GCash payment
-                        Date dateNow = new Date();
+                        Calendar calendarCur = Calendar.getInstance();
+                        int hour = calendarCur.get(Calendar.HOUR_OF_DAY); // Get the current hour (24-hour format)
+
+                        if (hour < 1) { // If the current time is before 1 AM
+                            calendarCur.add(Calendar.DAY_OF_YEAR, -1); // Move the date to yesterday
+                        }
+
+                        Date date = calendarCur.getTime(); // Get the updated date
                         SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                        String formattedDate = dateFormat.format(date);
                         Map<String, Object> gcashPayment = new HashMap<>();
                         gcashPayment.put("amount", Double.parseDouble(amount));  // Store amount as a number
                         gcashPayment.put("clientname", clientName);  // Store amount as a number
                         gcashPayment.put("paymentMethod", "GCash");
-                        gcashPayment.put("timestamp", dateFormat.format(dateNow));  // Add a timestamp
+                        gcashPayment.put("timestamp", formattedDate);  // Add a timestamp
 
                         // Submit the GCash payment to Firestore
                         db.collection("gcash_payments")
@@ -1529,9 +1562,7 @@ public class SalesFragment extends Fragment {
                             employeeList.add(employee);
                         }
                         fetchAppointmentData();
-                        loadExpensesData();
-                        loadGcashData();
-                        loadFundsData();
+
                     } else {
                         Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
                     }
@@ -1637,10 +1668,18 @@ public class SalesFragment extends Fragment {
                                 appointmentsList.add(appointment);
                             }
                             setDailyData(appointmentsList, targetMonth, targetYear);
-                            Date dateNow = new Date();
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                            Calendar calendarCur = Calendar.getInstance();
+                            int hour = calendarCur.get(Calendar.HOUR_OF_DAY); // Get the current hour (24-hour format)
 
-                            filterDataByDate(dateFormat.format(dateNow));
+                            if (hour < 1) { // If the current time is before 1 AM
+                                calendarCur.add(Calendar.DAY_OF_YEAR, -1); // Move the date to yesterday
+                            }
+
+                            Date date = calendarCur.getTime(); // Get the updated date
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                            String formattedDate = dateFormat.format(date);
+
+                            filterDataByDate(formattedDate);
                         } else {
                             Log.e("SalesFragment", "Error fetching appointments: ", task.getException());
                         }
