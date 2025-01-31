@@ -379,64 +379,70 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
             if (task.isSuccessful()) {
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     List<Map<String, Object>> services = (List<Map<String, Object>>) document.get("services");
+                    if (services != null) {
+                        for (Map<String, Object> service : services) {
+                            String assignedEmployee = (String) service.get("assignedEmployee");
+                            double totalPriceForService = (Double) service.get("servicePrice"); // Get the primary service price
 
-                    for (Map<String, Object> service : services) {
-                        String assignedEmployee = (String) service.get("assignedEmployee");
-                        double totalPriceForService = (Double) service.get("servicePrice"); // Get the primary service price
+                            // Initialize total price for sub-services
+                            double totalSubServicePrice = 0.0;
 
-                        // Initialize total price for sub-services
-                        double totalSubServicePrice = 0.0;
-
-                        // If there are sub-services, calculate their total price
-                        List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
-                        if (subServices != null) {
-                            for (Map<String, Object> subService : subServices) {
-                                double subServicePrice = (Double) subService.get("servicePrice"); // Get sub-service price
-                                totalSubServicePrice += subServicePrice; // Accumulate the price
-                            }
-                        }
-
-                        // Combine the total price for the service and its sub-services
-                        double combinedTotalPrice = totalPriceForService + totalSubServicePrice;
-
-                        // Check if the service is assigned to the current employee
-                        if (assignedEmployee != null && assignedEmployee.equals(employee.getName())) {
-                            String appointmentDate = document.getString("date");
-
-                            // Parse the appointment date and check if it matches the selected month
-                            try {
-                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                                Date date = sdf.parse(appointmentDate);
-                                Calendar calendar = Calendar.getInstance();
-                                calendar.setTime(date);
-
-                                // Check if the appointment is in the selected month
-                                if (calendar.get(Calendar.MONTH) == monthNumber) {
-                                    int weekNumber = calendar.get(Calendar.WEEK_OF_MONTH); // Get the week of the month
-
-                                    // Retrieve the appropriate commission rate for the appointment date
-                                    double commissionRate = getCommissionRateByDate(employee, appointmentDate);
-
-                                    // Create AssignedService object, passing the combined total price
-                                    AssignedService assignedService = new AssignedService(
-                                            service.get("serviceName").toString(),
-                                            document.getString("fullName"),
-                                            appointmentDate,
-                                            weekNumber,
-                                            combinedTotalPrice // Pass the price here
-                                    );
-
-                                    // Group by week
-                                    weeklyServicesMap.putIfAbsent(weekNumber, new ArrayList<>());
-                                    weeklyServicesMap.get(weekNumber).add(assignedService);
-
-                                    // Update total earnings for this week
-                                    weeklyEarningsMap.put(weekNumber, weeklyEarningsMap.getOrDefault(weekNumber, 0.0) + combinedTotalPrice); // Use combinedTotalPrice here
+                            // If there are sub-services, calculate their total price
+                            List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                            if (subServices != null) {
+                                for (Map<String, Object> subService : subServices) {
+                                    double subServicePrice = (Double) subService.get("servicePrice"); // Get sub-service price
+                                    totalSubServicePrice += subServicePrice; // Accumulate the price
                                 }
-                            } catch (ParseException e) {
-                                e.printStackTrace();
+                            }
+
+                            // Combine the total price for the service and its sub-services
+                            double combinedTotalPrice = totalPriceForService + totalSubServicePrice;
+
+                            // Check if the service is assigned to the current employee
+                            if (assignedEmployee != null && assignedEmployee.equals(employee.getName())) {
+                                String appointmentDate = document.getString("date");
+
+                                // Parse the appointment date and check if it matches the selected month
+                                try {
+                                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                                    Date date = sdf.parse(appointmentDate);
+                                    Calendar calendar = Calendar.getInstance();
+                                    calendar.setTime(date);
+
+                                    // Get the current year
+                                    int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+
+                                    // Check if the appointment is in the selected month and current year
+                                    if (calendar.get(Calendar.MONTH) == monthNumber && calendar.get(Calendar.YEAR) == currentYear) {
+                                        int weekNumber = calendar.get(Calendar.WEEK_OF_MONTH); // Get the week of the month
+
+                                        // Retrieve the appropriate commission rate for the appointment date
+                                        double commissionRate = getCommissionRateByDate(employee, appointmentDate);
+
+                                        // Create AssignedService object, passing the combined total price
+                                        AssignedService assignedService = new AssignedService(
+                                                service.get("serviceName").toString(),
+                                                document.getString("fullName"),
+                                                appointmentDate,
+                                                weekNumber,
+                                                combinedTotalPrice // Pass the price here
+                                        );
+
+                                        // Group by week
+                                        weeklyServicesMap.putIfAbsent(weekNumber, new ArrayList<>());
+                                        weeklyServicesMap.get(weekNumber).add(assignedService);
+
+                                        // Update total earnings for this week
+                                        weeklyEarningsMap.put(weekNumber, weeklyEarningsMap.getOrDefault(weekNumber, 0.0) + combinedTotalPrice); // Use combinedTotalPrice here
+                                    }
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
+                    }else{
+                        Toast.makeText(getActivity(), "No services available for this month", Toast.LENGTH_SHORT).show();
                     }
                 }
 

@@ -334,7 +334,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         for (int year = 2024; year <= currentYear; year++) {
             years.add(String.valueOf(year));
         }
-
+        Collections.sort(years, (y1, y2) -> Integer.compare(Integer.parseInt(y2), Integer.parseInt(y1)));
         // Set up the spinners with adapters
         ArrayAdapter<String> monthAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, months);
         monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
