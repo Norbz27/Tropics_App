@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 
@@ -25,6 +26,7 @@ import androidx.fragment.app.Fragment;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseUser;
 
 
 public class NavigationActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -41,11 +43,6 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         sharedPreferences = getSharedPreferences(Preference, MODE_PRIVATE);
         setContentView(R.layout.activity_navigation);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Window window = getWindow();
-            window.setStatusBarColor(ContextCompat.getColor(this, R.color.darkgray));
-            window.setNavigationBarColor(ContextCompat.getColor(this, R.color.darkgray));
-        }
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -53,25 +50,26 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         NavigationView navigationView = findViewById(R.id.navview);
         navigationView.setNavigationItemSelectedListener(this);
 
-        ActionBarDrawerToggle toogle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.open_nav, R.string.close_nav);
-        drawerLayout.addDrawerListener(toogle);
-        toogle.syncState();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            Menu menu = navigationView.getMenu();
+            MenuItem accountsMenuItem = menu.findItem(R.id.nav_accounts);
+
+            if (!userId.equals("WmYSRkbNXBWQgFmU9ll33vW0vfm2")) {
+                accountsMenuItem.setVisible(false);
+            }
+        }
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.open_nav, R.string.close_nav);
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new HomeFragment()).commit();
             navigationView.setCheckedItem(R.id.nav_home);
             getSupportActionBar().setTitle("Home");
         }
-        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                // Reload the fragment when back button is pressed
-                reloadFragment(); // Make sure this method is defined in your Activity
-            }
-        };
-
-        // Attach the callback to the OnBackPressedDispatcher
-        getOnBackPressedDispatcher().addCallback(this, callback);
     }
 
 
@@ -104,11 +102,15 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new ServiceFragment()).commit();
             getSupportActionBar().setTitle("Service");
         }
+        else if (id == R.id.nav_accounts) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new AccountsFragment()).commit();
+            getSupportActionBar().setTitle("Accounts");
+        }
         else if (id == R.id.nav_sign_out) {
             mAuth.signOut();
-            SharedPreferences.Editor editor = sharedPreferences.edit();
+            /*SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean(KEY_IS_LOGGED_IN, false);
-            editor.apply();
+            editor.apply();*/
             Intent intent = new Intent(this, SignInActivity.class); // Create intent for SignInActivity
             startActivity(intent);
             finish();
@@ -118,9 +120,6 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         return true;
     }
 
-    private void logoutUser(){
-
-    }
     private void reloadFragment() {
         // Reload the current fragment
         Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.framelayout);

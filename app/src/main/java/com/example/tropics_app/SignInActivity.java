@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class SignInActivity extends AppCompatActivity {
     Intent intent;
@@ -98,10 +99,24 @@ public class SignInActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            SharedPreferences.Editor editor = sharedPreferences.edit();
-                            editor.putBoolean(KEY_IS_LOGGED_IN, true);
-                            editor.apply();
-                            startActivity(intent);
+                            FirebaseUser user = mAuth.getCurrentUser(); // Get current user
+                            if (user != null) {
+                                String uid = user.getUid(); // Retrieve UID
+
+                                // Check if UID matches the specified UID
+                                if (uid.equals("WmYSRkbNXBWQgFmU9ll33vW0vfm2")) {
+                                    // UID matched, perform specific action
+                                    Toast.makeText(SignInActivity.this, "Admin Logged In", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    // Normal user logged in
+                                    Toast.makeText(SignInActivity.this, "User Logged In", Toast.LENGTH_SHORT).show();
+                                }
+
+                                /*SharedPreferences.Editor editor = sharedPreferences.edit();
+                                editor.putBoolean(KEY_IS_LOGGED_IN, true);
+                                editor.apply();*/
+                                startActivity(intent);
+                            }
                         } else {
                             Toast.makeText(SignInActivity.this, "Invalid Username or Password", Toast.LENGTH_SHORT).show();
                             username.setText("");
@@ -109,6 +124,7 @@ public class SignInActivity extends AppCompatActivity {
                         }
                     }
                 });
+
     }
 
     private void showForgotPasswordDialog() {
