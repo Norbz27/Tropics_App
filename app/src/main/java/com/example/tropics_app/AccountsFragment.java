@@ -1,9 +1,13 @@
 package com.example.tropics_app;
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -16,24 +20,29 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class AccountsFragment extends Fragment {
     private RecyclerView rvAccounts;
     private AccountAdapter adapter;
     private List<Accounts> userList = new ArrayList<>();
-    private static final String FETCH_USERS_URL = "https://us-central1-tropico-16e1e.cloudfunctions.net/listUsers"; // Replace with your actual function URL
-
+    private static final String FETCH_USERS_URL = "https://us-central1-tropico-16e1e.cloudfunctions.net/listUsers";
+    private static final String DELETE_USERS_URL = "https://us-central1-tropico-16e1e.cloudfunctions.net/deleteUserByEmail";
+    private FloatingActionButton fabAdd;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -41,10 +50,26 @@ public class AccountsFragment extends Fragment {
 
         rvAccounts = view.findViewById(R.id.rvAccounts);
         rvAccounts.setLayoutManager(new LinearLayoutManager(getActivity()));
-        adapter = new AccountAdapter(userList);
+        adapter = new AccountAdapter(getContext(), userList);
         rvAccounts.setAdapter(adapter);
+        fabAdd = view.findViewById(R.id.fabAdd);
+
+        fabAdd.setOnClickListener(v -> showAddAccount());
 
         fetchUsers();
+
+        adapter.setOnItemLongClickListener(new AccountAdapter.OnItemLongClickListener() {
+
+            @Override
+            public void onResetPassClick(Accounts user) {
+                    resetAccountPass(user);
+            }
+
+            @Override
+            public void onDeleteClick(Accounts user) {
+                    deleteAccount(user);
+            }
+        });
 
         return view;
     }
@@ -80,4 +105,83 @@ public class AccountsFragment extends Fragment {
 
         queue.add(request);
     }
+
+    private void showAddAccount() {
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_account, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        EditText etEmail = dialogView.findViewById(R.id.etEmail);
+        EditText etPassword = dialogView.findViewById(R.id.etPassword);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+
+        btnSubmit.setOnClickListener(v -> {
+            String email = etEmail.getText().toString().trim();
+            String password = etPassword.getText().toString().trim();
+
+            if (email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(getContext(), "Email and Password are required", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            mAuth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            if (user != null) {
+                                Toast.makeText(getContext(), "User Created: " + user.getEmail(), Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                                fetchUsers();
+                            }
+                        } else {
+                            Toast.makeText(getContext(), "Error: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        });
+    }
+
+    private void resetAccountPass(Accounts user) {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+
+        if (user.getEmail() == null || user.getEmail().isEmpty()) {
+            Toast.makeText(getContext(), "User email is missing!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        auth.sendPasswordResetEmail(user.getEmail())
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(getContext(), "Password reset email sent to " + user.getEmail(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Failed to send reset email: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void deleteAccount(Accounts user) {
+        RequestQueue queue = Volley.newRequestQueue(getContext());
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("email", user.getEmail()); // Send user email to delete
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, DELETE_USERS_URL, jsonBody,
+                response -> {
+                    Toast.makeText(getContext(), "User deleted successfully!", Toast.LENGTH_SHORT).show();
+                    userList.remove(user); // Remove from RecyclerView
+                    adapter.notifyDataSetChanged(); // Refresh RecyclerView
+                },
+                error -> Toast.makeText(getContext(), "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+        );
+
+        queue.add(request);
+    }
+
 }

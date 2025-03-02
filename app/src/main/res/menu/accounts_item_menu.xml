@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_reset_pass"
+        android:fontFamily="@font/manrope"
+        android:title="Reset Password" />
+    <item
+        android:id="@+id/action_delete"
+        android:fontFamily="@font/manrope"
+        android:title="Delete" />
+</menu>

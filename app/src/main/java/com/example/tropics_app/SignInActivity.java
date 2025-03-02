@@ -104,7 +104,7 @@ public class SignInActivity extends AppCompatActivity {
                                 String uid = user.getUid(); // Retrieve UID
 
                                 // Check if UID matches the specified UID
-                                if (uid.equals("WmYSRkbNXBWQgFmU9ll33vW0vfm2")) {
+                                if (uid.equals("bRbfirsBN5VT0AAzUeClRr84keY2") || uid.equals("xWFc9btObrXgCZjlFcENhUtCpfu2")) {
                                     // UID matched, perform specific action
                                     Toast.makeText(SignInActivity.this, "Admin Logged In", Toast.LENGTH_SHORT).show();
                                 } else {

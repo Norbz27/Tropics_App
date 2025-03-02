@@ -55,15 +55,15 @@
             android:title="Services"/>
 
         <item
-            android:id="@+id/nav_sign_out"
-            android:icon="@drawable/baseline_logout_24"
-            android:fontFamily="@font/manrope"
-            android:title="Sign out"/>
-
-        <item
             android:id="@+id/nav_accounts"
             android:icon="@drawable/outline_person_24"
             android:fontFamily="@font/manrope"
             android:title="Accounts"/>
+
+        <item
+            android:id="@+id/nav_sign_out"
+            android:icon="@drawable/baseline_logout_24"
+            android:fontFamily="@font/manrope"
+            android:title="Sign out"/>
     </group>
 </menu>
