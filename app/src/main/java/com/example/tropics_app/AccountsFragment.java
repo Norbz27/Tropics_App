@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -25,6 +26,7 @@ import com.android.volley.toolbox.Volley;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -33,6 +35,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +71,11 @@ public class AccountsFragment extends Fragment {
             @Override
             public void onDeleteClick(Accounts user) {
                     deleteAccount(user);
+            }
+
+            @Override
+            public void onPermissionClick(Accounts user) {
+                    showAccountPermission(user);
             }
         });
 
@@ -145,6 +153,60 @@ public class AccountsFragment extends Fragment {
         });
     }
 
+    private void showAccountPermission(Accounts user) {
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_permission, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        CheckBox chkb_edit_sales = dialogView.findViewById(R.id.chkb_edit_sales);
+        CheckBox chkb_delete_sales = dialogView.findViewById(R.id.chkb_delete_sales);
+        CheckBox chkb_edit_salary = dialogView.findViewById(R.id.chkb_edit_salary);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSave);
+
+        btnSubmit.setOnClickListener(view -> {
+            boolean editSales = chkb_edit_sales.isChecked();
+            boolean deleteSales = chkb_delete_sales.isChecked();
+            boolean editSalary = chkb_edit_salary.isChecked();
+
+            String uid = user.getUid();
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            DocumentReference userRef = db.collection("users").document(uid);
+
+            // Check if the document exists
+            userRef.get().addOnSuccessListener(documentSnapshot -> {
+                Map<String, Object> permissions = new HashMap<>();
+                permissions.put("editSales", editSales);
+                permissions.put("deleteSales", deleteSales);
+                permissions.put("editSalary", editSalary);
+
+                if (documentSnapshot.exists()) {
+                    // ✅ Document exists -> Update the permissions field
+                    userRef.update("permissions", permissions)
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d("Firestore", "Permissions updated successfully!");
+                                dialog.dismiss();
+                            })
+                            .addOnFailureListener(e -> Log.e("Firestore", "Error updating permissions", e));
+                } else {
+                    // ❌ Document doesn't exist -> Create a new document
+                    Map<String, Object> userData = new HashMap<>();
+                    userData.put("uid", uid);
+                    userData.put("permissions", permissions);
+
+                    userRef.set(userData)  // Set ensures it creates the document
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d("Firestore", "New user created with permissions!");
+                                dialog.dismiss();
+                            })
+                            .addOnFailureListener(e -> Log.e("Firestore", "Error adding new user", e));
+                }
+            }).addOnFailureListener(e -> Log.e("Firestore", "Error checking document", e));
+        });
+
+    }
     private void resetAccountPass(Accounts user) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
 

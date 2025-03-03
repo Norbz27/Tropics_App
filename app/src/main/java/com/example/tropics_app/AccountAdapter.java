@@ -55,7 +55,6 @@ public class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.ViewHold
             super(itemView);
             tvEmpName = itemView.findViewById(R.id.tvEmpName);
 
-            // 🔥 Show Popup Menu on Long Click
             itemView.setOnLongClickListener(v -> {
                 showPopupMenu(v, getAdapterPosition());
                 return true;
@@ -72,12 +71,16 @@ public class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.ViewHold
 
         MenuInflater inflater = popupMenu.getMenuInflater();
         inflater.inflate(R.menu.accounts_item_menu, popupMenu.getMenu());
-        Menu menu = popupMenu.getMenu();
 
         popupMenu.setOnMenuItemClickListener(menuItem -> {
             int id = menuItem.getItemId();
-
-            if (id == R.id.action_reset_pass) {
+            if (id == R.id.action_permission) {
+                // Call the edit action
+                if (longClickListener != null) {
+                    longClickListener.onPermissionClick(userList.get(position));
+                }
+                return true;
+            } else if (id == R.id.action_reset_pass) {
                 // Call the edit action
                 if (longClickListener != null) {
                     longClickListener.onResetPassClick(userList.get(position));
@@ -100,6 +103,7 @@ public class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.ViewHold
     public interface OnItemLongClickListener {
         void onResetPassClick(Accounts user);
         void onDeleteClick(Accounts user);
+        void onPermissionClick(Accounts accounts);
     }
 
 }
