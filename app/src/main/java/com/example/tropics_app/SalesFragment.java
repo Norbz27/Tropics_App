@@ -26,7 +26,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -35,15 +34,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -83,10 +79,12 @@ public class SalesFragment extends Fragment {
     private RecyclerView rvSearchResults;
     private EditText edClientName;
     private NumberFormat numberFormat;
+    private FirebaseAuth mAuth;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
         numberFormat = NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
         appointmentsList = new ArrayList<>();
         employeeList = new ArrayList<>();
@@ -855,6 +853,283 @@ public class SalesFragment extends Fragment {
 
         return commissionRate;
     }
+    public void showEditDialogExpenses(Expenses expense){
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_new_expenses, null);
+
+        // Initialize EditTexts and Button
+        EditText edAmount = dialogView.findViewById(R.id.etAmount);
+        EditText edReason = dialogView.findViewById(R.id.etReason);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+        // Pre-fill the EditTexts with the current values
+        edAmount.setText(String.valueOf(expense.getAmount())); // Pre-fill with current amount
+        edReason.setText(expense.getReason()); // Pre-fill with current reason/client name
+
+        // Create the AlertDialog
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
+        dialogBuilder.setView(dialogView);
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
+
+        // Handle the submit button click
+        btnSubmit.setOnClickListener(v1 -> {
+            // Get the updated values from the EditTexts
+            String newAmount = edAmount.getText().toString();
+            String newReason = edReason.getText().toString();
+
+            // Validate the input
+            if (!newAmount.isEmpty() && !newReason.isEmpty()) {
+                // Show confirmation dialog before proceeding with the update
+                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                        .setTitle("Confirm Update")
+                        .setMessage("Are you sure you want to update this expense?")
+                        .setPositiveButton("Update", (dialogInterface, i) -> {
+                            // Proceed with the update if the user confirms
+                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                            // Create a map of the updated fields
+                            Map<String, Object> updates = new HashMap<>();
+                            updates.put("amount", Double.parseDouble(newAmount)); // Parse amount to double
+                            updates.put("reason", newReason);
+
+                            // Update the Firestore document
+                            db.collection("expenses")
+                                    .document(expense.getId()) // Replace with your Firestore document ID field
+                                    .update(updates)
+                                    .addOnSuccessListener(aVoid -> {
+                                        Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
+                                        dialog.dismiss(); // Close the dialog on success
+                                        loadExpensesData();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    });
+                        })
+                        .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                            // User canceled the action, do nothing
+                            dialogInterface.dismiss();
+                        })
+                        .show();
+            } else {
+                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    public void showDeleteDialogExpenses(Expenses expense){
+        new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                .setTitle("Confirm Deletion")
+                .setMessage("Are you sure you want to delete this expense?")
+                .setPositiveButton("Delete", (dialogInterface, i) -> {
+                    // Proceed with deletion if the user confirms
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                    // Delete the Firestore document
+                    db.collection("expenses")
+                            .document(expense.getId()) // Replace with your Firestore document ID field
+                            .delete()
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
+                                // You may also want to update your UI after deletion, e.g., remove the item from the list
+                                loadExpensesData();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                    // User canceled the action, do nothing
+                    dialogInterface.dismiss();
+                })
+                .show();
+    }
+    public void showEditDialogGcash(Gcash gcash){
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_gcash, null);
+
+        EditText edAmount = dialogView.findViewById(R.id.etAmount);
+        edClientName = dialogView.findViewById(R.id.etClient);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+        rvSearchResults = dialogView.findViewById(R.id.rvSearchResults);
+        clientAdapter = new ClientAdapter(clientList, this::onClientSelected);
+        rvSearchResults.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvSearchResults.setAdapter(clientAdapter);
+
+        edAmount.setText(""+gcash.getAmount());
+        edClientName.setText(gcash.getClientname());
+
+        // TextWatcher to search clients by first name
+        edClientName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                searchClientByFirstName(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        // Create and show the AlertDialog for edit
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
+        dialogBuilder.setView(dialogView);
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
+
+        // Handle the submit button click with a confirmation dialog
+        btnSubmit.setOnClickListener(v1 -> {
+            String newAmount = edAmount.getText().toString();
+            String newClientName = edClientName.getText().toString();
+
+            if (!newAmount.isEmpty() && !newClientName.isEmpty()) {
+                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                        .setTitle("Confirm Update")
+                        .setMessage("Are you sure you want to update this GCash entry?")
+                        .setPositiveButton("Update", (dialogInterface, i) -> {
+                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                            Map<String, Object> updates = new HashMap<>();
+                            updates.put("amount", Double.parseDouble(newAmount));
+                            updates.put("clientname", newClientName);
+
+                            // Update Firestore document
+                            db.collection("gcash_payments")
+                                    .document(gcash.getId())  // Replace with Firestore document ID
+                                    .update(updates)
+                                    .addOnSuccessListener(aVoid -> {
+                                        Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
+                                        dialog.dismiss();
+                                        loadGcashData();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    });
+                        })
+                        .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                            dialogInterface.dismiss();
+                        })
+                        .show();
+            } else {
+                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    public void showDeleteDialogGcash(Gcash gcash){
+        new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                .setTitle("Confirm Deletion")
+                .setMessage("Are you sure you want to delete this GCash entry?")
+                .setPositiveButton("Delete", (dialogInterface, i) -> {
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+                    // Delete Firestore document
+                    db.collection("gcash_payments")
+                            .document(gcash.getId()) // Replace with Firestore document ID
+                            .delete()
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
+                                // Optionally, update your UI here
+                                loadGcashData();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                    dialogInterface.dismiss();
+                })
+                .show();
+    }
+    public void showEditDialogFunds(Funds funds){
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_add_funds, null);
+
+        // Initialize EditTexts and Button
+        EditText edAmount = dialogView.findViewById(R.id.etAmount);
+        EditText edReason = dialogView.findViewById(R.id.etReason);
+        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+
+        // Pre-fill the EditTexts with the current values
+        edAmount.setText(String.valueOf(funds.getAmount())); // Pre-fill with current amount
+        edReason.setText(funds.getReason()); // Pre-fill with current reason/client name
+
+        // Create the AlertDialog
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
+        dialogBuilder.setView(dialogView);
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
+
+        // Handle the submit button click
+        btnSubmit.setOnClickListener(v1 -> {
+            // Get the updated values from the EditTexts
+            String newAmount = edAmount.getText().toString();
+            String newReason = edReason.getText().toString();
+
+            // Validate the input
+            if (!newAmount.isEmpty() && !newReason.isEmpty()) {
+                // Show confirmation dialog before proceeding with the update
+                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                        .setTitle("Confirm Update")
+                        .setMessage("Are you sure you want to update this fund?")
+                        .setPositiveButton("Update", (dialogInterface, i) -> {
+                            // Proceed with the update if the user confirms
+                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                            // Create a map of the updated fields
+                            Map<String, Object> updates = new HashMap<>();
+                            updates.put("amount", Double.parseDouble(newAmount)); // Parse amount to double
+                            updates.put("reason", newReason);
+
+                            // Update the Firestore document
+                            db.collection("add_funds")
+                                    .document(funds.getId()) // Replace with your Firestore document ID field
+                                    .update(updates)
+                                    .addOnSuccessListener(aVoid -> {
+                                        Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
+                                        dialog.dismiss(); // Close the dialog on success
+                                        loadFundsData();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    });
+                        })
+                        .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                            // User canceled the action, do nothing
+                            dialogInterface.dismiss();
+                        })
+                        .show();
+            } else {
+                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    public void showDeleteDialogFunds(Funds funds){
+        new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                .setTitle("Confirm Deletion")
+                .setMessage("Are you sure you want to delete this fund?")
+                .setPositiveButton("Delete", (dialogInterface, i) -> {
+                    // Proceed with deletion if the user confirms
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                    // Delete the Firestore document
+                    db.collection("add_funds")
+                            .document(funds.getId()) // Replace with your Firestore document ID field
+                            .delete()
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
+                                // You may also want to update your UI after deletion, e.g., remove the item from the list
+                                loadFundsData();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                    // User canceled the action, do nothing
+                    dialogInterface.dismiss();
+                })
+                .show();
+
+    }
     private void displayTotalSalesWithDeductions(String selectedDate, double totalSales, double totalTherCommission) {
         double totalExpenses = 0.0;
         double totalGcash = 0.0;
@@ -873,116 +1148,47 @@ public class SalesFragment extends Fragment {
             expenseRow.addView(iconView); // Add icon to the row
 
             iconView.setOnClickListener(v -> {
-                // Create a PopupMenu anchored to the iconView
-                PopupMenu popupMenu = new PopupMenu(getContext(), iconView);
-                popupMenu.getMenuInflater().inflate(R.menu.employee_item_menu, popupMenu.getMenu());
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
-                // Handle the menu item clicks
-                popupMenu.setOnMenuItemClickListener(item -> {
-                    if (item.getItemId() == R.id.action_edit) {
-                        // Inflate the custom dialog view
-                        LayoutInflater inflater = getLayoutInflater();
-                        View dialogView = inflater.inflate(R.layout.dialog_new_expenses, null);
+                if (currentUser != null) {
+                    String userId = currentUser.getUid();
+                    DocumentReference userRef = db.collection("users").document(userId);
 
-                        // Initialize EditTexts and Button
-                        EditText edAmount = dialogView.findViewById(R.id.etAmount);
-                        EditText edReason = dialogView.findViewById(R.id.etReason);
-                        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+                    userRef.get().addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            Map<String, Object> permissions = (Map<String, Object>) documentSnapshot.get("permissions");
 
-                        // Pre-fill the EditTexts with the current values
-                        edAmount.setText(String.valueOf(expense.getAmount())); // Pre-fill with current amount
-                        edReason.setText(expense.getReason()); // Pre-fill with current reason/client name
+                            boolean editSales = permissions != null && (boolean) permissions.getOrDefault("editSales", false);
+                            boolean deleteSales = permissions != null && (boolean) permissions.getOrDefault("deleteSales", false);
 
-                        // Create the AlertDialog
-                        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
-                        dialogBuilder.setView(dialogView);
-                        AlertDialog dialog = dialogBuilder.create();
-                        dialog.show();
+                            // Create and show the PopupMenu **after fetching permissions**
+                            PopupMenu popupMenu = new PopupMenu(getContext(), iconView);
+                            popupMenu.getMenuInflater().inflate(R.menu.employee_item_menu, popupMenu.getMenu());
 
-                        // Handle the submit button click
-                        btnSubmit.setOnClickListener(v1 -> {
-                            // Get the updated values from the EditTexts
-                            String newAmount = edAmount.getText().toString();
-                            String newReason = edReason.getText().toString();
+                            // Disable options if the user does not have permission
+                            popupMenu.getMenu().findItem(R.id.action_edit).setEnabled(editSales);
+                            popupMenu.getMenu().findItem(R.id.action_delete).setEnabled(deleteSales);
 
-                            // Validate the input
-                            if (!newAmount.isEmpty() && !newReason.isEmpty()) {
-                                // Show confirmation dialog before proceeding with the update
-                                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
-                                        .setTitle("Confirm Update")
-                                        .setMessage("Are you sure you want to update this expense?")
-                                        .setPositiveButton("Update", (dialogInterface, i) -> {
-                                            // Proceed with the update if the user confirms
-                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                            popupMenu.setOnMenuItemClickListener(item -> {
+                                if (item.getItemId() == R.id.action_edit && editSales) {
+                                    showEditDialogExpenses(expense);  // Call function to handle edit
+                                    return true;
+                                }
+                                if (item.getItemId() == R.id.action_delete && deleteSales) {
+                                    showDeleteDialogExpenses(expense);  // Call function to handle delete
+                                    return true;
+                                }
+                                return false;
+                            });
 
-                                            // Create a map of the updated fields
-                                            Map<String, Object> updates = new HashMap<>();
-                                            updates.put("amount", Double.parseDouble(newAmount)); // Parse amount to double
-                                            updates.put("reason", newReason);
-
-                                            // Update the Firestore document
-                                            db.collection("expenses")
-                                                    .document(expense.getId()) // Replace with your Firestore document ID field
-                                                    .update(updates)
-                                                    .addOnSuccessListener(aVoid -> {
-                                                        Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
-                                                        dialog.dismiss(); // Close the dialog on success
-                                                        loadExpensesData();
-                                                    })
-                                                    .addOnFailureListener(e -> {
-                                                        Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                    });
-                                        })
-                                        .setNegativeButton("Cancel", (dialogInterface, i) -> {
-                                            // User canceled the action, do nothing
-                                            dialogInterface.dismiss();
-                                        })
-                                        .show();
-                            } else {
-                                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-
-
-                        return true;
-
-                    } else if (item.getItemId() == R.id.action_delete) {
-                        // Create a confirmation dialog
-                        new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
-                                .setTitle("Confirm Deletion")
-                                .setMessage("Are you sure you want to delete this expense?")
-                                .setPositiveButton("Delete", (dialogInterface, i) -> {
-                                    // Proceed with deletion if the user confirms
-                                    FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-                                    // Delete the Firestore document
-                                    db.collection("expenses")
-                                            .document(expense.getId()) // Replace with your Firestore document ID field
-                                            .delete()
-                                            .addOnSuccessListener(aVoid -> {
-                                                Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
-                                                // You may also want to update your UI after deletion, e.g., remove the item from the list
-                                                loadExpensesData();
-                                            })
-                                            .addOnFailureListener(e -> {
-                                                Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                            });
-                                })
-                                .setNegativeButton("Cancel", (dialogInterface, i) -> {
-                                    // User canceled the action, do nothing
-                                    dialogInterface.dismiss();
-                                })
-                                .show();
-
-                        return true;
-                    } else {
-                        return false;
-                    }
-                });
-
-
-                // Show the PopupMenu
-                popupMenu.show();
+                            popupMenu.show(); // Show the menu **after disabling items if needed**
+                        } else {
+                            Log.d("Firestore", "User document does not exist.");
+                        }
+                    }).addOnFailureListener(e -> Log.e("Firestore", "Error getting document", e));
+                } else {
+                    Log.d("Firestore", "No current user logged in.");
+                }
             });
 
 
@@ -1030,119 +1236,46 @@ public class SalesFragment extends Fragment {
             gcashRow.addView(iconView); // Add icon to the row
 
             iconView.setOnClickListener(v -> {
-                // Create a PopupMenu anchored to the iconView
-                PopupMenu popupMenu = new PopupMenu(getContext(), iconView);
-                popupMenu.getMenuInflater().inflate(R.menu.employee_item_menu, popupMenu.getMenu());
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
-                // Handle the menu item clicks
-                popupMenu.setOnMenuItemClickListener(item -> {
-                    if (item.getItemId() == R.id.action_edit) {
-                        // Inflate the custom dialog view
-                        LayoutInflater inflater = getLayoutInflater();
-                        View dialogView = inflater.inflate(R.layout.dialog_gcash, null);
+                if (currentUser != null) {
+                    String userId = currentUser.getUid();
+                    DocumentReference userRef = db.collection("users").document(userId);
 
-                        EditText edAmount = dialogView.findViewById(R.id.etAmount);
-                        edClientName = dialogView.findViewById(R.id.etClient);
-                        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
-                        rvSearchResults = dialogView.findViewById(R.id.rvSearchResults);
-                        clientAdapter = new ClientAdapter(clientList, this::onClientSelected);
-                        rvSearchResults.setLayoutManager(new LinearLayoutManager(getContext()));
-                        rvSearchResults.setAdapter(clientAdapter);
+                    userRef.get().addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            Map<String, Object> permissions = (Map<String, Object>) documentSnapshot.get("permissions");
 
-                        edAmount.setText(""+gcash.getAmount());
-                        edClientName.setText(gcash.getClientname());
+                            boolean editSales = permissions != null && (boolean) permissions.getOrDefault("editSales", false);
+                            boolean deleteSales = permissions != null && (boolean) permissions.getOrDefault("deleteSales", false);
 
-                        // TextWatcher to search clients by first name
-                        edClientName.addTextChangedListener(new TextWatcher() {
-                            @Override
-                            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                            // Create and show the PopupMenu **after fetching permissions**
+                            PopupMenu popupMenu = new PopupMenu(getContext(), iconView);
+                            popupMenu.getMenuInflater().inflate(R.menu.employee_item_menu, popupMenu.getMenu());
 
-                            @Override
-                            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                                searchClientByFirstName(s.toString());
-                            }
+                            // Disable options if the user does not have permission
+                            popupMenu.getMenu().findItem(R.id.action_edit).setEnabled(editSales);
+                            popupMenu.getMenu().findItem(R.id.action_delete).setEnabled(deleteSales);
 
-                            @Override
-                            public void afterTextChanged(Editable s) {}
-                        });
+                            popupMenu.setOnMenuItemClickListener(item -> {
+                                if (item.getItemId() == R.id.action_edit && editSales) {
+                                    showEditDialogGcash(gcash);  // Call function to handle edit
+                                    return true;
+                                } else if (item.getItemId() == R.id.action_delete && deleteSales) {
+                                    showDeleteDialogGcash(gcash);  // Call function to handle delete
+                                    return true;
+                                }
+                                return false;
+                            });
 
-                        // Create and show the AlertDialog for edit
-                        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
-                        dialogBuilder.setView(dialogView);
-                        AlertDialog dialog = dialogBuilder.create();
-                        dialog.show();
-
-                        // Handle the submit button click with a confirmation dialog
-                        btnSubmit.setOnClickListener(v1 -> {
-                            String newAmount = edAmount.getText().toString();
-                            String newClientName = edClientName.getText().toString();
-
-                            if (!newAmount.isEmpty() && !newClientName.isEmpty()) {
-                                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
-                                        .setTitle("Confirm Update")
-                                        .setMessage("Are you sure you want to update this GCash entry?")
-                                        .setPositiveButton("Update", (dialogInterface, i) -> {
-                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
-                                            Map<String, Object> updates = new HashMap<>();
-                                            updates.put("amount", Double.parseDouble(newAmount));
-                                            updates.put("clientname", newClientName);
-
-                                            // Update Firestore document
-                                            db.collection("gcash_payments")
-                                                    .document(gcash.getId())  // Replace with Firestore document ID
-                                                    .update(updates)
-                                                    .addOnSuccessListener(aVoid -> {
-                                                        Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
-                                                        dialog.dismiss();
-                                                        loadGcashData();
-                                                    })
-                                                    .addOnFailureListener(e -> {
-                                                        Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                    });
-                                        })
-                                        .setNegativeButton("Cancel", (dialogInterface, i) -> {
-                                            dialogInterface.dismiss();
-                                        })
-                                        .show();
-                            } else {
-                                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-
-                        return true;
-
-                    } else if (item.getItemId() == R.id.action_delete) {
-                        // Confirm before deleting
-                        new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
-                                .setTitle("Confirm Deletion")
-                                .setMessage("Are you sure you want to delete this GCash entry?")
-                                .setPositiveButton("Delete", (dialogInterface, i) -> {
-                                    FirebaseFirestore db = FirebaseFirestore.getInstance();
-                                    // Delete Firestore document
-                                    db.collection("gcash_payments")
-                                            .document(gcash.getId()) // Replace with Firestore document ID
-                                            .delete()
-                                            .addOnSuccessListener(aVoid -> {
-                                                Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
-                                                // Optionally, update your UI here
-                                                loadGcashData();
-                                            })
-                                            .addOnFailureListener(e -> {
-                                                Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                            });
-                                })
-                                .setNegativeButton("Cancel", (dialogInterface, i) -> {
-                                    dialogInterface.dismiss();
-                                })
-                                .show();
-
-                        return true;
-                    } else {
-                        return false;
-                    }
-                });
-                // Show the PopupMenu
-                popupMenu.show();
+                            popupMenu.show(); // Show the menu **after disabling items if needed**
+                        } else {
+                            Log.d("Firestore", "User document does not exist.");
+                        }
+                    }).addOnFailureListener(e -> Log.e("Firestore", "Error getting document", e));
+                } else {
+                    Log.d("Firestore", "No current user logged in.");
+                }
             });
             // Add client name
             TextView reasonTextView = new TextView(getContext());
@@ -1190,116 +1323,46 @@ public class SalesFragment extends Fragment {
             fundsRow.addView(iconView); // Add icon to the row
 
             iconView.setOnClickListener(v -> {
-                // Create a PopupMenu anchored to the iconView
-                PopupMenu popupMenu = new PopupMenu(getContext(), iconView);
-                popupMenu.getMenuInflater().inflate(R.menu.employee_item_menu, popupMenu.getMenu());
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
-                // Handle the menu item clicks
-                popupMenu.setOnMenuItemClickListener(item -> {
-                    if (item.getItemId() == R.id.action_edit) {
-                        // Inflate the custom dialog view
-                        LayoutInflater inflater = getLayoutInflater();
-                        View dialogView = inflater.inflate(R.layout.dialog_add_funds, null);
+                if (currentUser != null) {
+                    String userId = currentUser.getUid();
+                    DocumentReference userRef = db.collection("users").document(userId);
 
-                        // Initialize EditTexts and Button
-                        EditText edAmount = dialogView.findViewById(R.id.etAmount);
-                        EditText edReason = dialogView.findViewById(R.id.etReason);
-                        Button btnSubmit = dialogView.findViewById(R.id.btnSubmit);
+                    userRef.get().addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            Map<String, Object> permissions = (Map<String, Object>) documentSnapshot.get("permissions");
 
-                        // Pre-fill the EditTexts with the current values
-                        edAmount.setText(String.valueOf(funds.getAmount())); // Pre-fill with current amount
-                        edReason.setText(funds.getReason()); // Pre-fill with current reason/client name
+                            boolean editSales = permissions != null && (boolean) permissions.getOrDefault("editSales", false);
+                            boolean deleteSales = permissions != null && (boolean) permissions.getOrDefault("deleteSales", false);
 
-                        // Create the AlertDialog
-                        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
-                        dialogBuilder.setView(dialogView);
-                        AlertDialog dialog = dialogBuilder.create();
-                        dialog.show();
+                            // Create and show the PopupMenu **after fetching permissions**
+                            PopupMenu popupMenu = new PopupMenu(getContext(), iconView);
+                            popupMenu.getMenuInflater().inflate(R.menu.employee_item_menu, popupMenu.getMenu());
 
-                        // Handle the submit button click
-                        btnSubmit.setOnClickListener(v1 -> {
-                            // Get the updated values from the EditTexts
-                            String newAmount = edAmount.getText().toString();
-                            String newReason = edReason.getText().toString();
+                            // Disable options if the user does not have permission
+                            popupMenu.getMenu().findItem(R.id.action_edit).setEnabled(editSales);
+                            popupMenu.getMenu().findItem(R.id.action_delete).setEnabled(deleteSales);
 
-                            // Validate the input
-                            if (!newAmount.isEmpty() && !newReason.isEmpty()) {
-                                // Show confirmation dialog before proceeding with the update
-                                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
-                                        .setTitle("Confirm Update")
-                                        .setMessage("Are you sure you want to update this fund?")
-                                        .setPositiveButton("Update", (dialogInterface, i) -> {
-                                            // Proceed with the update if the user confirms
-                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                            popupMenu.setOnMenuItemClickListener(item -> {
+                                if (item.getItemId() == R.id.action_edit && editSales) {
+                                    showEditDialogFunds(funds);  // Call function to handle edit
+                                    return true;
+                                } else if (item.getItemId() == R.id.action_delete && deleteSales) {
+                                    showDeleteDialogFunds(funds);  // Call function to handle delete
+                                    return true;
+                                }
+                                return false;
+                            });
 
-                                            // Create a map of the updated fields
-                                            Map<String, Object> updates = new HashMap<>();
-                                            updates.put("amount", Double.parseDouble(newAmount)); // Parse amount to double
-                                            updates.put("reason", newReason);
-
-                                            // Update the Firestore document
-                                            db.collection("add_funds")
-                                                    .document(funds.getId()) // Replace with your Firestore document ID field
-                                                    .update(updates)
-                                                    .addOnSuccessListener(aVoid -> {
-                                                        Toast.makeText(getContext(), "Updated successfully", Toast.LENGTH_SHORT).show();
-                                                        dialog.dismiss(); // Close the dialog on success
-                                                        loadFundsData();
-                                                    })
-                                                    .addOnFailureListener(e -> {
-                                                        Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                    });
-                                        })
-                                        .setNegativeButton("Cancel", (dialogInterface, i) -> {
-                                            // User canceled the action, do nothing
-                                            dialogInterface.dismiss();
-                                        })
-                                        .show();
-                            } else {
-                                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-
-
-                        return true;
-
-                    } else if (item.getItemId() == R.id.action_delete) {
-                        // Create a confirmation dialog
-                        new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
-                                .setTitle("Confirm Deletion")
-                                .setMessage("Are you sure you want to delete this fund?")
-                                .setPositiveButton("Delete", (dialogInterface, i) -> {
-                                    // Proceed with deletion if the user confirms
-                                    FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-                                    // Delete the Firestore document
-                                    db.collection("add_funds")
-                                            .document(funds.getId()) // Replace with your Firestore document ID field
-                                            .delete()
-                                            .addOnSuccessListener(aVoid -> {
-                                                Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
-                                                // You may also want to update your UI after deletion, e.g., remove the item from the list
-                                                loadFundsData();
-                                            })
-                                            .addOnFailureListener(e -> {
-                                                Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                            });
-                                })
-                                .setNegativeButton("Cancel", (dialogInterface, i) -> {
-                                    // User canceled the action, do nothing
-                                    dialogInterface.dismiss();
-                                })
-                                .show();
-
-                        return true;
-                    } else {
-                        return false;
-                    }
-                });
-
-
-                // Show the PopupMenu
-                popupMenu.show();
+                            popupMenu.show(); // Show the menu **after disabling items if needed**
+                        } else {
+                            Log.d("Firestore", "User document does not exist.");
+                        }
+                    }).addOnFailureListener(e -> Log.e("Firestore", "Error getting document", e));
+                } else {
+                    Log.d("Firestore", "No current user logged in.");
+                }
             });
 
 
