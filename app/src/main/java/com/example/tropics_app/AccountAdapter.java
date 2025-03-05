@@ -48,6 +48,13 @@ public class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.ViewHold
         return userList.size();
     }
 
+    public void updateList(List<Accounts> newList) {
+        userList.clear();
+        userList.addAll(newList);
+        notifyDataSetChanged();
+    }
+
+
     public class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvEmpName;
 

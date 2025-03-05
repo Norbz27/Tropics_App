@@ -9,7 +9,9 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import androidx.appcompat.widget.SearchView;
 import android.widget.Toast;
+
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -42,6 +44,7 @@ import java.util.Map;
 public class AccountsFragment extends Fragment {
     private RecyclerView rvAccounts;
     private AccountAdapter adapter;
+    private SearchView searchView;
     private List<Accounts> userList = new ArrayList<>();
     private static final String FETCH_USERS_URL = "https://us-central1-tropico-16e1e.cloudfunctions.net/listUsers";
     private static final String DELETE_USERS_URL = "https://us-central1-tropico-16e1e.cloudfunctions.net/deleteUserByEmail";
@@ -50,6 +53,11 @@ public class AccountsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_accounts, container, false);
+
+        searchView = view.findViewById(R.id.searchView);
+
+        // Open the SearchView when clicked
+        searchView.setOnClickListener(v -> searchView.setIconified(false));
 
         rvAccounts = view.findViewById(R.id.rvAccounts);
         rvAccounts.setLayoutManager(new LinearLayoutManager(getActivity()));
@@ -79,7 +87,38 @@ public class AccountsFragment extends Fragment {
             }
         });
 
+        setupSearchView();
         return view;
+    }
+    private void setupSearchView() {
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false; // Handle search submission if needed
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filterUserList(newText); // Call filtering method
+                return true;
+            }
+        });
+    }
+    private void filterUserList(String query) {
+        if (query.isEmpty()) {
+            // If search is cleared, reload full user list
+            fetchUsers();
+            return;
+        }
+
+        List<Accounts> filteredList = new ArrayList<>();
+        for (Accounts user : userList) {
+            if (user.getEmail().toLowerCase().contains(query.toLowerCase())) {
+                filteredList.add(user);
+            }
+        }
+
+        adapter.updateList(filteredList); // Update RecyclerView dynamically
     }
 
     private void fetchUsers() {
@@ -226,24 +265,40 @@ public class AccountsFragment extends Fragment {
     }
 
     private void deleteAccount(Accounts user) {
-        RequestQueue queue = Volley.newRequestQueue(getContext());
-        JSONObject jsonBody = new JSONObject();
-        try {
-            jsonBody.put("email", user.getEmail()); // Send user email to delete
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        new AlertDialog.Builder(getContext(), R.style.AlertDialogTheme)
+                .setTitle("Delete Account")
+                .setMessage("Are you sure you want to delete this account?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    // Proceed with deletion after confirmation
+                    RequestQueue queue = Volley.newRequestQueue(getContext());
+                    JSONObject jsonBody = new JSONObject();
+                    try {
+                        jsonBody.put("email", user.getEmail()); // Send user email to delete
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
 
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, DELETE_USERS_URL, jsonBody,
-                response -> {
-                    Toast.makeText(getContext(), "User deleted successfully!", Toast.LENGTH_SHORT).show();
-                    userList.remove(user); // Remove from RecyclerView
-                    adapter.notifyDataSetChanged(); // Refresh RecyclerView
-                },
-                error -> Toast.makeText(getContext(), "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show()
-        );
+                    JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, DELETE_USERS_URL, jsonBody,
+                            response -> {
+                                // Delete from Firestore "users" collection by UID
+                                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                                db.collection("users").document(user.getUid())
+                                        .delete()
+                                        .addOnSuccessListener(aVoid -> {
+                                            Toast.makeText(getContext(), "User deleted successfully!", Toast.LENGTH_SHORT).show();
+                                            userList.remove(user); // Remove from RecyclerView
+                                            adapter.notifyDataSetChanged(); // Refresh RecyclerView
+                                        })
+                                        .addOnFailureListener(e ->
+                                                Toast.makeText(getContext(), "Error deleting user from Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                        );
+                            },
+                            error -> Toast.makeText(getContext(), "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                    );
 
-        queue.add(request);
+                    queue.add(request);
+                })
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss()) // Cancel action
+                .show();
     }
-
 }

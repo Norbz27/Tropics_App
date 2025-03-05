@@ -72,6 +72,12 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
             navigationView.setCheckedItem(R.id.nav_home);
             getSupportActionBar().setTitle("Home");
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Window window = getWindow();
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.darkgray));
+            window.setNavigationBarColor(ContextCompat.getColor(this, R.color.darkgray));
+        }
     }
 
 
