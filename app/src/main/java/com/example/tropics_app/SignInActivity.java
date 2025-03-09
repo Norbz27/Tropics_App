@@ -1,7 +1,7 @@
 package com.example.tropics_app;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
+
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,7 +33,7 @@ public class SignInActivity extends AppCompatActivity {
     private EditText username, password1;
     private Button btnSignin;
     private FirebaseAuth mAuth;
-    private SharedPreferences sharedPreferences;
+    //private SharedPreferences sharedPreferences;
     private static final String Preference = "userpreferences";
     private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
     private TextView tvForgotPass;  // Add this for Forgot Password TextView
@@ -50,13 +50,13 @@ public class SignInActivity extends AppCompatActivity {
         tvForgotPass = findViewById(R.id.tvForgotPass);  // Initialize your TextView here
         intent = new Intent(this, NavigationActivity.class);
 
-        sharedPreferences = getSharedPreferences(Preference, MODE_PRIVATE);
-        boolean isLoggedIn = sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false);
+        //sharedPreferences = getSharedPreferences(Preference, MODE_PRIVATE);
+        //boolean isLoggedIn = sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false);
 
-        if (isLoggedIn) {
+        /*if (isLoggedIn) {
             startActivity(new Intent(SignInActivity.this, NavigationActivity.class));
             finish();
-        }
+        }*/
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Window window = getWindow();
