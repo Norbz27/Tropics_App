@@ -2,6 +2,7 @@ package com.example.tropics_app;
 
 import android.content.Intent;
 
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -31,7 +32,7 @@ import com.google.firebase.auth.FirebaseUser;
 public class NavigationActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private DrawerLayout drawerLayout;
     private FirebaseAuth mAuth;
-    //private SharedPreferences sharedPreferences;
+    private SharedPreferences sharedPreferences;
     private static final String Preference = "userpreferences";
     private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
     @Override
@@ -39,7 +40,7 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         super.onCreate(savedInstanceState);
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         mAuth = FirebaseAuth.getInstance();
-        //sharedPreferences = getSharedPreferences(Preference, MODE_PRIVATE);
+        sharedPreferences = getSharedPreferences(Preference, MODE_PRIVATE);
         setContentView(R.layout.activity_navigation);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -115,9 +116,9 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         }
         else if (id == R.id.nav_sign_out) {
             mAuth.signOut();
-            /*SharedPreferences.Editor editor = sharedPreferences.edit();
+            SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean(KEY_IS_LOGGED_IN, false);
-            editor.apply();*/
+            editor.apply();
             Intent intent = new Intent(this, SignInActivity.class); // Create intent for SignInActivity
             startActivity(intent);
             finish();

@@ -15,8 +15,10 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -54,9 +56,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class CalendarFragment extends Fragment implements AppointmentAdapter.OnItemLongClickListener, AppointmentAdapter.OnItemClickListener {
 
@@ -70,31 +74,37 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     private String parentName = "";
     private List<CalendarDay> eventDays = new ArrayList<>();
     private List<CalendarDay> today = new ArrayList<>();
+    private ProgressBar progressBar;
+    private FrameLayout progressContainer;
+
+    private Map<String, List<Appointment>> appointmentCache = new HashMap<>();
+    private Set<String> cachedEventDates = new HashSet<>();
+    private boolean isCacheLoaded = false;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_calendar, container, false);
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        // Initialize Firestore
+
         db = FirebaseFirestore.getInstance();
 
-        // Initialize RecyclerView and AppointmentAdapter
         recyclerView = view.findViewById(R.id.rcview);
+        progressContainer = view.findViewById(R.id.progressContainer);
+        progressBar = view.findViewById(R.id.progressBar);
         appointmentList = new ArrayList<>();
         appointmentAdapter = new AppointmentAdapter(appointmentList, this);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         recyclerView.setAdapter(appointmentAdapter);
         calendarView = view.findViewById(R.id.calendarView);
-        // Load today's appointments
-        selectedDate = getCurrentDate();
-        loadAppointmentData(selectedDate);
 
-        // Set the long click listener on your adapter
+        selectedDate = getCurrentDate();
+        loadAllAppointments();
+
         appointmentAdapter.setOnItemLongClickListener(this);
         showToday();
-        // Set up the calendar view
+
         calendarView.setOnDayClickListener(event -> {
             eventDays.clear();
             Date clickedDateString = event.getCalendar().getTime();
@@ -111,14 +121,15 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
             selectedDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(event.getCalendar().getTime());
             loadAppointmentData(selectedDate);
         });
+
         OnBackPressedCallback callback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                // Do nothing or reload the fragment
-                reloadFragment(); // Call the reload method here
+                reloadFragment();
             }
         };
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), callback);
+
         return view;
     }
     private void reloadFragment() {
@@ -140,68 +151,97 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         return dateFormat.format(new Date());
     }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        isCacheLoaded = false; // Reset cache flag
+        appointmentCache.clear(); // Clear cache to prevent memory leaks
+    }
 
-    private void loadAppointmentData(String date) {
+
+    private void loadAllAppointments() {
+        requireActivity().runOnUiThread(() -> progressContainer.setVisibility(View.VISIBLE)); // Show progress
+
         db.collection("appointments")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    appointmentList.clear();
-                    List<EventDay> events = new ArrayList<>(); // List to hold event days for calendar view
-                    boolean hasAppointments = false;  // Track if any appointments are available
+                    new Thread(() -> {
+                        if (!isAdded()) return;
 
-                    for (DocumentSnapshot document : queryDocumentSnapshots) {
-                        Appointment appointment = document.toObject(Appointment.class);
-                        if (appointment != null) { // Check if appointment is not null
-                            appointment.setId(document.getId()); // Set ID from Firestore
+                        appointmentCache.clear();
+                        cachedEventDates.clear();
+                        List<EventDay> allEvents = new ArrayList<>();
 
-                            // Check if the appointment's date matches the selected date
-                            if (appointment.getDate().equals(date)) {
-                                appointmentList.add(appointment);
-                                hasAppointments = true; // Set flag to true if appointments are found
-                            }
+                        for (DocumentSnapshot document : queryDocumentSnapshots) {
+                            if (!isAdded()) return;
 
-                            // Highlight dates with appointments
-                            Calendar appointmentCalendar = Calendar.getInstance();
-                            try {
-                                Date appointmentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(appointment.getDate());
-                                appointmentCalendar.setTime(appointmentDate);
+                            Appointment appointment = document.toObject(Appointment.class);
+                            if (appointment != null) {
+                                appointment.setId(document.getId());
+                                appointmentCache.putIfAbsent(appointment.getDate(), new ArrayList<>());
+                                appointmentCache.get(appointment.getDate()).add(appointment);
 
-                                // Use sample_three_icons drawable to highlight the date
-                                Drawable threeIconsDrawable = getResources().getDrawable(R.drawable.sample_three_icons, null);
-                                events.add(new EventDay(appointmentCalendar, threeIconsDrawable)); // Add event to the list
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                                if (!cachedEventDates.contains(appointment.getDate())) {
+                                    Calendar appointmentCalendar = Calendar.getInstance();
+                                    try {
+                                        Date appointmentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(appointment.getDate());
+                                        appointmentCalendar.setTime(appointmentDate);
+                                        Drawable threeIconsDrawable = getResources().getDrawable(R.drawable.sample_three_icons, null);
+                                        allEvents.add(new EventDay(appointmentCalendar, threeIconsDrawable));
+                                        cachedEventDates.add(appointment.getDate());
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                         }
-                    }
 
-                    // Sort appointmentList by appointment time
-                    Collections.sort(appointmentList, new Comparator<Appointment>() {
-                        @Override
-                        public int compare(Appointment a1, Appointment a2) {
-                            try {
-                                SimpleDateFormat sdf24 = new SimpleDateFormat("HH:mm");
-                                Date time1 = sdf24.parse(a1.getTime());
-                                Date time2 = sdf24.parse(a2.getTime());
-                                return time1.compareTo(time2);
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                            return 0; // In case of exception, treat them as equal
-                        }
-                    });
+                        isCacheLoaded = true;
 
-                    // Set the events to highlight dates with appointments
-                    calendarView.setEvents(events);
-                    appointmentAdapter.notifyDataSetChanged();
-
+                        requireActivity().runOnUiThread(() -> {
+                            if (!isAdded()) return;
+                            calendarView.setEvents(allEvents);
+                            progressContainer.setVisibility(View.GONE); // Hide progress
+                            loadAppointmentData(selectedDate);
+                        });
+                    }).start();
                 })
                 .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
                     Log.e("LoadAppointments", "Error loading appointments: ", e);
                     Toast.makeText(getActivity(), "Failed to load appointments: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    progressContainer.setVisibility(View.GONE);
                 });
     }
+    private void loadAppointmentData(String date) {
+        progressBar.setVisibility(View.VISIBLE);
 
+        new Thread(() -> {
+            if (!isAdded()) return; // Stop if fragment is closed
+
+            List<Appointment> newAppointments = appointmentCache.getOrDefault(date, new ArrayList<>());
+
+            newAppointments.sort((a1, a2) -> {
+                try {
+                    SimpleDateFormat sdf24 = new SimpleDateFormat("HH:mm");
+                    Date time1 = sdf24.parse(a1.getTime());
+                    Date time2 = sdf24.parse(a2.getTime());
+                    return time1.compareTo(time2);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                return 0;
+            });
+
+            requireActivity().runOnUiThread(() -> {
+                if (!isAdded()) return; // Stop if fragment is closed
+                appointmentList.clear();
+                appointmentList.addAll(newAppointments);
+                appointmentAdapter.notifyDataSetChanged();
+                progressBar.setVisibility(View.GONE);
+            });
+        }).start();
+    }
 
     @Override
     public void onItemLongClick(Appointment appointment) {
