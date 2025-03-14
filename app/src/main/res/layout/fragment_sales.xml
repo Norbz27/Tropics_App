@@ -6,6 +6,24 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#121315"
     tools:context=".SalesFragment">
+    <FrameLayout
+        android:id="@+id/progressContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:background="@android:color/transparent"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            style="@android:style/Widget.ProgressBar.Large"
+            android:indeterminate="true"/>
+    </FrameLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"

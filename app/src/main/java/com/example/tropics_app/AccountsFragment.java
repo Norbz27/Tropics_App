@@ -203,23 +203,64 @@ public class AccountsFragment extends Fragment {
         CheckBox chkb_edit_sales = dialogView.findViewById(R.id.chkb_edit_sales);
         CheckBox chkb_delete_sales = dialogView.findViewById(R.id.chkb_delete_sales);
         CheckBox chkb_edit_salary = dialogView.findViewById(R.id.chkb_edit_salary);
+        CheckBox chkb_delete_salary = dialogView.findViewById(R.id.chkb_delete_salary);
+        CheckBox chkb_edit_cal = dialogView.findViewById(R.id.chkb_edit_cal);
+        CheckBox chkb_delete_cal = dialogView.findViewById(R.id.chkb_delete_cal);
+        CheckBox chkb_edit_inventory = dialogView.findViewById(R.id.chkb_edit_inventory);
+        CheckBox chkb_delete_inventory = dialogView.findViewById(R.id.chkb_delete_inventory);
+        CheckBox chkb_edit_service = dialogView.findViewById(R.id.chkb_edit_service);
+        CheckBox chkb_delete_service = dialogView.findViewById(R.id.chkb_delete_service);
+
         Button btnSubmit = dialogView.findViewById(R.id.btnSave);
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference userRef = db.collection("users").document(user.getUid());
+
+        // ✅ Fetch user permissions and set checkboxes
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                Map<String, Object> permissions = (Map<String, Object>) documentSnapshot.get("permissions");
+                if (permissions != null) {
+                    chkb_edit_sales.setChecked(Boolean.TRUE.equals(permissions.get("editSales")));
+                    chkb_delete_sales.setChecked(Boolean.TRUE.equals(permissions.get("deleteSales")));
+                    chkb_edit_salary.setChecked(Boolean.TRUE.equals(permissions.get("editSalary")));
+                    chkb_delete_salary.setChecked(Boolean.TRUE.equals(permissions.get("deleteSalary")));
+                    chkb_edit_cal.setChecked(Boolean.TRUE.equals(permissions.get("editCal")));
+                    chkb_delete_cal.setChecked(Boolean.TRUE.equals(permissions.get("deleteCal")));
+                    chkb_edit_inventory.setChecked(Boolean.TRUE.equals(permissions.get("editInventory")));
+                    chkb_delete_inventory.setChecked(Boolean.TRUE.equals(permissions.get("deleteInventory")));
+                    chkb_edit_service.setChecked(Boolean.TRUE.equals(permissions.get("editService")));
+                    chkb_delete_service.setChecked(Boolean.TRUE.equals(permissions.get("deleteService")));
+                }
+            }
+        }).addOnFailureListener(e -> Log.e("Firestore", "Error fetching permissions", e));
 
         btnSubmit.setOnClickListener(view -> {
             boolean editSales = chkb_edit_sales.isChecked();
             boolean deleteSales = chkb_delete_sales.isChecked();
             boolean editSalary = chkb_edit_salary.isChecked();
+            boolean deleteSalary = chkb_delete_salary.isChecked();
+            boolean editCal = chkb_edit_cal.isChecked();
+            boolean deleteCal = chkb_delete_cal.isChecked();
+            boolean editInventory = chkb_edit_inventory.isChecked();
+            boolean deleteInventory = chkb_delete_inventory.isChecked();
+            boolean editService = chkb_edit_service.isChecked();
+            boolean deleteService = chkb_delete_service.isChecked();
 
             String uid = user.getUid();
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            DocumentReference userRef = db.collection("users").document(uid);
 
-            // Check if the document exists
             userRef.get().addOnSuccessListener(documentSnapshot -> {
                 Map<String, Object> permissions = new HashMap<>();
                 permissions.put("editSales", editSales);
                 permissions.put("deleteSales", deleteSales);
                 permissions.put("editSalary", editSalary);
+                permissions.put("deleteSalary", deleteSalary);
+                permissions.put("editCal", editCal);
+                permissions.put("deleteCal", deleteCal);
+                permissions.put("editInventory", editInventory);
+                permissions.put("deleteInventory", deleteInventory);
+                permissions.put("editService", editService);
+                permissions.put("deleteService", deleteService);
 
                 if (documentSnapshot.exists()) {
                     // ✅ Document exists -> Update the permissions field

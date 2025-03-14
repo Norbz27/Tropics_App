@@ -19,6 +19,106 @@
             android:fontFamily="@font/manrope"
             android:textSize="22sp"
             android:textColor="@color/orange" />
+
+        <TextView
+            android:id="@+id/tvCal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Callendar Appointments"
+            android:layout_marginTop="15dp"
+            android:fontFamily="@font/manrope"
+            android:textSize="17sp"
+            android:textColor="#FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <CheckBox android:id="@+id/chkb_edit_cal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit Action"
+                android:fontFamily="@font/manrope"
+                android:textSize="14sp"
+                android:textColor="#B6B6B6" />
+
+            <CheckBox android:id="@+id/chkb_delete_cal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete Action"
+                android:fontFamily="@font/manrope"
+                android:textSize="14sp"
+                android:textColor="#B6B6B6" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvInventory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Inventory"
+            android:layout_marginTop="15dp"
+            android:fontFamily="@font/manrope"
+            android:textSize="17sp"
+            android:textColor="#FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <CheckBox android:id="@+id/chkb_edit_inventory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit Action"
+                android:fontFamily="@font/manrope"
+                android:textSize="14sp"
+                android:textColor="#B6B6B6" />
+
+            <CheckBox android:id="@+id/chkb_delete_inventory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete Action"
+                android:fontFamily="@font/manrope"
+                android:textSize="14sp"
+                android:textColor="#B6B6B6" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvServices"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Services"
+            android:layout_marginTop="15dp"
+            android:fontFamily="@font/manrope"
+            android:textSize="17sp"
+            android:textColor="#FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <CheckBox android:id="@+id/chkb_edit_service"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit Action"
+                android:fontFamily="@font/manrope"
+                android:textSize="14sp"
+                android:textColor="#B6B6B6" />
+
+            <CheckBox android:id="@+id/chkb_delete_service"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete Action"
+                android:fontFamily="@font/manrope"
+                android:textSize="14sp"
+                android:textColor="#B6B6B6" />
+        </LinearLayout>
+
         <TextView
             android:id="@+id/tvFname"
             android:layout_width="wrap_content"
@@ -76,6 +176,13 @@
                 android:textSize="14sp"
                 android:textColor="#B6B6B6" />
 
+            <CheckBox android:id="@+id/chkb_delete_salary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete Action"
+                android:fontFamily="@font/manrope"
+                android:textSize="14sp"
+                android:textColor="#B6B6B6" />
         </LinearLayout>
 
         <LinearLayout

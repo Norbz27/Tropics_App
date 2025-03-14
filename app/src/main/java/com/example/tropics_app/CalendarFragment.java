@@ -40,6 +40,8 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.applandeo.materialcalendarview.CalendarDay;
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -493,19 +495,61 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
     }
 
     private void showAppointmentOptionsDialog(Appointment appointment) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
-        builder.setTitle("Options")
-                .setItems(new CharSequence[]{"Edit Client Info", "Edit Selected Service", "Edit Time", "Delete"}, (dialog, optionIndex) -> {
-                    if (optionIndex == 0) {
-                        // Handle "Edit" action
-                        showEditClientDialog(appointment); // Method to edit client information
-                    } else if (optionIndex == 1) {
-                        // Handle "Edit" action
-                        viewServices(appointment); // Method to view/edit services
-                    } else if(optionIndex == 2){
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) return; // Ensure user is logged in
+
+        String userId = currentUser.getUid();
+        DocumentReference userRef = db.collection("users").document(userId);
+
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            Map<String, Object> permissions = (Map<String, Object>) documentSnapshot.get("permissions");
+
+            boolean editCal = permissions != null && (boolean) permissions.getOrDefault("editCal", false);
+            boolean deleteCal = permissions != null && (boolean) permissions.getOrDefault("deleteCal", false);
+
+            // Define menu options
+            String[] options = {"Edit Client Info", "Edit Selected Service", "Edit Time", "Delete"};
+            boolean[] enabledOptions = {editCal, editCal, editCal, deleteCal}; // Disable based on permissions
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
+            builder.setTitle("Options");
+
+            // Create a custom adapter to disable items
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, options) {
+                @Override
+                public boolean isEnabled(int position) {
+                    return enabledOptions[position]; // Disable items without permissions
+                }
+
+                @Override
+                public View getView(int position, View convertView, ViewGroup parent) {
+                    View view = super.getView(position, convertView, parent);
+                    if (!enabledOptions[position]) {
+                        view.setEnabled(false);
+                        view.setAlpha(0.5f); // Grey out the disabled item
+                    }
+                    return view;
+                }
+            };
+
+            builder.setAdapter(adapter, (dialog, optionIndex) -> {
+                if (!enabledOptions[optionIndex]) {
+                    Toast.makeText(getActivity(), "You don't have permission to perform this action.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Handle enabled options
+                switch (optionIndex) {
+                    case 0:
+                        showEditClientDialog(appointment);
+                        break;
+                    case 1:
+                        viewServices(appointment);
+                        break;
+                    case 2:
                         showEditTimeDialog(appointment);
-                    }else if (optionIndex == 3) {
-                        // Handle "Delete" action
+                        break;
+                    case 3:
                         new AlertDialog.Builder(getActivity())
                                 .setTitle("Delete Appointment")
                                 .setMessage("Are you sure you want to delete this appointment?")
@@ -513,16 +557,17 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                                     deleteAppointment(appointment);
                                     Toast.makeText(getActivity(), "Appointment deleted successfully", Toast.LENGTH_SHORT).show();
                                 })
-                                .setNegativeButton("No", (confirmDialog, confirmIndex) -> {
-                                    confirmDialog.dismiss();
-                                })
+                                .setNegativeButton("No", (confirmDialog, confirmIndex) -> confirmDialog.dismiss())
                                 .setIcon(android.R.drawable.ic_dialog_alert)
                                 .show();
-                    }
-                })
-                .create()
-                .show();
+                        break;
+                }
+            });
+
+            builder.create().show();
+        }).addOnFailureListener(e -> Log.e("Firestore", "Error fetching permissions", e));
     }
+
 
     private void showEditClientDialog(Appointment appointment) {
         LayoutInflater inflater = getLayoutInflater();
