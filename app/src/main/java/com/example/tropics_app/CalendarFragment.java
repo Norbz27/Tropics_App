@@ -3,6 +3,7 @@ package com.example.tropics_app;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -496,7 +497,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
 
     private void showAppointmentOptionsDialog(Appointment appointment) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser == null) return; // Ensure user is logged in
+        if (currentUser == null) return;
 
         String userId = currentUser.getUid();
         DocumentReference userRef = db.collection("users").document(userId);
@@ -504,21 +505,22 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
         userRef.get().addOnSuccessListener(documentSnapshot -> {
             Map<String, Object> permissions = (Map<String, Object>) documentSnapshot.get("permissions");
 
-            boolean editCal = permissions != null && (boolean) permissions.getOrDefault("editCal", false);
+            boolean editClientInfo = permissions != null && (boolean) permissions.getOrDefault("editCal", false);
+            boolean editService = permissions != null && (boolean) permissions.getOrDefault("editCal", false);
+            boolean editTime = permissions != null && (boolean) permissions.getOrDefault("editCal", false);
             boolean deleteCal = permissions != null && (boolean) permissions.getOrDefault("deleteCal", false);
 
-            // Define menu options
             String[] options = {"Edit Client Info", "Edit Selected Service", "Edit Time", "Delete"};
-            boolean[] enabledOptions = {editCal, editCal, editCal, deleteCal}; // Disable based on permissions
+            boolean[] enabledOptions = {editClientInfo, editService, editTime, deleteCal}; // Enable based on individual permissions
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme);
             builder.setTitle("Options");
 
-            // Create a custom adapter to disable items
+            // Custom adapter to disable specific items
             ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, options) {
                 @Override
                 public boolean isEnabled(int position) {
-                    return enabledOptions[position]; // Disable items without permissions
+                    return enabledOptions[position]; // Disable only specific items
                 }
 
                 @Override
@@ -526,10 +528,14 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     View view = super.getView(position, convertView, parent);
                     if (!enabledOptions[position]) {
                         view.setEnabled(false);
-                        view.setAlpha(0.5f); // Grey out the disabled item
+                        view.setAlpha(0.5f); // Grey out disabled items
+                    } else{
+                        view.setEnabled(true);
+                        view.setAlpha(1.0f);
                     }
                     return view;
                 }
+
             };
 
             builder.setAdapter(adapter, (dialog, optionIndex) -> {
@@ -538,7 +544,7 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
                     return;
                 }
 
-                // Handle enabled options
+                // Handle enabled actions
                 switch (optionIndex) {
                     case 0:
                         showEditClientDialog(appointment);
@@ -567,7 +573,6 @@ public class CalendarFragment extends Fragment implements AppointmentAdapter.OnI
             builder.create().show();
         }).addOnFailureListener(e -> Log.e("Firestore", "Error fetching permissions", e));
     }
-
 
     private void showEditClientDialog(Appointment appointment) {
         LayoutInflater inflater = getLayoutInflater();
