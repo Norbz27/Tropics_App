@@ -5,60 +5,77 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/darkgray"
-    android:elevation="7dp"
+    android:clickable="true"
+    android:focusable="true"
     tools:context=".CalendarFragment">
+
+    <!-- Main Content -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingTop="20dp"
         android:fillViewport="true"
         android:scrollbars="none">
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginTop="20dp">
-            <LinearLayout
-                android:id="@+id/calendar"
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp">
+
+            <!-- Calendar View -->
+            <com.applandeo.materialcalendarview.CalendarView
+                android:id="@+id/calendarView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/darkgray">
-                <com.applandeo.materialcalendarview.CalendarView
-                    android:id="@+id/calendarView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:abbreviationsBarColor="@color/darkgray"
-                    app:abbreviationsLabelsColor="@color/white"
-                    app:anotherMonthsDaysLabelsColor="#787878"
-                    app:daysLabelsColor="@color/white"
-                    app:headerColor="@color/darkgray"
-                    app:headerLabelColor="@color/orange"
-                    app:highlightedDaysLabelsColor="@color/orange"
-                    app:pagesColor="@color/darkgray"
-                    app:todayLabelColor="@color/white" />
-            </LinearLayout>
+                app:abbreviationsBarColor="@color/darkgray"
+                app:abbreviationsLabelsColor="@color/white"
+                app:anotherMonthsDaysLabelsColor="#787878"
+                app:daysLabelsColor="@color/white"
+                app:headerColor="@color/darkgray"
+                app:headerLabelColor="@color/orange"
+                app:highlightedDaysLabelsColor="@color/orange"
+                app:pagesColor="@color/darkgray"
+                app:todayLabelColor="@color/white" />
+
+            <!-- Appointment List -->
             <ScrollView
-                android:id="@+id/scrollview"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_below="@id/calendar"
-                android:layout_marginTop="20dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/calendarView"
                 android:fillViewport="true"
                 android:scrollbars="none">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical">
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rcview"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
+                        android:layout_height="wrap_content" />
+
                 </LinearLayout>
             </ScrollView>
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:layout_below="@id/scrollview"/>
+
         </RelativeLayout>
     </ScrollView>
+
+    <!-- Progress Bar (Always on Top) -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:background="@android:color/transparent"
+        android:visibility="gone"
+        android:id="@+id/progressContainer">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            style="@android:style/Widget.ProgressBar.Large"
+            android:indeterminate="true"/>
+    </FrameLayout>
+
 </FrameLayout>

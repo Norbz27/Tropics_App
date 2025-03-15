@@ -18,6 +18,10 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -151,51 +155,75 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
             Log.d("InventoryAdapter", "Trues");
         }
 
-        popupMenu.setOnMenuItemClickListener(menuItem -> {
-            int id = menuItem.getItemId();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
-            if (id == R.id.action_edit) {
-                // Call the edit action
-                if (longClickListener != null) {
-                    longClickListener.onEditClick(inventoryList.get(position));
-                }
-                return true;
-            } else if (id == R.id.action_add) {
-                // Add stocks
-                if (longClickListener != null) {
-                    longClickListener.onAddClick(inventoryList.get(position));
-                }
-                return true;
-            } else if (id == R.id.action_remove) {
-                // Remove stocks
-                if (longClickListener != null) {
-                    longClickListener.onRemoveInUsedClick(inventoryList.get(position));
-                }
-                return true;
-            } else if (id == R.id.action_subtract) {
-                // Subtract stocks and add on in use
-                if (longClickListener != null) {
-                    longClickListener.onUseClick(inventoryList.get(position));
-                }
-                return true;
-            } else if (id == R.id.action_delete) {
-                // Call the delete action
-                if (longClickListener != null) {
-                    longClickListener.onDeleteClick(inventoryList.get(position));
-                }
-                return true;
-            } else if (id == R.id.action_removestocks) {
-                // Call the remove stocks action
-                if (longClickListener != null) {
-                    longClickListener.onRemoveStockClick(inventoryList.get(position)); // Assuming you want to call onRemoveinUsed here
-                }
-                return true;
-            } else {
-                return false;
-            }
-        });
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            DocumentReference userRef = db.collection("users").document(userId);
 
-        popupMenu.show();
+            userRef.get().addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot.exists()) {
+                    Map<String, Object> permissions = (Map<String, Object>) documentSnapshot.get("permissions");
+
+                    boolean editInventory = permissions != null && (boolean) permissions.getOrDefault("editInventory", false);
+                    boolean deleteInventory = permissions != null && (boolean) permissions.getOrDefault("deleteInventory", false);
+
+                    menu.findItem(R.id.action_edit).setEnabled(editInventory);
+                    menu.findItem(R.id.action_add).setEnabled(editInventory);
+                    menu.findItem(R.id.action_remove).setEnabled(editInventory);
+                    menu.findItem(R.id.action_subtract).setEnabled(editInventory);
+                    menu.findItem(R.id.action_removestocks).setEnabled(editInventory);
+                    menu.findItem(R.id.action_delete).setEnabled(deleteInventory);
+
+                    popupMenu.setOnMenuItemClickListener(menuItem -> {
+                        int id = menuItem.getItemId();
+
+                        if (id == R.id.action_edit) {
+                            // Call the edit action
+                            if (longClickListener != null) {
+                                longClickListener.onEditClick(inventoryList.get(position));
+                            }
+                            return true;
+                        } else if (id == R.id.action_add) {
+                            // Add stocks
+                            if (longClickListener != null) {
+                                longClickListener.onAddClick(inventoryList.get(position));
+                            }
+                            return true;
+                        } else if (id == R.id.action_remove) {
+                            // Remove stocks
+                            if (longClickListener != null) {
+                                longClickListener.onRemoveInUsedClick(inventoryList.get(position));
+                            }
+                            return true;
+                        } else if (id == R.id.action_subtract) {
+                            // Subtract stocks and add on in use
+                            if (longClickListener != null) {
+                                longClickListener.onUseClick(inventoryList.get(position));
+                            }
+                            return true;
+                        } else if (id == R.id.action_delete) {
+                            // Call the delete action
+                            if (longClickListener != null) {
+                                longClickListener.onDeleteClick(inventoryList.get(position));
+                            }
+                            return true;
+                        } else if (id == R.id.action_removestocks) {
+                            // Call the remove stocks action
+                            if (longClickListener != null) {
+                                longClickListener.onRemoveStockClick(inventoryList.get(position)); // Assuming you want to call onRemoveinUsed here
+                            }
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    });
+
+                    popupMenu.show();
+                }
+            });
+        }
     }
 
 

@@ -38,7 +38,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -534,41 +537,59 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
 
         Menu menu = popupMenu.getMenu();
 
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
-        // Set a listener for menu item clicks
-        popupMenu.setOnMenuItemClickListener(menuItem -> {
-            int id = menuItem.getItemId();
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            DocumentReference userRef = db.collection("users").document(userId);
 
-            if (id == R.id.action_edit) {
-                // Call the edit action
-                showEditEmployeeDialog(employee);
-                return true;
-            } else if (id == R.id.action_delete) {
-                // Create a confirmation dialog
-                new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
-                        .setTitle("Delete Employee")
-                        .setMessage("Are you sure you want to delete this employee?")
-                        .setPositiveButton("Yes", (dialog, which) -> {
-                            // Call the delete action if user confirms
-                            deleteEmployee(employee);
-                            Toast.makeText(getActivity(), "Employee deleted successfully", Toast.LENGTH_SHORT).show();
-                        })
-                        .setNegativeButton("No", (dialog, which) -> {
-                            // Dismiss the dialog if user cancels
-                            dialog.dismiss();
-                        })
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .show();
+            userRef.get().addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot.exists()) {
+                    Map<String, Object> permissions = (Map<String, Object>) documentSnapshot.get("permissions");
 
-                return true;
-            }
-            else {
-                return false; // Unhandled item
-            }
-        });
+                    boolean editSalary = permissions != null && (boolean) permissions.getOrDefault("editSalary", false);
+                    boolean deleteSalary = permissions != null && (boolean) permissions.getOrDefault("deleteSalary", false);
 
-        // Show the popup menu
-        popupMenu.show();
+                    // Disable options if the user does not have permission
+                    popupMenu.getMenu().findItem(R.id.action_edit).setEnabled(editSalary);
+                    popupMenu.getMenu().findItem(R.id.action_delete).setEnabled(deleteSalary);
+
+                    popupMenu.setOnMenuItemClickListener(menuItem -> {
+                        int id = menuItem.getItemId();
+
+                        if (id == R.id.action_edit) {
+                            // Call the edit action
+                            showEditEmployeeDialog(employee);
+                            return true;
+                        } else if (id == R.id.action_delete) {
+                            // Create a confirmation dialog
+                            new AlertDialog.Builder(getActivity(), R.style.AlertDialogTheme)
+                                    .setTitle("Delete Employee")
+                                    .setMessage("Are you sure you want to delete this employee?")
+                                    .setPositiveButton("Yes", (dialog, which) -> {
+                                        // Call the delete action if user confirms
+                                        deleteEmployee(employee);
+                                        Toast.makeText(getActivity(), "Employee deleted successfully", Toast.LENGTH_SHORT).show();
+                                    })
+                                    .setNegativeButton("No", (dialog, which) -> {
+                                        // Dismiss the dialog if user cancels
+                                        dialog.dismiss();
+                                    })
+                                    .setIcon(android.R.drawable.ic_dialog_alert)
+                                    .show();
+
+                            return true;
+                        }
+                        else {
+                            return false; // Unhandled item
+                        }
+                    });
+
+                    // Show the popup menu
+                    popupMenu.show();
+                }
+            });
+        }
     }
 
     private void showEditEmployeeDialog(Employee employee) {

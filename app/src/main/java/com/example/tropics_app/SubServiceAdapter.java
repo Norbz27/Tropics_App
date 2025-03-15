@@ -11,6 +11,12 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 import java.util.List;
 import java.util.Map;
 
@@ -124,27 +130,49 @@ public class SubServiceAdapter extends RecyclerView.Adapter<SubServiceAdapter.Vi
         menu.findItem(R.id.action_removestocks).setVisible(false);  // To hide 'subtract'
         menu.findItem(R.id.action_remove).setVisible(false);  // To hide ''
 
-        popupMenu.setOnMenuItemClickListener(menuItem -> {
-            int id = menuItem.getItemId();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
-            if (id == R.id.action_edit) {
-                // Call the edit action
-                if (longClickListener != null) {
-                    longClickListener.onEditClick(serviceList.get(position));
-                }
-                return true;
-            } else if (id == R.id.action_delete) {
-                // Call the delete action
-                if (longClickListener != null) {
-                    longClickListener.onDeleteClick(serviceList.get(position));
-                }
-                return true;
-            } else {
-                return false;
-            }
-        });
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            DocumentReference userRef = db.collection("users").document(userId);
 
-        popupMenu.show();
+            userRef.get().addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot.exists()) {
+                    Map<String, Object> permissions = (Map<String, Object>) documentSnapshot.get("permissions");
+
+                    boolean editService = permissions != null && (boolean) permissions.getOrDefault("editService", false);
+                    boolean deleteService = permissions != null && (boolean) permissions.getOrDefault("deleteService", false);
+
+                    menu.findItem(R.id.action_edit).setEnabled(editService);
+                    menu.findItem(R.id.action_delete).setEnabled(deleteService);
+
+                    popupMenu.setOnMenuItemClickListener(menuItem -> {
+                        int id = menuItem.getItemId();
+
+                        if (id == R.id.action_edit) {
+                            // Call the edit action
+                            if (longClickListener != null) {
+                                longClickListener.onEditClick(serviceList.get(position));
+                            }
+                            return true;
+                        } else if (id == R.id.action_delete) {
+                            // Call the delete action
+                            if (longClickListener != null) {
+                                longClickListener.onDeleteClick(serviceList.get(position));
+                            }
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    });
+
+                    popupMenu.show();
+                }
+            });
+        }
+
+
     }
 
     // Interface for handling long-clicks with edit and delete actions
