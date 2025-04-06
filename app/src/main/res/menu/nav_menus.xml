@@ -53,7 +53,11 @@
             android:icon="@drawable/outline_face_retouching_natural_24"
             android:fontFamily="@font/manrope"
             android:title="Services"/>
-
+        <item
+            android:id="@+id/nav_sales_tracking"
+            android:icon="@drawable/baseline_bar_chart_24"
+            android:fontFamily="@font/manrope"
+            android:title="Sales Chart"/>
         <item
             android:id="@+id/nav_accounts"
             android:icon="@drawable/outline_person_24"

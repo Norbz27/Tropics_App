@@ -55,11 +55,14 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
             String userId = currentUser.getUid();
             Menu menu = navigationView.getMenu();
             MenuItem accountsMenuItem = menu.findItem(R.id.nav_accounts);
+            MenuItem accountsMenuItem2 = menu.findItem(R.id.nav_sales_tracking);
 
             if (userId.equals("bRbfirsBN5VT0AAzUeClRr84keY2") || userId.equals("xWFc9btObrXgCZjlFcENhUtCpfu2")) {
                 accountsMenuItem.setVisible(true);
+                accountsMenuItem2.setVisible(true);
             }else {
                 accountsMenuItem.setVisible(false);
+                accountsMenuItem2.setVisible(false);
             }
         }
 
@@ -112,6 +115,10 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         }
         else if (id == R.id.nav_accounts) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new AccountsFragment()).commit();
+            getSupportActionBar().setTitle("Accounts");
+        }
+        else if (id == R.id.nav_sales_tracking) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new SalesTrackingFragment()).commit();
             getSupportActionBar().setTitle("Accounts");
         }
         else if (id == R.id.nav_sign_out) {
