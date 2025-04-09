@@ -1,6 +1,8 @@
 package com.example.tropics_app;
 
 import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
@@ -18,9 +20,13 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -32,6 +38,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
@@ -54,10 +61,10 @@ import java.util.Set;
 public class SalesTrackingFragment extends Fragment {
     private Button btnDaily, btnMonthly;
     private Spinner monthSpinner, yearSpinner;
-    private LineChart lineChart;
+    private BarChart barChart;
     private boolean isDaily = true;
     private int targetMonth, targetYear;
-    private TextView tvAverage, tvHigh, tvLow;
+    private TextView tvAverage, tvHigh, tvLow, tvTotal;
     private List<Appointment> appointmentsList;
     private FirebaseFirestore db;
     @Override
@@ -75,13 +82,14 @@ public class SalesTrackingFragment extends Fragment {
         View view =  inflater.inflate(R.layout.fragment_sales_tracking, container, false);
 
         tvAverage = view.findViewById(R.id.tvAverage);
+        tvTotal = view.findViewById(R.id.tvTotal);
         tvHigh = view.findViewById(R.id.tvHigh);
         tvLow = view.findViewById(R.id.tvLow);
 
         // Find LineChart and Buttons from layout
-        lineChart = view.findViewById(R.id.lineChart);
-        Button btnDaily = view.findViewById(R.id.btnDaily);
-        Button btnMonthly = view.findViewById(R.id.btnMonthly);
+        barChart = view.findViewById(R.id.barChart);
+        btnDaily = view.findViewById(R.id.btnDaily);
+        btnMonthly = view.findViewById(R.id.btnMonthly);
         // Inside your Fragment or Activity
         monthSpinner = view.findViewById(R.id.month_spinner);
         yearSpinner = view.findViewById(R.id.year_spinner);
@@ -216,234 +224,300 @@ public class SalesTrackingFragment extends Fragment {
         }
         return -1; // Return -1 if not found (error case)
     }
-
     private void setDailyData(List<Appointment> appointmentsList, int targetMonth, int targetYear) {
-        ArrayList<Entry> dailyEntries = new ArrayList<>();
+        ArrayList<BarEntry> dailyEntries = new ArrayList<>();
         Map<Integer, Float> dailySales = new HashMap<>();
 
         float totalSales = 0f;
         int daysWithSales = 0;
 
-        // Variables to track highest and lowest sales
         float highestSales = Float.MIN_VALUE;
         float lowestSales = Float.MAX_VALUE;
 
-        // Get the current date
         Calendar today = Calendar.getInstance();
         int currentDay = today.get(Calendar.DAY_OF_MONTH);
         int currentMonth = today.get(Calendar.MONTH);
         int currentYear = today.get(Calendar.YEAR);
 
-        // Group appointments by day of the target month and sum the sales
-        Calendar calendar = Calendar.getInstance(); // Initialize calendar
+        Calendar calendar = Calendar.getInstance();
         for (Appointment appointment : appointmentsList) {
-            Date date = appointment.getClientDateTimeAsDate(); // Use the updated method
+            Date date = appointment.getClientDateTimeAsDate();
             if (date != null) {
                 calendar.setTime(date);
-                int month = calendar.get(Calendar.MONTH); // Months are zero-based in Calendar
                 int year = calendar.get(Calendar.YEAR);
-                int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
+                int month = calendar.get(Calendar.MONTH);
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-                // Only consider sales from the past and today of the current month and year
+                // Check if the appointment is in the target month and year and before or on today
                 if (month == targetMonth && year == targetYear &&
                         (year < currentYear || (year == currentYear && month < currentMonth) ||
-                                (year == currentYear && month == currentMonth && dayOfMonth <= currentDay))) {
+                                (year == currentYear && month == currentMonth && day <= currentDay))) {
 
-                    float sales = dailySales.getOrDefault(dayOfMonth, 0f);
-                    float newSales = sales + (float) appointment.getTotalPrice(); // Convert double to float
-                    dailySales.put(dayOfMonth, newSales); // Update sales for the day
-                    totalSales += (float) appointment.getTotalPrice();
-                    daysWithSales++;
+                    List<Map<String, Object>> services = appointment.getServices();
+                    for (Map<String, Object> service : services) {
+                        String assignedEmployee = (String) service.get("assignedEmployee");
+                        if (assignedEmployee == null || assignedEmployee.equals("None")) {
+                            continue;
+                        }
 
-                    // Track highest and lowest sales
-                    if (newSales > highestSales) highestSales = newSales;
-                    if (newSales < lowestSales) lowestSales = newSales;
+                        double totalPriceForParentService = (Double) service.get("servicePrice");
+
+                        List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                        if (subServices != null) {
+                            for (Map<String, Object> subService : subServices) {
+                                Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                totalPriceForParentService += subServicePrice;
+                            }
+                        }
+
+                        // Update the daily sales map
+                        float sales = dailySales.getOrDefault(day, 0f);
+                        float newSales = sales + (float) totalPriceForParentService;
+                        dailySales.put(day, newSales);
+                        totalSales += (float) totalPriceForParentService;
+
+                        // If this day has sales, count it
+                        if (sales == 0f) {
+                            daysWithSales++;
+                        }
+
+                        // Track highest sales
+                        if (newSales > highestSales) highestSales = newSales;
+                    }
                 }
             }
         }
 
-        // Generate entries for all days of the current month
-        for (int day = 1; day <= calendar.getActualMaximum(Calendar.DAY_OF_MONTH); day++) {
-            float sales = dailySales.getOrDefault(day, 0f); // Default to 0 if no sales
-            dailyEntries.add(new Entry(day, sales));
+        // Recalculate the correct lowest sales
+        lowestSales = Float.MAX_VALUE;
+        for (Map.Entry<Integer, Float> entry : dailySales.entrySet()) {
+            float sales = entry.getValue();
+            if (sales > 0f && sales < lowestSales) {
+                lowestSales = sales;
+            }
         }
 
+        // If no valid sales exist, set lowestSales to 0
+        if (lowestSales == Float.MAX_VALUE) {
+            lowestSales = 0f;
+        }
+
+        // Determine the number of days in the target month
+        int daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        // Create a list of bar colors based on the gradient
+        List<Integer> barColors = new ArrayList<>();
+        for (int day = 1; day <= daysInMonth; day++) {
+            float sales = dailySales.getOrDefault(day, 0f);
+            dailyEntries.add(new BarEntry(day, sales));
+
+            // For gradient, use LinearGradient for the dataset
+            Shader shader = new LinearGradient(0f, 0f, 0f, 300f,
+                    ContextCompat.getColor(requireContext(), R.color.orange), // Start color
+                    ContextCompat.getColor(requireContext(), R.color.yellow), // End color
+                    Shader.TileMode.MIRROR); // Optional TileMode for repetition
+        }
+
+        // Format the currency
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
+        currencyFormat.setMaximumFractionDigits(2);
+        currencyFormat.setMinimumFractionDigits(2);
+
+        // Calculate and display the daily average sales based on actual days with sales
         float averageSales = (daysWithSales > 0) ? totalSales / daysWithSales : 0f;
-        tvAverage.setText("₱" + String.format("%.2f", averageSales));
-        tvHigh.setText("Highest Sales: ₱" + String.format("%.2f", highestSales));
-        tvLow.setText("Lowest Sales: ₱" + String.format("%.2f", lowestSales));
-        Log.d("SalesFragment", "Average Daily Sales: " + averageSales);
+        tvAverage.setText(currencyFormat.format(averageSales));
+        tvTotal.setText(currencyFormat.format(totalSales));
+        tvHigh.setText("Highest Sales: " + currencyFormat.format(highestSales));
+        tvLow.setText("Lowest Sales: " + currencyFormat.format(lowestSales));
 
-        LineDataSet dataSet = new LineDataSet(dailyEntries, null); // Set label to null
-        dataSet.setColor(Color.parseColor("#FFA500")); // Set line color to orange
-        dataSet.setCircleColor(Color.parseColor("#FFA500")); // Set circle color to orange
-        dataSet.setLineWidth(2f);
-        dataSet.setDrawCircles(true);
+        // Set up the bar chart data
+        BarDataSet dataSet = new BarDataSet(dailyEntries, null);
+
+        // Apply gradient shader
+        dataSet.setGradientColor(ContextCompat.getColor(requireContext(), R.color.orange), ContextCompat.getColor(requireContext(), R.color.yellow));
+
         dataSet.setDrawValues(false);
-        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
 
-        // Set the fill drawable
-        Drawable gradientDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.gradient_fill);
-        dataSet.setDrawFilled(true);
-        dataSet.setFillDrawable(gradientDrawable);
+        BarData barData = new BarData(dataSet);
+        barData.setBarWidth(0.9f);
 
-        LineData lineData = new LineData(dataSet);
-        lineChart.setData(lineData);
+        barChart.setData(barData);
+        barChart.setMarker(new CustomMarkerView(requireContext(), R.layout.custom_marker_view));
+        barChart.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray));
+        barChart.setFitBars(true);
+        barChart.getLegend().setEnabled(false);
+        barChart.getDescription().setEnabled(false);
 
-        CustomMarkerView markerView = new CustomMarkerView(requireContext(), R.layout.custom_marker_view); // Replace with your layout resource
-        lineChart.setMarker(markerView);
-
-        // Customize chart appearance
-        lineChart.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray)); // Set chart background color
-
-        // Hide the legend and description
-        lineChart.getLegend().setEnabled(false);
-        lineChart.getDescription().setEnabled(false);
-
-        // Set X-axis labels to display in mm-dd format
-        XAxis xAxis = lineChart.getXAxis();
+        // Set up the X-Axis
+        XAxis xAxis = barChart.getXAxis();
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
-                int day = (int) value;
-                // Format the date as mm-dd
-                String formattedDate = String.format("%02d-%02d", targetMonth + 1, day); // Add 1 to month for display
-                return formattedDate; // Return the formatted date string
+                return String.format("%02d-%02d", targetMonth + 1, (int)value);
             }
         });
-
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setGranularity(1f);
-        xAxis.setLabelCount(calendar.getActualMaximum(Calendar.DAY_OF_MONTH)); // Ensure all month labels are displayed
-        xAxis.setDrawLabels(true); // Enable drawing labels
-        xAxis.setTextColor(Color.WHITE); // Set X-axis text color to white
-        xAxis.setAxisMinimum(1f); // Set the minimum value of X-axis to 1 (first day of the month)
-        xAxis.setAxisMaximum(calendar.getActualMaximum(Calendar.DAY_OF_MONTH)); // Set the maximum value of X-axis
+        xAxis.setLabelCount(daysInMonth);
+        xAxis.setTextColor(Color.WHITE);
+        xAxis.setAxisMaximum(daysInMonth);
+        xAxis.setAxisMinimum(0.5f);
 
-        // Customize Y-axis
-        YAxis leftAxis = lineChart.getAxisLeft();
-        leftAxis.setTextColor(Color.WHITE); // Set Y-axis text color to white
-        lineChart.getAxisRight().setEnabled(false);
+        // Set up the Y-Axis
+        YAxis leftAxis = barChart.getAxisLeft();
+        leftAxis.setTextColor(Color.WHITE);
+        leftAxis.setAxisMinimum(0f); // Force Y-axis to start at 0
 
-        lineChart.invalidate(); // Refresh the chart
+        barChart.getAxisRight().setEnabled(false);
+
+        barChart.invalidate();
     }
 
 
     private void setMonthlyData(List<Appointment> appointmentsList, int selectedYear) {
-        ArrayList<Entry> monthlyEntries = new ArrayList<>();
+        ArrayList<BarEntry> monthlyEntries = new ArrayList<>();
         Map<Integer, Float> monthlySales = new HashMap<>();
 
         float totalSales = 0f;
         int monthsWithSales = 0;
 
-        // Variables to track highest and lowest sales
         float highestSales = Float.MIN_VALUE;
         float lowestSales = Float.MAX_VALUE;
 
-        // Get the current date
         Calendar today = Calendar.getInstance();
-        int currentMonth = today.get(Calendar.MONTH) + 1; // Calendar.MONTH is zero-based
+        int currentMonth = today.get(Calendar.MONTH) + 1;
         int currentYear = today.get(Calendar.YEAR);
 
-        // Initialize sales for all 12 months
+        // Initialize monthly sales
         for (int month = 1; month <= 12; month++) {
-            monthlySales.put(month, 0f); // Initialize all months to 0 sales
+            monthlySales.put(month, 0f);
         }
 
-        // Group appointments by month and sum the sales only for the selected year
         Calendar calendar = Calendar.getInstance();
         for (Appointment appointment : appointmentsList) {
-            Date date = appointment.getClientDateTimeAsDate(); // Use the updated method
+            Date date = appointment.getClientDateTimeAsDate();
             if (date != null) {
                 calendar.setTime(date);
-                int year = calendar.get(Calendar.YEAR); // Get the year of the appointment
-                int month = calendar.get(Calendar.MONTH) + 1; // Calendar.MONTH is zero-based
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH) + 1;
 
-                // Only include appointments from the selected year and up to the current month
                 if (year == selectedYear) {
-                    float sales = monthlySales.get(month);
-                    float newSales = sales + (float) appointment.getTotalPrice(); // Convert double to float
-                    monthlySales.put(month, newSales); // Update sales for the month
-                    totalSales += (float) appointment.getTotalPrice();
-                    monthsWithSales++;
+                    List<Map<String, Object>> services = appointment.getServices();
+                    for (Map<String, Object> service : services) {
+                        String assignedEmployee = (String) service.get("assignedEmployee");
+                        if (assignedEmployee == null || assignedEmployee.equals("None")) {
+                            continue;
+                        }
 
-                    // Track highest and lowest sales
-                    if (newSales > highestSales) highestSales = newSales;
-                    if (newSales < lowestSales) lowestSales = newSales;
+                        double totalPriceForParentService = (Double) service.get("servicePrice");
+
+                        List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                        if (subServices != null) {
+                            for (Map<String, Object> subService : subServices) {
+                                Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                totalPriceForParentService += subServicePrice;
+                            }
+                        }
+
+                        float sales = monthlySales.get(month);
+                        float newSales = sales + (float) totalPriceForParentService;
+                        monthlySales.put(month, newSales);
+                        totalSales += (float) totalPriceForParentService;
+
+                        if (newSales > highestSales) highestSales = newSales;
+                        if (newSales < lowestSales) lowestSales = newSales;
+                    }
                 }
             }
         }
 
-        // Convert monthly sales map to chart entries
-        for (int month = 1; month <= 12; month++) {
-            // Add sales values to entries, using 0 for future months
-            float salesValue = (month <= currentMonth || selectedYear < currentYear) ? monthlySales.get(month) : 0f;
-            monthlyEntries.add(new Entry(month, salesValue));
+        // Recalculate monthsWithSales to count only months with actual sales
+        for (Map.Entry<Integer, Float> entry : monthlySales.entrySet()) {
+            if (entry.getValue() > 0f) {
+                monthsWithSales++;
+            }
         }
 
+        // Recalculate the correct lowest sales
+        lowestSales = Float.MAX_VALUE;
+        for (Map.Entry<Integer, Float> entry : monthlySales.entrySet()) {
+            float sales = entry.getValue();
+            if (sales > 0f && sales < lowestSales) {
+                lowestSales = sales;
+            }
+        }
+
+        // If no valid sales exist, set lowestSales to 0
+        if (lowestSales == Float.MAX_VALUE) {
+            lowestSales = 0f;
+        }
+
+        // Create the Bar Entries for each month
+        for (int month = 1; month <= 12; month++) {
+            float salesValue = (month <= currentMonth || selectedYear < currentYear) ? monthlySales.get(month) : 0f;
+            monthlyEntries.add(new BarEntry(month, salesValue));
+        }
+
+        // Calculate the average sales
         float averageSales = (monthsWithSales > 0) ? totalSales / monthsWithSales : 0f;
-        tvAverage.setText("₱" + String.format("%.2f", averageSales));
-        tvHigh.setText("Highest Sales: ₱" + String.format("%.2f", highestSales));
-        tvLow.setText("Lowest Sales: ₱" + String.format("%.2f", lowestSales));
-        Log.d("SalesFragment", "Average Monthly Sales: " + averageSales); // Log the average sales
 
+        // Update UI with results
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
+        currencyFormat.setMaximumFractionDigits(2);
+        currencyFormat.setMinimumFractionDigits(2);
 
-        LineDataSet dataSet = new LineDataSet(monthlyEntries, null); // Set label to null
-        dataSet.setColor(Color.parseColor("#FFA500")); // Set line color to orange
-        dataSet.setCircleColor(Color.parseColor("#FFA500")); // Set circle color to orange
-        dataSet.setLineWidth(2f);
-        dataSet.setDrawCircles(true);
+        tvTotal.setText(currencyFormat.format(totalSales));
+        tvAverage.setText(currencyFormat.format(averageSales));
+        tvHigh.setText("Highest Sales: " + currencyFormat.format(highestSales));
+        tvLow.setText("Lowest Sales: " + currencyFormat.format(lowestSales));
+
+        BarDataSet dataSet = new BarDataSet(monthlyEntries, null);
+
+        // Create a gradient using color resources
+        Shader shader = new LinearGradient(0f, 0f, 0f, 300f,
+                ContextCompat.getColor(requireContext(), R.color.orange),
+                ContextCompat.getColor(requireContext(), R.color.yellow),
+                Shader.TileMode.MIRROR);
+        dataSet.setGradientColor(ContextCompat.getColor(requireContext(), R.color.orange), ContextCompat.getColor(requireContext(), R.color.yellow));
+
+        // Set properties for the dataset
         dataSet.setDrawValues(false);
-        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
 
-        // Set the fill drawable
-        Drawable gradientDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.gradient_fill);
-        dataSet.setDrawFilled(true);
-        dataSet.setFillDrawable(gradientDrawable);
+        BarData barData = new BarData(dataSet);
+        barData.setBarWidth(0.9f);
 
-        LineData lineData = new LineData(dataSet);
-        lineChart.setData(lineData);
+        barChart.setData(barData);
+        barChart.setMarker(new CustomMarkerView(requireContext(), R.layout.custom_marker_view));
+        barChart.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray));
+        barChart.setFitBars(true);
+        barChart.getLegend().setEnabled(false);
+        barChart.getDescription().setEnabled(false);
 
-        CustomMarkerView markerView = new CustomMarkerView(requireContext(), R.layout.custom_marker_view); // Replace with your layout resource
-        lineChart.setMarker(markerView);
-
-        // Customize chart appearance
-        lineChart.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray)); // Set chart background color
-
-        // Hide the legend
-        lineChart.getLegend().setEnabled(false);
-
-        // Hide the description
-        lineChart.getDescription().setEnabled(false);
-
-        // Set X-axis labels to display all months
-        XAxis xAxis = lineChart.getXAxis();
+        XAxis xAxis = barChart.getXAxis();
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
-                int month = (int) value;
-                if (month < 1 || month > 12) {
-                    return ""; // Return an empty string for invalid values
-                }
-                String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-                return monthNames[month - 1]; // Adjust for zero-based index
+                String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+                if (value >= 1 && value <= 12) return months[(int)value - 1];
+                return "";
             }
         });
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setGranularity(1f); // Ensure that each month is shown
-        xAxis.setLabelCount(12); // Ensure all month labels are displayed
-        xAxis.setDrawLabels(true); // Enable drawing labels
-        xAxis.setTextColor(Color.WHITE); // Set X-axis text color to white
-        xAxis.setAxisMinimum(1f); // Set the minimum value of X-axis to 1 (January)
-        xAxis.setAxisMaximum(12f); // Set the maximum value of X-axis to 12 (December)
+        xAxis.setGranularity(1f);
+        xAxis.setLabelCount(12); // or day count
+        xAxis.setDrawLabels(true);
+        xAxis.setTextColor(Color.WHITE);
+        xAxis.setAxisMinimum(0.5f);
+        xAxis.setAxisMaximum(12.5f);
 
-        // Customize Y-axis
-        YAxis leftAxis = lineChart.getAxisLeft();
-        leftAxis.setTextColor(Color.WHITE); // Set Y-axis text color to white
-        lineChart.getAxisRight().setEnabled(false);
+        YAxis leftAxis = barChart.getAxisLeft();
+        leftAxis.setTextColor(Color.WHITE);
+        leftAxis.setAxisMinimum(0f); // <-- Add this line to make sure it starts from 0
 
-        lineChart.invalidate(); // Refresh the chart
+        barChart.getAxisRight().setEnabled(false);
 
-
+        barChart.invalidate();
     }
+
 }

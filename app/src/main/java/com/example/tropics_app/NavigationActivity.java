@@ -119,7 +119,11 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
         }
         else if (id == R.id.nav_sales_tracking) {
             getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new SalesTrackingFragment()).commit();
-            getSupportActionBar().setTitle("Accounts");
+            getSupportActionBar().setTitle("Sales Chart");
+        }
+        else if (id == R.id.nav_employee_payroll) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new SalesTrackingFragment()).commit();
+            getSupportActionBar().setTitle("Payroll History");
         }
         else if (id == R.id.nav_sign_out) {
             mAuth.signOut();

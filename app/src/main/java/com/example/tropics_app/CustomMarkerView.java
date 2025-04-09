@@ -7,6 +7,9 @@ import com.github.mikephil.charting.components.MarkerView;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.highlight.Highlight;
 
+import java.text.NumberFormat;
+import java.util.Locale;
+
 public class CustomMarkerView extends MarkerView implements CustomMarkerView2 {
 
     private TextView tvContent;
@@ -20,7 +23,10 @@ public class CustomMarkerView extends MarkerView implements CustomMarkerView2 {
     public void refreshContent(Entry e, Highlight highlight) {
         // Get the y-value for the entry
         float sales = e.getY();
-        tvContent.setText("₱" + String.format("%.2f", sales));
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
+        currencyFormat.setMaximumFractionDigits(2);
+        currencyFormat.setMinimumFractionDigits(2);
+        tvContent.setText(currencyFormat.format(sales));
         super.refreshContent(e, highlight);
     }
 
