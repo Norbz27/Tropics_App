@@ -8,6 +8,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
@@ -18,7 +19,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
@@ -67,11 +70,23 @@ public class SalesTrackingFragment extends Fragment {
     private TextView tvAverage, tvHigh, tvLow, tvTotal;
     private List<Appointment> appointmentsList;
     private FirebaseFirestore db;
+    private List<Employee> employeeList;
+    private List<Expenses> expensesList;
+    private List<Gcash> gcashList;
+    private List<Funds> fundsList;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         db = FirebaseFirestore.getInstance();
         appointmentsList = new ArrayList<>();
+        employeeList = new ArrayList<>();
+        expensesList = new ArrayList<>();
+        gcashList = new ArrayList<>();
+        fundsList = new ArrayList<>();
+        loadEmployeeData();
+        loadExpensesData();
+        loadFundsData();
+        loadGcashData();
         fetchAppointmentData();
     }
 
@@ -227,10 +242,13 @@ public class SalesTrackingFragment extends Fragment {
     private void setDailyData(List<Appointment> appointmentsList, int targetMonth, int targetYear) {
         ArrayList<BarEntry> dailyEntries = new ArrayList<>();
         Map<Integer, Float> dailySales = new HashMap<>();
+        Map<Integer, Float> dailyGcash = new HashMap<>();
+        Map<Integer, Float> dailyFunds = new HashMap<>();
+        Map<Integer, Float> dailyExpenses = new HashMap<>();
+        Map<Integer, Float> dailyTherapistCommissions = new HashMap<>();
 
         float totalSales = 0f;
         int daysWithSales = 0;
-
         float highestSales = Float.MIN_VALUE;
         float lowestSales = Float.MAX_VALUE;
 
@@ -240,6 +258,16 @@ public class SalesTrackingFragment extends Fragment {
         int currentYear = today.get(Calendar.YEAR);
 
         Calendar calendar = Calendar.getInstance();
+
+        // Initialize daily maps
+        for (int day = 1; day <= 31; day++) {
+            dailySales.put(day, 0f);
+            dailyExpenses.put(day, 0f);
+            dailyTherapistCommissions.put(day, 0f);
+            dailyGcash.put(day, 0f);
+            dailyFunds.put(day, 0f);
+        }
+
         for (Appointment appointment : appointmentsList) {
             Date date = appointment.getClientDateTimeAsDate();
             if (date != null) {
@@ -248,7 +276,6 @@ public class SalesTrackingFragment extends Fragment {
                 int month = calendar.get(Calendar.MONTH);
                 int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-                // Check if the appointment is in the target month and year and before or on today
                 if (month == targetMonth && year == targetYear &&
                         (year < currentYear || (year == currentYear && month < currentMonth) ||
                                 (year == currentYear && month == currentMonth && day <= currentDay))) {
@@ -270,52 +297,99 @@ public class SalesTrackingFragment extends Fragment {
                             }
                         }
 
-                        // Update the daily sales map
-                        float sales = dailySales.getOrDefault(day, 0f);
-                        float newSales = sales + (float) totalPriceForParentService;
-                        dailySales.put(day, newSales);
-                        totalSales += (float) totalPriceForParentService;
+                        // Update daily sales
+                        float updatedSales = dailySales.get(day) + (float) totalPriceForParentService;
+                        dailySales.put(day, updatedSales);
 
-                        // If this day has sales, count it
-                        if (sales == 0f) {
-                            daysWithSales++;
+                        // Therapist commission
+                        Employee employee = findEmployeeByName(assignedEmployee);
+                        if (employee != null) {
+                            String therapistRole = employee.getTherapist();
+                            if ("Therapist".equals(therapistRole) || employee.getSalary() == 0) {
+                                double commissionRate = getCommissionRateByDate(employee, new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()).format(date));
+                                double commission = (totalPriceForParentService * commissionRate) / 100.0;
+                                float updatedCommission = dailyTherapistCommissions.get(day) + (float) commission;
+                                dailyTherapistCommissions.put(day, updatedCommission);
+                            }
                         }
-
-                        // Track highest sales
-                        if (newSales > highestSales) highestSales = newSales;
                     }
                 }
             }
         }
 
-        // Recalculate the correct lowest sales
-        lowestSales = Float.MAX_VALUE;
-        for (Map.Entry<Integer, Float> entry : dailySales.entrySet()) {
-            float sales = entry.getValue();
-            if (sales > 0f && sales < lowestSales) {
-                lowestSales = sales;
+        // Calculate expenses per day
+        for (Expenses expense : expensesList) {
+            Date date = expense.getParsedDate();
+            if (date != null) {
+                calendar.setTime(date);
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH);
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+                if (month == targetMonth && year == targetYear) {
+                    float updatedExpense = dailyExpenses.getOrDefault(day, 0f) + (float) expense.getAmount();
+                    dailyExpenses.put(day, updatedExpense);
+                }
             }
         }
 
-        // If no valid sales exist, set lowestSales to 0
-        if (lowestSales == Float.MAX_VALUE) {
-            lowestSales = 0f;
+        for (Gcash gcash : gcashList) {
+            Date date = gcash.getParsedDate();
+            if (date != null) {
+                calendar.setTime(date);
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH);
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+                if (month == targetMonth && year == targetYear) {
+                    float updatedExpense = dailyGcash.getOrDefault(day, 0f) + (float) gcash.getAmount();
+                    dailyGcash.put(day, updatedExpense);
+                }
+            }
         }
 
-        // Determine the number of days in the target month
+        for (Funds funds : fundsList) {
+            Date date = funds.getParsedDate();
+            if (date != null) {
+                calendar.setTime(date);
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH);
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+                if (month == targetMonth && year == targetYear) {
+                    float updatedExpense = dailyFunds.getOrDefault(day, 0f) + (float) funds.getAmount();
+                    dailyFunds.put(day, updatedExpense);
+                }
+            }
+        }
+
+
+        // Get actual number of days in the target month
+        calendar.set(Calendar.MONTH, targetMonth);
+        calendar.set(Calendar.YEAR, targetYear);
         int daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-        // Create a list of bar colors based on the gradient
-        List<Integer> barColors = new ArrayList<>();
         for (int day = 1; day <= daysInMonth; day++) {
-            float sales = dailySales.getOrDefault(day, 0f);
-            dailyEntries.add(new BarEntry(day, sales));
+            float grossSales = dailySales.getOrDefault(day, 0f);
+            float expenses = dailyExpenses.getOrDefault(day, 0f);
+            float gcash = dailyGcash.getOrDefault(day, 0f);
+            float funds = dailyFunds.getOrDefault(day, 0f);
+            float commissions = dailyTherapistCommissions.getOrDefault(day, 0f);
+            float netDeductions = gcash + expenses + commissions;
+            float netSales = (grossSales + funds) - netDeductions;
 
-            // For gradient, use LinearGradient for the dataset
-            Shader shader = new LinearGradient(0f, 0f, 0f, 300f,
-                    ContextCompat.getColor(requireContext(), R.color.orange), // Start color
-                    ContextCompat.getColor(requireContext(), R.color.yellow), // End color
-                    Shader.TileMode.MIRROR); // Optional TileMode for repetition
+            dailyEntries.add(new BarEntry(day, netSales));
+
+            if (netSales > 0f) {
+                daysWithSales++;
+                totalSales += netSales;
+                if (netSales > highestSales) highestSales = netSales;
+                if (netSales < lowestSales) lowestSales = netSales;
+            }
+        }
+
+        if (lowestSales == Float.MAX_VALUE) {
+            lowestSales = 0f;
         }
 
         // Format the currency
@@ -323,19 +397,14 @@ public class SalesTrackingFragment extends Fragment {
         currencyFormat.setMaximumFractionDigits(2);
         currencyFormat.setMinimumFractionDigits(2);
 
-        // Calculate and display the daily average sales based on actual days with sales
         float averageSales = (daysWithSales > 0) ? totalSales / daysWithSales : 0f;
         tvAverage.setText(currencyFormat.format(averageSales));
         tvTotal.setText(currencyFormat.format(totalSales));
         tvHigh.setText("Highest Sales: " + currencyFormat.format(highestSales));
         tvLow.setText("Lowest Sales: " + currencyFormat.format(lowestSales));
 
-        // Set up the bar chart data
         BarDataSet dataSet = new BarDataSet(dailyEntries, null);
-
-        // Apply gradient shader
         dataSet.setGradientColor(ContextCompat.getColor(requireContext(), R.color.orange), ContextCompat.getColor(requireContext(), R.color.yellow));
-
         dataSet.setDrawValues(false);
 
         BarData barData = new BarData(dataSet);
@@ -353,7 +422,7 @@ public class SalesTrackingFragment extends Fragment {
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
-                return String.format("%02d-%02d", targetMonth + 1, (int)value);
+                return String.format("%02d-%02d", targetMonth + 1, (int) value);
             }
         });
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
@@ -363,13 +432,11 @@ public class SalesTrackingFragment extends Fragment {
         xAxis.setAxisMaximum(daysInMonth);
         xAxis.setAxisMinimum(0.5f);
 
-        // Set up the Y-Axis
         YAxis leftAxis = barChart.getAxisLeft();
         leftAxis.setTextColor(Color.WHITE);
-        leftAxis.setAxisMinimum(0f); // Force Y-axis to start at 0
+        leftAxis.setAxisMinimum(0f);
 
         barChart.getAxisRight().setEnabled(false);
-
         barChart.invalidate();
     }
 
@@ -377,10 +444,13 @@ public class SalesTrackingFragment extends Fragment {
     private void setMonthlyData(List<Appointment> appointmentsList, int selectedYear) {
         ArrayList<BarEntry> monthlyEntries = new ArrayList<>();
         Map<Integer, Float> monthlySales = new HashMap<>();
+        Map<Integer, Float> monthlyGcash = new HashMap<>();
+        Map<Integer, Float> monthlyFunds = new HashMap<>();
+        Map<Integer, Float> monthlyExpenses = new HashMap<>();
+        Map<Integer, Float> monthlyTherapistCommissions = new HashMap<>();
 
         float totalSales = 0f;
         int monthsWithSales = 0;
-
         float highestSales = Float.MIN_VALUE;
         float lowestSales = Float.MAX_VALUE;
 
@@ -388,12 +458,17 @@ public class SalesTrackingFragment extends Fragment {
         int currentMonth = today.get(Calendar.MONTH) + 1;
         int currentYear = today.get(Calendar.YEAR);
 
-        // Initialize monthly sales
+        Calendar calendar = Calendar.getInstance();
+
+        // Initialize monthly maps
         for (int month = 1; month <= 12; month++) {
             monthlySales.put(month, 0f);
+            monthlyExpenses.put(month, 0f);
+            monthlyTherapistCommissions.put(month, 0f);
+            monthlyGcash.put(month, 0f);
+            monthlyFunds.put(month, 0f);
         }
 
-        Calendar calendar = Calendar.getInstance();
         for (Appointment appointment : appointmentsList) {
             Date date = appointment.getClientDateTimeAsDate();
             if (date != null) {
@@ -419,49 +494,100 @@ public class SalesTrackingFragment extends Fragment {
                             }
                         }
 
-                        float sales = monthlySales.get(month);
-                        float newSales = sales + (float) totalPriceForParentService;
-                        monthlySales.put(month, newSales);
-                        totalSales += (float) totalPriceForParentService;
+                        // Add to monthly sales
+                        float updatedSales = monthlySales.get(month) + (float) totalPriceForParentService;
+                        monthlySales.put(month, updatedSales);
 
-                        if (newSales > highestSales) highestSales = newSales;
-                        if (newSales < lowestSales) lowestSales = newSales;
+                        // Therapist commission deduction
+                        Employee employee = findEmployeeByName(assignedEmployee);
+                        if (employee != null) {
+                            String therapistRole = employee.getTherapist();
+                            if ("Therapist".equals(therapistRole) || employee.getSalary() == 0) {
+                                double commissionRate = getCommissionRateByDate(employee, new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()).format(date));
+                                double commission = (totalPriceForParentService * commissionRate) / 100.0;
+
+                                float updatedCommission = monthlyTherapistCommissions.get(month) + (float) commission;
+                                monthlyTherapistCommissions.put(month, updatedCommission);
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // Recalculate monthsWithSales to count only months with actual sales
-        for (Map.Entry<Integer, Float> entry : monthlySales.entrySet()) {
-            if (entry.getValue() > 0f) {
+        // Aggregate expenses by month
+        for (Expenses expense : expensesList) {
+            Date date = expense.getParsedDate();
+            if (date != null) {
+                calendar.setTime(date);
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH) + 1;
+
+                if (year == selectedYear) {
+                    float updatedExpenses = monthlyExpenses.getOrDefault(month, 0f) + (float) expense.getAmount();
+                    monthlyExpenses.put(month, updatedExpenses);
+                }
+            }
+        }
+
+        for (Gcash gcash : gcashList) {
+            Date date = gcash.getParsedDate();
+            if (date != null) {
+                calendar.setTime(date);
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH) + 1;
+
+                if (year == selectedYear) {
+                    float updatedExpenses = monthlyGcash.getOrDefault(month, 0f) + (float) gcash.getAmount();
+                    monthlyGcash.put(month, updatedExpenses);
+                }
+            }
+        }
+
+        for (Funds funds : fundsList) {
+            Date date = funds.getParsedDate();
+            if (date != null) {
+                calendar.setTime(date);
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH) + 1;
+
+                if (year == selectedYear) {
+                    float updatedExpenses = monthlyFunds.getOrDefault(month, 0f) + (float) funds.getAmount();
+                    monthlyFunds.put(month, updatedExpenses);
+                }
+            }
+        }
+
+        // Compute monthly net sales and statistics
+        for (int month = 1; month <= 12; month++) {
+            float grossSales = monthlySales.get(month);
+            float expenses = monthlyExpenses.get(month);
+            float gcash = monthlyGcash.get(month);
+            float funds = monthlyFunds.get(month);
+            float commissions = monthlyTherapistCommissions.get(month);
+            float netDeductions = gcash + expenses + commissions;
+            float netSales = (grossSales + funds) - netDeductions;
+
+            if (month <= currentMonth || selectedYear < currentYear) {
+                monthlyEntries.add(new BarEntry(month, netSales));
+            } else {
+                monthlyEntries.add(new BarEntry(month, 0f));
+            }
+
+            if (netSales > 0f) {
                 monthsWithSales++;
+                totalSales += netSales;
+                if (netSales > highestSales) highestSales = netSales;
+                if (netSales < lowestSales) lowestSales = netSales;
             }
         }
 
-        // Recalculate the correct lowest sales
-        lowestSales = Float.MAX_VALUE;
-        for (Map.Entry<Integer, Float> entry : monthlySales.entrySet()) {
-            float sales = entry.getValue();
-            if (sales > 0f && sales < lowestSales) {
-                lowestSales = sales;
-            }
-        }
-
-        // If no valid sales exist, set lowestSales to 0
         if (lowestSales == Float.MAX_VALUE) {
             lowestSales = 0f;
         }
 
-        // Create the Bar Entries for each month
-        for (int month = 1; month <= 12; month++) {
-            float salesValue = (month <= currentMonth || selectedYear < currentYear) ? monthlySales.get(month) : 0f;
-            monthlyEntries.add(new BarEntry(month, salesValue));
-        }
-
-        // Calculate the average sales
         float averageSales = (monthsWithSales > 0) ? totalSales / monthsWithSales : 0f;
 
-        // Update UI with results
         NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
         currencyFormat.setMaximumFractionDigits(2);
         currencyFormat.setMinimumFractionDigits(2);
@@ -472,15 +598,8 @@ public class SalesTrackingFragment extends Fragment {
         tvLow.setText("Lowest Sales: " + currencyFormat.format(lowestSales));
 
         BarDataSet dataSet = new BarDataSet(monthlyEntries, null);
-
-        // Create a gradient using color resources
-        Shader shader = new LinearGradient(0f, 0f, 0f, 300f,
-                ContextCompat.getColor(requireContext(), R.color.orange),
-                ContextCompat.getColor(requireContext(), R.color.yellow),
-                Shader.TileMode.MIRROR);
-        dataSet.setGradientColor(ContextCompat.getColor(requireContext(), R.color.orange), ContextCompat.getColor(requireContext(), R.color.yellow));
-
-        // Set properties for the dataset
+        dataSet.setGradientColor(ContextCompat.getColor(requireContext(), R.color.orange),
+                ContextCompat.getColor(requireContext(), R.color.yellow));
         dataSet.setDrawValues(false);
 
         BarData barData = new BarData(dataSet);
@@ -499,13 +618,13 @@ public class SalesTrackingFragment extends Fragment {
             public String getFormattedValue(float value) {
                 String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-                if (value >= 1 && value <= 12) return months[(int)value - 1];
+                if (value >= 1 && value <= 12) return months[(int) value - 1];
                 return "";
             }
         });
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setGranularity(1f);
-        xAxis.setLabelCount(12); // or day count
+        xAxis.setLabelCount(12);
         xAxis.setDrawLabels(true);
         xAxis.setTextColor(Color.WHITE);
         xAxis.setAxisMinimum(0.5f);
@@ -513,11 +632,116 @@ public class SalesTrackingFragment extends Fragment {
 
         YAxis leftAxis = barChart.getAxisLeft();
         leftAxis.setTextColor(Color.WHITE);
-        leftAxis.setAxisMinimum(0f); // <-- Add this line to make sure it starts from 0
+        leftAxis.setAxisMinimum(0f);
 
         barChart.getAxisRight().setEnabled(false);
-
         barChart.invalidate();
     }
 
+    private double getCommissionRateByDate(Employee employee, String appointmentDate) {
+        List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
+        double commissionRate = employee.getComs(); // Default to current commission rate
+
+        if (commissionHistory == null || commissionHistory.isEmpty()) {
+            return commissionRate; // No history, return default
+        }
+
+        // Parse the appointment date
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // Adjust date format to match your Firebase data
+            Date appointment = sdf.parse(appointmentDate);
+
+            // Iterate through commission history to find the appropriate rate based on date
+            for (Map<String, Object> history : commissionHistory) {
+                String changeDateStr = (String) history.get("dateChanged");
+                double rateAtChange = (Double) history.get("commission");
+
+                // Parse the change date
+                Date changeDate = sdf.parse(changeDateStr);
+
+                // If the change date is before the appointment date, use this rate
+                if (changeDate != null && changeDate.before(appointment)) {
+                    commissionRate = rateAtChange;
+                }
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return commissionRate;
+    }
+
+    private Employee findEmployeeByName(String employeeName) {
+        for (Employee employee : employeeList) {
+            if (employee.getName().equalsIgnoreCase(employeeName)) {
+                return employee; // Return the matching employee object
+            }
+        }
+        return null;
+    }
+    private void loadEmployeeData() {
+        db.collection("Employees").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        employeeList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Employee employee = document.toObject(Employee.class);
+                            employee.setId(document.getId());
+                            employeeList.add(employee);
+                        }
+                        fetchAppointmentData();
+
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+    private void loadExpensesData() {
+        db.collection("expenses").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        expensesList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Expenses expenses = document.toObject(Expenses.class);
+                            expenses.setId(document.getId());
+                            expensesList.add(expenses);
+                        }
+                        fetchAppointmentData();
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+    private void loadFundsData() {
+        db.collection("add_funds").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        fundsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Funds funds = document.toObject(Funds.class);
+                            funds.setId(document.getId());
+                            fundsList.add(funds);
+                        }
+                        fetchAppointmentData();
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+    private void loadGcashData() {
+        db.collection("gcash_payments").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        gcashList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Gcash gcash = document.toObject(Gcash.class);
+                            gcash.setId(document.getId());
+                            gcashList.add(gcash);
+                        }
+                        fetchAppointmentData();
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
 }

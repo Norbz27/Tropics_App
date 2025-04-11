@@ -1,4 +1,10 @@
 package com.example.tropics_app;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class Funds {
     private String id;
     private Double amount;
@@ -29,5 +35,13 @@ public class Funds {
     public String getTimestamp() { return timestamp; }
     public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
 
-
+    public Date getParsedDate() {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+            return sdf.parse(this.timestamp);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

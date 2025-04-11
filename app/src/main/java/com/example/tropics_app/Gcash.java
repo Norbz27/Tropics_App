@@ -1,4 +1,10 @@
 package com.example.tropics_app;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class Gcash {
     private String id;
     private Double amount;
@@ -29,5 +35,13 @@ public class Gcash {
     public String getClientname() { return clientname; }
     public void setClientname(String ClientName) { this.clientname = ClientName; }
 
-
+    public Date getParsedDate() {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+            return sdf.parse(this.timestamp);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
