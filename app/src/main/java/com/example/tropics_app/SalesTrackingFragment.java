@@ -1,14 +1,9 @@
 package com.example.tropics_app;
 
 import android.graphics.Color;
-import android.graphics.LinearGradient;
-import android.graphics.Shader;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
@@ -18,53 +13,44 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
-import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.BarChart;
-import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 
 public class SalesTrackingFragment extends Fragment {
     private Button btnDaily, btnMonthly;
     private Spinner monthSpinner, yearSpinner;
     private BarChart barChart;
+    private ProgressBar progressBar;
+    private FrameLayout progressContainer1;
     private boolean isDaily = true;
     private int targetMonth, targetYear;
     private TextView tvAverage, tvHigh, tvLow, tvTotal;
@@ -83,11 +69,8 @@ public class SalesTrackingFragment extends Fragment {
         expensesList = new ArrayList<>();
         gcashList = new ArrayList<>();
         fundsList = new ArrayList<>();
-        loadEmployeeData();
-        loadExpensesData();
-        loadFundsData();
-        loadGcashData();
-        fetchAppointmentData();
+
+
     }
 
     @Override
@@ -96,6 +79,9 @@ public class SalesTrackingFragment extends Fragment {
         // Inflate the layout for this fragment
         View view =  inflater.inflate(R.layout.fragment_sales_tracking, container, false);
 
+        progressBar = view.findViewById(R.id.progressBar);
+        progressContainer1 = view.findViewById(R.id.progressContainer1);
+        fetchAppointmentData();
         tvAverage = view.findViewById(R.id.tvAverage);
         tvTotal = view.findViewById(R.id.tvTotal);
         tvHigh = view.findViewById(R.id.tvHigh);
@@ -198,47 +184,7 @@ public class SalesTrackingFragment extends Fragment {
         return view;
     }
 
-    private void fetchAppointmentData() {
-        db.collection("appointments")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            appointmentsList.clear(); // Clear the list before adding new data
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Appointment appointment = document.toObject(Appointment.class);
-                                appointmentsList.add(appointment);
-                            }
-                            setDailyData(appointmentsList, targetMonth, targetYear);
-                            Calendar calendarCur = Calendar.getInstance();
-                            int hour = calendarCur.get(Calendar.HOUR_OF_DAY); // Get the current hour (24-hour format)
 
-                            if (hour < 1) { // If the current time is before 1 AM
-                                calendarCur.add(Calendar.DAY_OF_YEAR, -1); // Move the date to yesterday
-                            }
-
-                            /*Date date = calendarCur.getTime(); // Get the updated date
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
-                            String formattedDate = dateFormat.format(date);
-
-                            filterDataByDate(formattedDate);*/
-                        } else {
-                            Log.e("SalesFragment", "Error fetching appointments: ", task.getException());
-                        }
-                    }
-                });
-    }
-
-    private int getMonthIndex(String monthName) {
-        String[] months = getResources().getStringArray(R.array.months_array);
-        for (int i = 0; i < months.length; i++) {
-            if (months[i].equals(monthName)) {
-                return i; // Return the month index (0-11)
-            }
-        }
-        return -1; // Return -1 if not found (error case)
-    }
     private void setDailyData(List<Appointment> appointmentsList, int targetMonth, int targetYear) {
         ArrayList<BarEntry> dailyEntries = new ArrayList<>();
         Map<Integer, Float> dailySales = new HashMap<>();
@@ -638,6 +584,15 @@ public class SalesTrackingFragment extends Fragment {
         barChart.invalidate();
     }
 
+    private int getMonthIndex(String monthName) {
+        String[] months = getResources().getStringArray(R.array.months_array);
+        for (int i = 0; i < months.length; i++) {
+            if (months[i].equals(monthName)) {
+                return i; // Return the month index (0-11)
+            }
+        }
+        return -1; // Return -1 if not found (error case)
+    }
     private double getCommissionRateByDate(Employee employee, String appointmentDate) {
         List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
         double commissionRate = employee.getComs(); // Default to current commission rate
@@ -679,9 +634,32 @@ public class SalesTrackingFragment extends Fragment {
         }
         return null;
     }
-    private void loadEmployeeData() {
-        db.collection("Employees").get()
+    private void fetchAppointmentData() {
+        requireActivity().runOnUiThread(() -> progressContainer1.setVisibility(View.VISIBLE));
+
+        // Create a list of tasks to execute in parallel
+        List<Task<QuerySnapshot>> tasks = new ArrayList<>();
+
+        // Fetch appointment data concurrently
+        tasks.add(db.collection("appointments").get()
                 .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
+                    if (task.isSuccessful()) {
+                        appointmentsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Appointment appointment = document.toObject(Appointment.class);
+                            appointmentsList.add(appointment);
+                        }
+                        setDailyData(appointmentsList, targetMonth, targetYear);
+                    } else {
+                        Log.e("SalesFragment", "Error fetching appointments: ", task.getException());
+                    }
+                }));
+
+        // Fetch employee data concurrently
+        tasks.add(db.collection("Employees").get()
+                .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
                     if (task.isSuccessful()) {
                         employeeList.clear();
                         for (QueryDocumentSnapshot document : task.getResult()) {
@@ -689,16 +667,15 @@ public class SalesTrackingFragment extends Fragment {
                             employee.setId(document.getId());
                             employeeList.add(employee);
                         }
-                        fetchAppointmentData();
-
                     } else {
-                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "Failed to load employee data", Toast.LENGTH_SHORT).show();
                     }
-                });
-    }
-    private void loadExpensesData() {
-        db.collection("expenses").get()
+                }));
+
+        // Fetch expenses data concurrently
+        tasks.add(db.collection("expenses").get()
                 .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
                     if (task.isSuccessful()) {
                         expensesList.clear();
                         for (QueryDocumentSnapshot document : task.getResult()) {
@@ -706,15 +683,15 @@ public class SalesTrackingFragment extends Fragment {
                             expenses.setId(document.getId());
                             expensesList.add(expenses);
                         }
-                        fetchAppointmentData();
                     } else {
-                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "Failed to load expenses data", Toast.LENGTH_SHORT).show();
                     }
-                });
-    }
-    private void loadFundsData() {
-        db.collection("add_funds").get()
+                }));
+
+        // Fetch funds data concurrently
+        tasks.add(db.collection("add_funds").get()
                 .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
                     if (task.isSuccessful()) {
                         fundsList.clear();
                         for (QueryDocumentSnapshot document : task.getResult()) {
@@ -722,15 +699,15 @@ public class SalesTrackingFragment extends Fragment {
                             funds.setId(document.getId());
                             fundsList.add(funds);
                         }
-                        fetchAppointmentData();
                     } else {
-                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "Failed to load funds data", Toast.LENGTH_SHORT).show();
                     }
-                });
-    }
-    private void loadGcashData() {
-        db.collection("gcash_payments").get()
+                }));
+
+        // Fetch gcash data concurrently
+        tasks.add(db.collection("gcash_payments").get()
                 .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
                     if (task.isSuccessful()) {
                         gcashList.clear();
                         for (QueryDocumentSnapshot document : task.getResult()) {
@@ -738,10 +715,18 @@ public class SalesTrackingFragment extends Fragment {
                             gcash.setId(document.getId());
                             gcashList.add(gcash);
                         }
-                        fetchAppointmentData();
                     } else {
-                        Toast.makeText(getActivity(), "Failed to load data", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "Failed to load gcash data", Toast.LENGTH_SHORT).show();
                     }
-                });
+                }));
+
+        // Use Task.whenAllComplete to wait for all tasks to complete
+        Tasks.whenAllComplete(tasks).addOnCompleteListener(task -> {
+            if (isAdded()) {
+                // Once all tasks are done, hide the progress bar
+                progressContainer1.setVisibility(View.GONE);
+            }
+        });
     }
+
 }

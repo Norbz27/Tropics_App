@@ -3,8 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SalesTrackingFragment"
-    android:background="#121315">
+    android:gravity="center"
+    android:background="#121315"
+    tools:context=".SalesTrackingFragment">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -51,7 +52,6 @@
                     android:text="Monthly" />
             </LinearLayout>
 
-            <!-- Spinner Group -->
             <LinearLayout
                 android:id="@+id/l3"
                 android:layout_width="match_parent"
@@ -71,7 +71,6 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
-            <!-- LineChart Section -->
             <LinearLayout
                 android:id="@+id/l2"
                 android:layout_width="match_parent"
@@ -87,16 +86,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
 
-                <Switch
+                <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switch1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Switch"
-                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+                    android:text="Switch" />
             </LinearLayout>
 
-            <!-- Average Sales Section -->
             <RelativeLayout
                 android:id="@+id/relativeLayout"
                 android:layout_width="match_parent"
@@ -181,4 +178,21 @@
             </RelativeLayout>
         </LinearLayout>
     </ScrollView>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:background="@android:color/transparent"
+        android:visibility="gone"
+        android:id="@+id/progressContainer1">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            style="@android:style/Widget.ProgressBar.Large"
+            android:indeterminate="true"/>
+    </FrameLayout>
 </FrameLayout>

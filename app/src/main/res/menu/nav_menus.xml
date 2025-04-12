@@ -60,7 +60,7 @@
             android:title="Sales Chart"/>
         <item
             android:id="@+id/nav_employee_payroll"
-            android:icon="@drawable/baseline_bar_chart_24"
+            android:icon="@drawable/outline_article_24"
             android:fontFamily="@font/manrope"
             android:title="Payroll History"/>
         <item
