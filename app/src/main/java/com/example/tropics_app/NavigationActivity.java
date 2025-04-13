@@ -122,7 +122,7 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
             getSupportActionBar().setTitle("Sales Chart");
         }
         else if (id == R.id.nav_employee_payroll) {
-            getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new SalesTrackingFragment()).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.framelayout, new PayrollHistoryFragment()).commit();
             getSupportActionBar().setTitle("Payroll History");
         }
         else if (id == R.id.nav_sign_out) {
