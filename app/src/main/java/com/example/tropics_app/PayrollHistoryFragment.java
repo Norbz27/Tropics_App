@@ -1,21 +1,78 @@
 package com.example.tropics_app;
 
+import android.graphics.Color;
 import android.os.Bundle;
 
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.Spinner;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class PayrollHistoryFragment extends Fragment {
+    private List<Appointment> appointmentsList;
+    private FirebaseFirestore db;
+    private List<Employee> employeeList;
+    private List<Expenses> expensesList;
+    private List<Gcash> gcashList;
+    private List<Funds> fundsList;
+    private FrameLayout progressContainer1;
+    private Spinner month_spinner;
+    private Spinner year_spinner;
+    private Spinner week_num;
+    private NumberFormat numberFormat;
+    private Button btnSearch;
+    private TableLayout tblHandler, tblWeekly, tblSalary;
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        db = FirebaseFirestore.getInstance();
+        appointmentsList = new ArrayList<>();
+        employeeList = new ArrayList<>();
+        expensesList = new ArrayList<>();
+        gcashList = new ArrayList<>();
+        fundsList = new ArrayList<>();
+
     }
 
     @Override
@@ -23,31 +80,468 @@ public class PayrollHistoryFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_payroll_history, container, false);
 
-        String[] names = {
-                "ADORO, MATTHEW LOUIS E.",
-                "BROCAL, VANNISA M.",
-                "BRUZON, NORBERTO JR. J.",
-                "CORTES, MARIELLA MAE R.",
-                "DELFIN, KEVIN ART T.",
-                "DENOSAPAL, IVY JOY Z.",
-                "FANUNAL, JOSEPHEN",
-                "LEOPARDAS, TIMOTEO P.",
-                "MEDALLA, PEJIE Q.",
-                "MONTEALTO, JAN ANGELIEKA",
-                "MARIF V."
-        };
+        progressContainer1 = view.findViewById(R.id.progressContainer1);
+        month_spinner = view.findViewById(R.id.month_spinner);
+        year_spinner = view.findViewById(R.id.year_spinner);
+        week_num = view.findViewById(R.id.week_num);
+        tblHandler = view.findViewById(R.id.tblHandler);
+        tblWeekly = view.findViewById(R.id.tblWeekly);
+        tblSalary = view.findViewById(R.id.tblSalary);
 
-        AutoCompleteTextView autoCompleteTextView = view.findViewById(R.id.autoCompleteTextView);
+        numberFormat = NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
+
+        AutoCompleteTextView autoCompleteTVEmployee = view.findViewById(R.id.autoCompleteTextView);
+        List<String> employeeNames = new ArrayList<>();
+        for (Employee emp : employeeList) {
+            employeeNames.add(emp.getName());
+        }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                requireContext(), // or getContext(), depending on your use case
+                requireContext(),
                 android.R.layout.simple_dropdown_item_1line,
-                names
+                employeeNames
         );
 
-        autoCompleteTextView.setAdapter(adapter);
-        autoCompleteTextView.setThreshold(1);
+        autoCompleteTVEmployee.setAdapter(adapter);
+        autoCompleteTVEmployee.setThreshold(1);
+        fetchAppointmentData();
+        spinnerSetup();
+
+        btnSearch = view.findViewById(R.id.btnSearch); // You need to add this in XML
+
+        btnSearch.setOnClickListener(v -> {
+            int selectedMonth = month_spinner.getSelectedItemPosition(); // 0-based
+            int selectedYear = Integer.parseInt(year_spinner.getSelectedItem().toString());
+            int selectedWeek = Integer.parseInt(week_num.getSelectedItem().toString());
+            String empName = autoCompleteTVEmployee.getText().toString();
+
+
+            filterDataByMonthYearWeek(selectedMonth, selectedYear, selectedWeek, empName);
+
+        });
+
+
 
         return view;
+    }
+
+    private void filterDataByMonthYearWeek(int month, int year, int weekNumber, String empName) {
+        progressContainer1.setVisibility(View.VISIBLE);
+        btnSearch.setEnabled(false);
+        new Thread(() -> {
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, month);
+            calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
+            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+
+            Date startOfWeek = calendar.getTime();
+            calendar.add(Calendar.DAY_OF_MONTH, 6);
+            Date endOfWeek = calendar.getTime();
+
+            Collections.sort(appointmentsList, (a1, a2) -> {
+                try {
+                    Calendar cal1 = Calendar.getInstance();
+                    cal1.setTime(a1.getClientDateTimeAsDate());
+                    Date time1 = new SimpleDateFormat("HH:mm").parse(a1.getTime());
+                    Calendar timeCal1 = Calendar.getInstance();
+                    timeCal1.setTime(time1);
+                    cal1.set(Calendar.HOUR_OF_DAY, timeCal1.get(Calendar.HOUR_OF_DAY));
+                    cal1.set(Calendar.MINUTE, timeCal1.get(Calendar.MINUTE));
+
+                    Calendar cal2 = Calendar.getInstance();
+                    cal2.setTime(a2.getClientDateTimeAsDate());
+                    Date time2 = new SimpleDateFormat("HH:mm").parse(a2.getTime());
+                    Calendar timeCal2 = Calendar.getInstance();
+                    timeCal2.setTime(time2);
+                    cal2.set(Calendar.HOUR_OF_DAY, timeCal2.get(Calendar.HOUR_OF_DAY));
+                    cal2.set(Calendar.MINUTE, timeCal2.get(Calendar.MINUTE));
+
+                    return cal1.getTime().compareTo(cal2.getTime());
+
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                    return 0;
+                }
+            });
+
+            List<TableRow> generatedRows = new ArrayList<>();
+            double totalSales = 0.0;
+            String lastClientName = "";
+            String lastTime = "";
+
+            for (Appointment appointment : appointmentsList) {
+                Date appointmentDate = appointment.getClientDateTimeAsDate();
+                if (appointmentDate == null) continue;
+
+                if (!appointmentDate.before(startOfWeek) && !appointmentDate.after(endOfWeek)) {
+                    String formattedTime = "";
+                    String formattedDate = "";
+
+                    try {
+                        formattedTime = new SimpleDateFormat("hh:mm a", Locale.getDefault())
+                                .format(new SimpleDateFormat("HH:mm").parse(appointment.getTime()));
+                        formattedDate = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+                                .format(appointmentDate);
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+
+                    for (Map<String, Object> service : appointment.getServices()) {
+                        String assignedEmployee = (String) service.get("assignedEmployee");
+                        if (assignedEmployee == null || assignedEmployee.equals("None")) continue;
+                        if (!assignedEmployee.equals(empName)) continue;
+
+                        TableRow row = new TableRow(getContext());
+                        row.setLayoutParams(new TableRow.LayoutParams(
+                                TableRow.LayoutParams.MATCH_PARENT,
+                                TableRow.LayoutParams.WRAP_CONTENT
+                        ));
+
+                        if (!appointment.getFullName().equals(lastClientName)
+                                || !appointment.getTime().equals(lastTime)) {
+
+                            row.addView(makeTextView(formattedDate, Color.WHITE));
+                            row.addView(makeTextView(formattedTime, Color.WHITE));
+                            row.addView(makeTextView(appointment.getFullName(), Color.WHITE));
+
+                            lastClientName = appointment.getFullName();
+                            lastTime = appointment.getTime();
+                        } else {
+                            row.addView(emptyTextView());
+                            row.addView(emptyTextView());
+                            row.addView(emptyTextView());
+                        }
+
+                        row.addView(makeTextView((String) service.get("serviceName"), Color.LTGRAY));
+
+                        double totalPrice = service.get("servicePrice") != null ? (Double) service.get("servicePrice") : 0.0;
+
+                        List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                        if (subServices != null) {
+                            for (Map<String, Object> sub : subServices) {
+                                totalPrice += sub.get("servicePrice") != null ? (double) sub.get("servicePrice") : 0.0;
+                            }
+                        }
+
+                        row.addView(makeTextView(numberFormat.format(totalPrice), Color.LTGRAY));
+                        totalSales += totalPrice;
+                        generatedRows.add(row);
+                    }
+                }
+            }
+
+            requireActivity().runOnUiThread(() -> {
+                tblHandler.removeViews(1, tblHandler.getChildCount() - 1);
+                tblWeekly.removeViews(1, tblWeekly.getChildCount() - 1);
+
+                Calendar headerCal = Calendar.getInstance();
+                headerCal.set(Calendar.YEAR, year);
+                headerCal.set(Calendar.MONTH, month);
+                headerCal.set(Calendar.WEEK_OF_MONTH, weekNumber);
+                headerCal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                headerCal.set(Calendar.HOUR_OF_DAY, 0);
+                headerCal.set(Calendar.MINUTE, 0);
+                headerCal.set(Calendar.SECOND, 0);
+                headerCal.set(Calendar.MILLISECOND, 0);
+
+                TableRow dateRow = new TableRow(getContext());
+                dateRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                Calendar displayCalendar = (Calendar) headerCal.clone();
+                for (int i = 0; i < 7; i++) {
+                    TextView dateTextView = new TextView(getContext());
+                    String dateStr = sdf.format(displayCalendar.getTime());
+                    dateTextView.setText(dateStr);
+                    dateTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                    dateTextView.setTextColor(Color.WHITE);
+                    dateTextView.setPadding(10, 10, 10, 10);
+                    dateRow.addView(dateTextView);
+                    displayCalendar.add(Calendar.DAY_OF_MONTH, 1);
+                }
+                tblWeekly.addView(dateRow);
+
+                for (TableRow row : generatedRows) {
+                    tblHandler.addView(row);
+                }
+
+                progressContainer1.setVisibility(View.GONE);
+                btnSearch.setEnabled(true);
+            });
+        }).start();
+    }
+
+    private TextView makeTextView(String text, int color) {
+        TextView tv = new TextView(getContext());
+        tv.setText(text);
+        tv.setTextColor(color);
+        tv.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        tv.setPadding(10, 5, 5, 5);
+        return tv;
+    }
+
+    private TextView emptyTextView() {
+        return makeTextView("", Color.TRANSPARENT);
+    }
+
+
+    private void fetchAppointmentData() {
+        requireActivity().runOnUiThread(() -> progressContainer1.setVisibility(View.VISIBLE));
+
+        // Create a list of tasks to execute in parallel
+        List<Task<QuerySnapshot>> tasks = new ArrayList<>();
+
+        // Fetch appointment data concurrently
+        tasks.add(db.collection("appointments").get()
+                .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
+                    if (task.isSuccessful()) {
+                        appointmentsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Appointment appointment = document.toObject(Appointment.class);
+                            appointmentsList.add(appointment);
+                        }
+
+                    } else {
+                        Log.e("SalesFragment", "Error fetching appointments: ", task.getException());
+                    }
+                }));
+
+        // Fetch employee data concurrently
+        tasks.add(db.collection("Employees").get()
+                .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
+                    if (task.isSuccessful()) {
+                        employeeList.clear();
+                        List<String> employeeNames = new ArrayList<>();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Employee employee = document.toObject(Employee.class);
+                            employee.setId(document.getId());
+                            employeeList.add(employee);
+                            employeeNames.add(employee.getName()); // Assuming getName() exists
+                        }
+
+                        // Setup adapter after loading names
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                requireContext(),
+                                android.R.layout.simple_dropdown_item_1line,
+                                employeeNames
+                        );
+
+                        AutoCompleteTextView autoCompleteTextView = getView().findViewById(R.id.autoCompleteTextView);
+                        autoCompleteTextView.setAdapter(adapter);
+                        autoCompleteTextView.setThreshold(1);
+
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load employee data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+
+        // Fetch expenses data concurrently
+        tasks.add(db.collection("expenses").get()
+                .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
+                    if (task.isSuccessful()) {
+                        expensesList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Expenses expenses = document.toObject(Expenses.class);
+                            expenses.setId(document.getId());
+                            expensesList.add(expenses);
+                        }
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load expenses data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // Fetch funds data concurrently
+        tasks.add(db.collection("add_funds").get()
+                .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
+                    if (task.isSuccessful()) {
+                        fundsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Funds funds = document.toObject(Funds.class);
+                            funds.setId(document.getId());
+                            fundsList.add(funds);
+                        }
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load funds data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // Fetch gcash data concurrently
+        tasks.add(db.collection("gcash_payments").get()
+                .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
+                    if (task.isSuccessful()) {
+                        gcashList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Gcash gcash = document.toObject(Gcash.class);
+                            gcash.setId(document.getId());
+                            gcashList.add(gcash);
+                        }
+                    } else {
+                        Toast.makeText(getActivity(), "Failed to load gcash data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // Use Task.whenAllComplete to wait for all tasks to complete
+        Tasks.whenAllComplete(tasks).addOnCompleteListener(task -> {
+            if (isAdded()) {
+                // Once all tasks are done, hide the progress bar
+                progressContainer1.setVisibility(View.GONE);
+            }
+        });
+    }
+    private void spinnerSetup() {
+        String[] months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+        List<String> years = new ArrayList<>();
+        // Get the current date
+        Calendar calendar = Calendar.getInstance();
+        calendar.setFirstDayOfWeek(Calendar.MONDAY); // Set the first day of the week to Monday
+
+        int currentMonth = calendar.get(Calendar.MONTH); // January = 0, ..., December = 11
+        int currentYear = calendar.get(Calendar.YEAR);
+
+        // Correctly calculate the current week of the month
+        int currentWeek = getCurrentWeekOfMonth(calendar);
+
+        // Populate the years array with the current year and the next 9 years
+
+        for (int year = 2024; year <= currentYear; year++) {
+            years.add(String.valueOf(year));
+        }
+        Collections.sort(years, (y1, y2) -> Integer.compare(Integer.parseInt(y2), Integer.parseInt(y1)));
+        // Set up the spinners with adapters
+        ArrayAdapter<String> monthAdapter = new ArrayAdapter<>(requireActivity(), android.R.layout.simple_spinner_item, months);
+        monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        month_spinner.setAdapter(monthAdapter);
+
+        ArrayAdapter<String> yearAdapter = new ArrayAdapter<>(requireActivity(), android.R.layout.simple_spinner_item, years);
+        yearAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        year_spinner.setAdapter(yearAdapter);
+
+        // Set default selection to current month and year
+        month_spinner.setSelection(currentMonth); // Current month
+        year_spinner.setSelection(0); // The current year is at index 0 in the years array
+
+        // Set default week number
+        updateWeekSpinner(currentYear, currentMonth, currentWeek);
+
+        // Add listeners for month and year spinners to update the week spinner dynamically
+        month_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                int selectedMonth = position;
+                int selectedYear = Integer.parseInt(year_spinner.getSelectedItem().toString());
+                updateWeekSpinner(selectedYear, selectedMonth, currentWeek); // Update the week spinner based on the new month and year
+                //filterDataByMonthYearWeek(months[selectedMonth], year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // Do nothing
+            }
+        });
+
+        year_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                int selectedYear = Integer.parseInt(parentView.getItemAtPosition(position).toString());
+                int selectedMonth = month_spinner.getSelectedItemPosition();
+                updateWeekSpinner(selectedYear, selectedMonth, currentWeek); // Update the week spinner based on the new year
+                //filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), String.valueOf(selectedYear), week_num.getSelectedItem().toString());
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // Do nothing
+            }
+        });
+
+        week_num.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                String selectedWeek = week_num.getSelectedItem().toString();
+                //filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), selectedWeek);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // Do nothing
+            }
+        });
+    }
+    private void updateWeekSpinner(int year, int month, int currentWeek) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month);
+        calendar.setFirstDayOfWeek(Calendar.MONDAY); // Ensure Monday is the first day of the week
+
+        // Find the number of weeks in the selected month
+        int maxWeeks = calendar.getActualMaximum(Calendar.WEEK_OF_MONTH);
+
+        // Create a new array for the weeks based on the max number of weeks
+        String[] weeks = new String[maxWeeks];
+        for (int i = 0; i < maxWeeks; i++) {
+            weeks[i] = String.valueOf(i + 1); // Week numbers start at 1
+        }
+
+        // Update the week spinner with the new week data
+        ArrayAdapter<String> weekAdapter = new ArrayAdapter<>(requireActivity(), android.R.layout.simple_spinner_item, weeks);
+        weekAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        week_num.setAdapter(weekAdapter);
+
+        // Set the default selection to the current week (if it's valid for the selected month and year)
+        if (currentWeek <= maxWeeks) {
+            week_num.setSelection(currentWeek - 1); // Week is 1-based, so subtract 1
+        } else {
+            week_num.setSelection(0); // Default to first week if the current week doesn't exist
+        }
+        Log.d("SalesFragment", "Selected Month: " + month_spinner.getSelectedItem().toString());
+        Log.d("SalesFragment", "Selected Year: " + year_spinner.getSelectedItem().toString());
+        Log.d("SalesFragment", "Selected Week: " + week_num.getSelectedItem().toString());
+        //filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+    }
+    private int getCurrentWeekOfMonth(Calendar calendar) {
+        calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        return calendar.get(Calendar.WEEK_OF_MONTH);
+    }
+
+    private int getMonthNumber(String monthName) {
+        switch (monthName) {
+            case "January":
+                return Calendar.JANUARY;
+            case "February":
+                return Calendar.FEBRUARY;
+            case "March":
+                return Calendar.MARCH;
+            case "April":
+                return Calendar.APRIL;
+            case "May":
+                return Calendar.MAY;
+            case "June":
+                return Calendar.JUNE;
+            case "July":
+                return Calendar.JULY;
+            case "August":
+                return Calendar.AUGUST;
+            case "September":
+                return Calendar.SEPTEMBER;
+            case "October":
+                return Calendar.OCTOBER;
+            case "November":
+                return Calendar.NOVEMBER;
+            case "December":
+                return Calendar.DECEMBER;
+            default:
+                throw new IllegalArgumentException("Invalid month name: " + monthName);
+        }
     }
 }

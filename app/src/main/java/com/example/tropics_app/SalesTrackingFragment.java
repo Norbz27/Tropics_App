@@ -69,8 +69,6 @@ public class SalesTrackingFragment extends Fragment {
         expensesList = new ArrayList<>();
         gcashList = new ArrayList<>();
         fundsList = new ArrayList<>();
-
-
     }
 
     @Override

@@ -21,13 +21,14 @@
                 android:id="@+id/autoCompleteTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Select..."
+                android:hint="Select Employee..."
                 android:inputType="text"
+                android:fontFamily="@font/manrope"
                 android:background="@drawable/custom_background"
                 android:drawableEnd="@android:drawable/ic_menu_search"
                 android:dropDownHeight="300dp"
                 android:textColor="@color/white"
-                android:textColorHint="@color/white"
+                android:textColorHint="#ABABAB"
                 android:padding="10dp" />
 
             <LinearLayout
@@ -53,7 +54,82 @@
                     android:id="@+id/week_num"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
+
             </LinearLayout>
+            <LinearLayout
+                android:id="@+id/l9"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:gravity="left"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/btnSearch"
+                    android:layout_width="match_parent"
+                    android:layout_height="45dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/custom_background_3"
+                    android:text="Search"
+                    android:textColor="@android:color/white" />
+            </LinearLayout>
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="horizontal">
+                <TableLayout
+                    android:id="@+id/tblHandler"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="30dp"
+                    android:stretchColumns="*">
+
+                    <!-- Table Header -->
+                    <TableRow android:background="@color/gray">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Date"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Time"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Client Name"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Services"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Rate"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Commission"
+                            android:textColor="@android:color/white"
+                            android:padding="5dp"
+                            android:fontFamily="@font/manrope_bold" />
+                    </TableRow>
+                </TableLayout>
+            </HorizontalScrollView>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -71,7 +147,7 @@
                 android:scrollbars="horizontal">
 
                 <TableLayout
-                    android:id="@+id/daily_table"
+                    android:id="@+id/tblWeekly"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:stretchColumns="*">
@@ -159,7 +235,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
                 <TableLayout
-                    android:id="@+id/final_salary_table"
+                    android:id="@+id/tblSalary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:stretchColumns="*">
@@ -238,7 +314,22 @@
                     </TableRow>
                 </TableLayout>
             </HorizontalScrollView>
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:background="@android:color/transparent"
+                android:visibility="gone"
+                android:id="@+id/progressContainer1">
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="center"
+                    style="@android:style/Widget.ProgressBar.Large"
+                    android:indeterminate="true"/>
+            </FrameLayout>
         </LinearLayout>
     </ScrollView>
-
 </FrameLayout>
