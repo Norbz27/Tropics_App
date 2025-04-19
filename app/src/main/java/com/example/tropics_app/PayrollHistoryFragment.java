@@ -62,6 +62,7 @@ public class PayrollHistoryFragment extends Fragment {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    Map<String, Employee> employeeMap;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -169,6 +170,7 @@ public class PayrollHistoryFragment extends Fragment {
                 }
             });
 
+            Employee employeeObj = findEmployeeByName(empName);
             List<TableRow> generatedRows = new ArrayList<>();
             double totalSales = 0.0;
             String lastClientName = "";
@@ -230,6 +232,12 @@ public class PayrollHistoryFragment extends Fragment {
 
                         row.addView(makeTextView(numberFormat.format(totalPrice), Color.LTGRAY));
                         totalSales += totalPrice;
+
+                        double commissionRate = getCommissionRateByDate(employeeObj, formattedDate);
+                        double commissionAmount = totalPrice * (commissionRate / 100.0);
+
+                        row.addView(makeTextViewBold(numberFormat.format(commissionAmount), ResourcesCompat.getColor(getResources(), R.color.orange, null)));
+
                         generatedRows.add(row);
                     }
                 }
@@ -239,6 +247,7 @@ public class PayrollHistoryFragment extends Fragment {
                 tblHandler.removeViews(1, tblHandler.getChildCount() - 1);
                 tblWeekly.removeViews(1, tblWeekly.getChildCount() - 1);
 
+                // Create header with actual dates
                 Calendar headerCal = Calendar.getInstance();
                 headerCal.set(Calendar.YEAR, year);
                 headerCal.set(Calendar.MONTH, month);
@@ -249,23 +258,82 @@ public class PayrollHistoryFragment extends Fragment {
                 headerCal.set(Calendar.SECOND, 0);
                 headerCal.set(Calendar.MILLISECOND, 0);
 
+                // === First Row: Dates ===
                 TableRow dateRow = new TableRow(getContext());
                 dateRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
                 SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
                 Calendar displayCalendar = (Calendar) headerCal.clone();
+                List<String> weekdayDates = new ArrayList<>();
+
                 for (int i = 0; i < 7; i++) {
-                    TextView dateTextView = new TextView(getContext());
                     String dateStr = sdf.format(displayCalendar.getTime());
+                    weekdayDates.add(dateStr);
+
+                    TextView dateTextView = new TextView(getContext());
                     dateTextView.setText(dateStr);
                     dateTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
                     dateTextView.setTextColor(Color.WHITE);
                     dateTextView.setPadding(10, 10, 10, 10);
                     dateRow.addView(dateTextView);
+
                     displayCalendar.add(Calendar.DAY_OF_MONTH, 1);
                 }
                 tblWeekly.addView(dateRow);
 
+                // === Second Row: Commission Totals ===
+                TableRow commissionRow = new TableRow(getContext());
+                commissionRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                // Initialize commission totals
+                Map<String, Double> commissionPerDate = new HashMap<>();
+                for (String date : weekdayDates) {
+                    commissionPerDate.put(date, 0.0);
+                }
+
+                // Loop again to fill commission totals by formatted date
+                for (Appointment appointment : appointmentsList) {
+                    Date appointmentDate = appointment.getClientDateTimeAsDate();
+                    if (appointmentDate == null) continue;
+
+                    if (!appointmentDate.before(startOfWeek) && !appointmentDate.after(endOfWeek)) {
+                        String formattedDate = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()).format(appointmentDate);
+
+                        for (Map<String, Object> service : appointment.getServices()) {
+                            String assignedEmployee = (String) service.get("assignedEmployee");
+                            if (assignedEmployee == null || assignedEmployee.equals("None")) continue;
+                            if (!assignedEmployee.equals(empName)) continue;
+
+                            double totalPrice = service.get("servicePrice") != null ? (Double) service.get("servicePrice") : 0.0;
+
+                            List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                            if (subServices != null) {
+                                for (Map<String, Object> sub : subServices) {
+                                    totalPrice += sub.get("servicePrice") != null ? (double) sub.get("servicePrice") : 0.0;
+                                }
+                            }
+
+                            double commissionRate = getCommissionRateByDate(employeeObj, formattedDate);
+                            double commissionAmount = totalPrice * (commissionRate / 100.0);
+
+                            // Add to existing daily total
+                            commissionPerDate.put(formattedDate, commissionPerDate.getOrDefault(formattedDate, 0.0) + commissionAmount);
+                        }
+                    }
+                }
+
+                // Add commission values to row
+                for (String date : weekdayDates) {
+                    TextView commissionTextView = new TextView(getContext());
+                    commissionTextView.setText(numberFormat.format(commissionPerDate.get(date)));
+                    commissionTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+                    commissionTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                    commissionTextView.setPadding(10, 10, 10, 10);
+                    commissionRow.addView(commissionTextView);
+                }
+                tblWeekly.addView(commissionRow);
+
+                // Add regular service rows
                 for (TableRow row : generatedRows) {
                     tblHandler.addView(row);
                 }
@@ -273,6 +341,7 @@ public class PayrollHistoryFragment extends Fragment {
                 progressContainer1.setVisibility(View.GONE);
                 btnSearch.setEnabled(true);
             });
+
         }).start();
     }
 
@@ -281,6 +350,14 @@ public class PayrollHistoryFragment extends Fragment {
         tv.setText(text);
         tv.setTextColor(color);
         tv.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+        tv.setPadding(10, 5, 5, 5);
+        return tv;
+    }
+    private TextView makeTextViewBold(String text, int color) {
+        TextView tv = new TextView(getContext());
+        tv.setText(text);
+        tv.setTextColor(color);
+        tv.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
         tv.setPadding(10, 5, 5, 5);
         return tv;
     }
@@ -399,6 +476,47 @@ public class PayrollHistoryFragment extends Fragment {
             }
         });
     }
+    private double getCommissionRateByDate(Employee employee, String appointmentDate) {
+        // Get commission history and ensure it is not null
+        List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
+        if (commissionHistory == null) {
+            return employee.getComs() != null ? employee.getComs() : 0.0; // Return the current commission rate if history is null
+        }
+
+        double commissionRate = employee.getComs() != null ? employee.getComs() : 0.0; // Default to current commission rate
+
+        // Parse the appointment date
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // Adjust date format to match your Firebase data
+            Date appointment = sdf.parse(appointmentDate);
+
+            // Iterate through commission history to find the appropriate rate based on date
+            for (Map<String, Object> history : commissionHistory) {
+                String changeDateStr = (String) history.get("dateChanged");
+                Object rateAtChangeObj = history.get("commission");
+
+                // Ensure the rate is properly retrieved as Double
+                double rateAtChange = 0.0;
+                if (rateAtChangeObj instanceof Long) {
+                    rateAtChange = ((Long) rateAtChangeObj).doubleValue();
+                } else if (rateAtChangeObj instanceof Double) {
+                    rateAtChange = (Double) rateAtChangeObj;
+                }
+
+                // Parse the change date
+                Date changeDate = sdf.parse(changeDateStr);
+
+                // If the change date is before the appointment date, use this rate
+                if (changeDate != null && changeDate.before(appointment)) {
+                    commissionRate = rateAtChange;
+                }
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return commissionRate;
+    }
     private void spinnerSetup() {
         String[] months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
         List<String> years = new ArrayList<>();
@@ -513,7 +631,14 @@ public class PayrollHistoryFragment extends Fragment {
         calendar.setFirstDayOfWeek(Calendar.MONDAY);
         return calendar.get(Calendar.WEEK_OF_MONTH);
     }
-
+    private Employee findEmployeeByName(String employeeName) {
+        for (Employee employee : employeeList) {
+            if (employee.getName().equalsIgnoreCase(employeeName)) {
+                return employee; // Return the matching employee object
+            }
+        }
+        return null;
+    }
     private int getMonthNumber(String monthName) {
         switch (monthName) {
             case "January":

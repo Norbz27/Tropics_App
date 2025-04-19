@@ -72,6 +72,15 @@
                     android:text="Search"
                     android:textColor="@android:color/white" />
             </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp"
+                android:text="Employee Commission"
+                android:textColor="@color/orange"
+                android:textSize="18sp"
+                android:fontFamily="@font/manrope"
+                android:textStyle="bold" />
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -130,21 +139,12 @@
                     </TableRow>
                 </TableLayout>
             </HorizontalScrollView>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingBottom="8dp"
-                android:text="Employee Commission"
-                android:textColor="@color/orange"
-                android:textSize="18sp"
-                android:fontFamily="@font/manrope"
-                android:textStyle="bold" />
-
             <!-- Wrap the table in a HorizontalScrollView -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:scrollbars="horizontal">
+                android:scrollbars="horizontal"
+                android:layout_marginTop="10dp">
 
                 <TableLayout
                     android:id="@+id/tblWeekly"
@@ -209,14 +209,6 @@
                             android:fontFamily="@font/manrope_bold"
                             android:text="SUNDAY"
                             android:textColor="@color/white" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="10dp"
-                            android:fontFamily="@font/manrope_bold"
-                            android:text="Total Commission"
-                            android:textColor="@color/orange" />
                     </TableRow>
                 </TableLayout>
             </HorizontalScrollView>
