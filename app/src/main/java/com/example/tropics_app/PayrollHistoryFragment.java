@@ -52,6 +52,7 @@ public class PayrollHistoryFragment extends Fragment {
     private List<Expenses> expensesList;
     private List<Gcash> gcashList;
     private List<Funds> fundsList;
+    private List<EmployeeSalaryDetails> salaryDetailsList ;
     private FrameLayout progressContainer1;
     private Spinner month_spinner;
     private Spinner year_spinner;
@@ -73,7 +74,7 @@ public class PayrollHistoryFragment extends Fragment {
         expensesList = new ArrayList<>();
         gcashList = new ArrayList<>();
         fundsList = new ArrayList<>();
-
+        salaryDetailsList = new ArrayList<>();
     }
 
     @Override
@@ -246,6 +247,7 @@ public class PayrollHistoryFragment extends Fragment {
             requireActivity().runOnUiThread(() -> {
                 tblHandler.removeViews(1, tblHandler.getChildCount() - 1);
                 tblWeekly.removeViews(1, tblWeekly.getChildCount() - 1);
+                tblSalary.removeViews(1, tblSalary.getChildCount() - 1);
 
                 // Create header with actual dates
                 Calendar headerCal = Calendar.getInstance();
@@ -338,13 +340,158 @@ public class PayrollHistoryFragment extends Fragment {
                     tblHandler.addView(row);
                 }
 
+                double overAllTotalSalary = 0.0;
+                String yearStr = String.valueOf(year);
+                String weekStr = String.valueOf(weekNumber);
+
+                List<EmployeeSalaryDetails> EmployeeSalList = getSalaryForDate(month, yearStr, weekStr);
+                for (EmployeeSalaryDetails emp : EmployeeSalList) {
+                    Employee employee = findEmployeeByName(emp.getEmployeeId());
+                    Log.d("FullSalaryReportsID", emp.getEmployeeId());
+                    // Check if the employee and required fields exist before proceeding
+                    if (employee != null && emp.getEmployeeId() != null && !"None".equals(emp.getEmployeeId())) {
+
+                        // Check if the employee role is "Regular"
+                        if ("Regular".equals(employee.getTherapist()) || employee.getSalary() != 0) {
+                            TableRow tableRow = new TableRow(getContext());
+                            Log.d("FullSalaryReports", emp.getLateDeduction());
+
+                            // Calculate the basic weekly salary and deductions
+                            String daysPresent = emp.getDaysPresent() != "" ? emp.getDaysPresent() : "0";
+                            double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
+                            double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
+                            double deductedWeekSal = weekSal - lateDeduction;
+                            double totalCommissionPerEmp = 0.0;
+
+                            /*
+                            // Check if the employee has sales data in the dailySalesMap
+                            double[] dailySalesArray = dailySalesMap.get(emp.getEmployeeId());
+                            if (dailySalesArray == null) {
+                                dailySalesArray = new double[7];  // Initialize with zero sales for all 7 days if not found
+                            }
+
+                            // Process sales and commissions for 7 days (weekdays and weekends)
+                            for (int i = 0; i < 7; i++) {
+                                String dateStr = sdf.format(displayCalendar3.getTime());
+                                double commissionRate = getCommissionRateByDate(employee, dateStr);
+                                double dailySales = dailySalesArray[i];
+                                double dailyCommission = (dailySales * commissionRate) / 100.0;
+                                totalCommissionPerEmp += dailyCommission;
+                                displayCalendar3.add(Calendar.DAY_OF_MONTH, 1);
+                            }*/
+
+                            // Calculate total salary including commission and deductions
+                            double totalSalary = deductedWeekSal + totalCommissionPerEmp;
+                            double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
+                            double totalSalaryDeducted = totalSalary - caDeduction;
+
+                            overAllTotalSalary += totalSalaryDeducted;
+
+                            // Create TextViews for displaying employee details
+                            TextView name = makeTextView(emp.getEmployeeId(), Color.WHITE);
+                            TextView perDay = makeTextView(numberFormat.format(employee.getSalary()), Color.WHITE);
+                            TextView daysPresentTextView = makeTextView(daysPresent, Color.WHITE);
+                            TextView weekSalary = makeTextView(numberFormat.format(weekSal), Color.WHITE);
+                            TextView lateDeductionTextView = makeTextView(numberFormat.format(lateDeduction), Color.WHITE);
+                            TextView deductedSalary = makeTextView(numberFormat.format(deductedWeekSal), Color.WHITE);
+                            TextView commissionTextView = makeTextView(numberFormat.format(totalCommissionPerEmp), Color.WHITE);
+                            TextView totalSalaryTextView = makeTextView(numberFormat.format(totalSalary), Color.WHITE);
+                            TextView caDeductionTextView = makeTextView(numberFormat.format(caDeduction), Color.WHITE);
+                            TextView overallSalaryTextView = makeTextView(numberFormat.format(totalSalaryDeducted), Color.WHITE);
+
+                            // Styling for the overall salary
+                            overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                            overallSalaryTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+
+                            // Add TextViews to the table row
+                            tableRow.addView(name);
+                            tableRow.addView(perDay);
+                            tableRow.addView(daysPresentTextView);
+                            tableRow.addView(weekSalary);
+                            tableRow.addView(lateDeductionTextView);
+                            tableRow.addView(deductedSalary);
+                            tableRow.addView(commissionTextView);
+                            tableRow.addView(totalSalaryTextView);
+                            tableRow.addView(caDeductionTextView);
+                            tableRow.addView(overallSalaryTextView);
+
+                            // Add the row to the final salary table
+                            tblSalary.addView(tableRow);
+                        }
+                    }
+                }
+
+
+                TableRow tableRow4 = new TableRow(getContext());
+                for(int i = 0; i < 8; i++){
+                    TextView TextView5 = emptyTextView();
+                    tableRow4.addView(TextView5);
+                }
+                double remainingBal = 0.0;
+
+                TextView dateTextView4 = makeTextViewBold("Overall Salary", ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                TextView ovSal1 = makeTextViewBold(numberFormat.format(overAllTotalSalary), ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                tableRow4.addView(dateTextView4);
+                tableRow4.addView(ovSal1);
+                tblSalary.addView(tableRow4);
+
                 progressContainer1.setVisibility(View.GONE);
                 btnSearch.setEnabled(true);
             });
 
         }).start();
     }
+    private double getSalaryByDate(Employee employee, String daysPresentStr, SimpleDateFormat sdf) {
+        double salary = employee.getSalary() != null ? employee.getSalary() : 0.0; // Default to current salary
+        List<Map<String, Object>> salaryHistory = employee.getSalaryHistory();
 
+        // Parse the current date for salary calculation
+        Calendar currentCalendar = Calendar.getInstance();
+        int daysPresent = Integer.parseInt(daysPresentStr!= "" ? daysPresentStr : String.valueOf(0));
+
+        // Calculate the total salary for the days present
+        double totalSalary = salary * daysPresent;
+
+        // Iterate through salary history to find the appropriate salary based on the date
+        try {
+            if (salaryHistory != null) { // Add null check here
+                for (Map<String, Object> history : salaryHistory) {
+                    String changeDateStr = (String) history.get("dateChanged");
+                    double salaryAtChange = ((Number) history.get("salary")).doubleValue(); // Handle both Long and Double
+
+                    // Parse the change date
+                    Date changeDate = sdf.parse(changeDateStr);
+                    Date currentDate = currentCalendar.getTime();
+
+                    // If the change date is before or equal to the current date, use this salary
+                    if (changeDate != null && !changeDate.after(currentDate)) {
+                        salary = salaryAtChange; // Update salary to the most recent one before or equal to current date
+                    }
+                }
+            } else {
+                // Handle the case where salaryHistory is null
+                System.out.println("salaryHistory is null");
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+
+        // Calculate total salary for the given number of days present
+        return salary * daysPresent;
+    }
+
+    private List<EmployeeSalaryDetails> getSalaryForDate(int month, String year, String selectedDate) {
+        Log.d("SalesFragments", "Month: " + month + ", Year: " + year + ", Week: " + selectedDate);
+        List<EmployeeSalaryDetails> matchingDate = new ArrayList<>();
+        for (EmployeeSalaryDetails salary : salaryDetailsList) {
+            if (salary.getMonth() == month && salary.getYear().equalsIgnoreCase(year) && salary.getWeek().equalsIgnoreCase(selectedDate)) {
+                matchingDate.add(salary); // Add matching expense to the list
+            }
+        }
+        Log.d("SalesFragments", "Matching Date: " + matchingDate);
+        return matchingDate; // Return the list of matching expenses
+    }
     private TextView makeTextView(String text, int color) {
         TextView tv = new TextView(getContext());
         tv.setText(text);
@@ -465,6 +612,26 @@ public class PayrollHistoryFragment extends Fragment {
                         }
                     } else {
                         Toast.makeText(getActivity(), "Failed to load gcash data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        tasks.add(db.collection("salary_details").get()
+                .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
+                    if (task.isSuccessful()) {
+                        salaryDetailsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            EmployeeSalaryDetails employee = document.toObject(EmployeeSalaryDetails.class);
+                            if (employee != null) { // Check if employee is not null
+                                salaryDetailsList.add(employee);
+                                Log.d("SalesFragments", "Salary Details: " + employee);
+                            } else {
+                                Log.d("SalesFragments", "Null EmployeeSalaryDetails for document: " + document.getId());
+                            }
+                        }
+                        Log.d("SalesFragments", "Total Salary Details Loaded: " + salaryDetailsList.size());
+                    } else {
+                        Toast.makeText(getContext(), "Failed to load data", Toast.LENGTH_SHORT).show();
                     }
                 }));
 
