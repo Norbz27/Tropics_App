@@ -173,7 +173,7 @@ public class PayrollHistoryFragment extends Fragment {
 
             Employee employeeObj = findEmployeeByName(empName);
             List<TableRow> generatedRows = new ArrayList<>();
-            double totalSales = 0.0;
+            double totalComms = 0.0;
             String lastClientName = "";
             String lastTime = "";
 
@@ -232,11 +232,10 @@ public class PayrollHistoryFragment extends Fragment {
                         }
 
                         row.addView(makeTextView(numberFormat.format(totalPrice), Color.LTGRAY));
-                        totalSales += totalPrice;
 
                         double commissionRate = getCommissionRateByDate(employeeObj, formattedDate);
                         double commissionAmount = totalPrice * (commissionRate / 100.0);
-
+                        totalComms += commissionAmount;
                         row.addView(makeTextViewBold(numberFormat.format(commissionAmount), ResourcesCompat.getColor(getResources(), R.color.orange, null)));
 
                         generatedRows.add(row);
@@ -244,6 +243,7 @@ public class PayrollHistoryFragment extends Fragment {
                 }
             }
 
+            double finalTotalComms = totalComms;
             requireActivity().runOnUiThread(() -> {
                 tblHandler.removeViews(1, tblHandler.getChildCount() - 1);
                 tblWeekly.removeViews(1, tblWeekly.getChildCount() - 1);
@@ -326,10 +326,7 @@ public class PayrollHistoryFragment extends Fragment {
 
                 // Add commission values to row
                 for (String date : weekdayDates) {
-                    TextView commissionTextView = new TextView(getContext());
-                    commissionTextView.setText(numberFormat.format(commissionPerDate.get(date)));
-                    commissionTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
-                    commissionTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                    TextView commissionTextView = makeTextViewBold(numberFormat.format(commissionPerDate.get(date)), ResourcesCompat.getColor(getResources(), R.color.orange, null));
                     commissionTextView.setPadding(10, 10, 10, 10);
                     commissionRow.addView(commissionTextView);
                 }
@@ -339,6 +336,14 @@ public class PayrollHistoryFragment extends Fragment {
                 for (TableRow row : generatedRows) {
                     tblHandler.addView(row);
                 }
+                TableRow empTableRow = new TableRow(getContext());
+                for(int empt = 0; empt <5; empt++){
+                    TextView emptyTextView = emptyTextView();
+                    empTableRow.addView(emptyTextView);
+                }
+                TextView TotalComission = makeTextViewBold(numberFormat.format(finalTotalComms),ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                empTableRow.addView(TotalComission);
+                tblHandler.addView(empTableRow);
 
                 double overAllTotalSalary = 0.0;
                 String yearStr = String.valueOf(year);
@@ -346,78 +351,71 @@ public class PayrollHistoryFragment extends Fragment {
 
                 List<EmployeeSalaryDetails> EmployeeSalList = getSalaryForDate(month, yearStr, weekStr);
                 for (EmployeeSalaryDetails emp : EmployeeSalList) {
-                    Employee employee = findEmployeeByName(emp.getEmployeeId());
-                    Log.d("FullSalaryReportsID", emp.getEmployeeId());
+                    Employee employee = findEmployeeByName(empName);
                     // Check if the employee and required fields exist before proceeding
-                    if (employee != null && emp.getEmployeeId() != null && !"None".equals(emp.getEmployeeId())) {
+                    if (employee != null && emp.getEmployeeId() != null && !"None".equals(emp.getEmployeeId())
+                    && emp.getEmployeeId().equals(empName)) {
 
-                        // Check if the employee role is "Regular"
-                        if ("Regular".equals(employee.getTherapist()) || employee.getSalary() != 0) {
-                            TableRow tableRow = new TableRow(getContext());
-                            Log.d("FullSalaryReports", emp.getLateDeduction());
+                        TableRow tableRow = new TableRow(getContext());
 
-                            // Calculate the basic weekly salary and deductions
-                            String daysPresent = emp.getDaysPresent() != "" ? emp.getDaysPresent() : "0";
-                            double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
-                            double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
-                            double deductedWeekSal = weekSal - lateDeduction;
-                            double totalCommissionPerEmp = 0.0;
+                        // Calculate the basic weekly salary and deductions
+                        String daysPresent = emp.getDaysPresent() != "" ? emp.getDaysPresent() : "0";
+                        double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
+                        double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
+                        double deductedWeekSal = weekSal - lateDeduction;
+                        double totalCommissionPerEmp = 0.0;
 
-                            /*
-                            // Check if the employee has sales data in the dailySalesMap
-                            double[] dailySalesArray = dailySalesMap.get(emp.getEmployeeId());
-                            if (dailySalesArray == null) {
-                                dailySalesArray = new double[7];  // Initialize with zero sales for all 7 days if not found
-                            }
-
-                            // Process sales and commissions for 7 days (weekdays and weekends)
-                            for (int i = 0; i < 7; i++) {
-                                String dateStr = sdf.format(displayCalendar3.getTime());
-                                double commissionRate = getCommissionRateByDate(employee, dateStr);
-                                double dailySales = dailySalesArray[i];
-                                double dailyCommission = (dailySales * commissionRate) / 100.0;
-                                totalCommissionPerEmp += dailyCommission;
-                                displayCalendar3.add(Calendar.DAY_OF_MONTH, 1);
-                            }*/
-
-                            // Calculate total salary including commission and deductions
-                            double totalSalary = deductedWeekSal + totalCommissionPerEmp;
-                            double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
-                            double totalSalaryDeducted = totalSalary - caDeduction;
-
-                            overAllTotalSalary += totalSalaryDeducted;
-
-                            // Create TextViews for displaying employee details
-                            TextView name = makeTextView(emp.getEmployeeId(), Color.WHITE);
-                            TextView perDay = makeTextView(numberFormat.format(employee.getSalary()), Color.WHITE);
-                            TextView daysPresentTextView = makeTextView(daysPresent, Color.WHITE);
-                            TextView weekSalary = makeTextView(numberFormat.format(weekSal), Color.WHITE);
-                            TextView lateDeductionTextView = makeTextView(numberFormat.format(lateDeduction), Color.WHITE);
-                            TextView deductedSalary = makeTextView(numberFormat.format(deductedWeekSal), Color.WHITE);
-                            TextView commissionTextView = makeTextView(numberFormat.format(totalCommissionPerEmp), Color.WHITE);
-                            TextView totalSalaryTextView = makeTextView(numberFormat.format(totalSalary), Color.WHITE);
-                            TextView caDeductionTextView = makeTextView(numberFormat.format(caDeduction), Color.WHITE);
-                            TextView overallSalaryTextView = makeTextView(numberFormat.format(totalSalaryDeducted), Color.WHITE);
-
-                            // Styling for the overall salary
-                            overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-                            overallSalaryTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
-
-                            // Add TextViews to the table row
-                            tableRow.addView(name);
-                            tableRow.addView(perDay);
-                            tableRow.addView(daysPresentTextView);
-                            tableRow.addView(weekSalary);
-                            tableRow.addView(lateDeductionTextView);
-                            tableRow.addView(deductedSalary);
-                            tableRow.addView(commissionTextView);
-                            tableRow.addView(totalSalaryTextView);
-                            tableRow.addView(caDeductionTextView);
-                            tableRow.addView(overallSalaryTextView);
-
-                            // Add the row to the final salary table
-                            tblSalary.addView(tableRow);
+                        /*
+                        // Check if the employee has sales data in the dailySalesMap
+                        double[] dailySalesArray = dailySalesMap.get(emp.getEmployeeId());
+                        if (dailySalesArray == null) {
+                            dailySalesArray = new double[7];  // Initialize with zero sales for all 7 days if not found
                         }
+
+                        // Process sales and commissions for 7 days (weekdays and weekends)
+                        for (int i = 0; i < 7; i++) {
+                            String dateStr = sdf.format(displayCalendar3.getTime());
+                            double commissionRate = getCommissionRateByDate(employee, dateStr);
+                            double dailySales = dailySalesArray[i];
+                            double dailyCommission = (dailySales * commissionRate) / 100.0;
+                            totalCommissionPerEmp += dailyCommission;
+                            displayCalendar3.add(Calendar.DAY_OF_MONTH, 1);
+                        }*/
+
+                        // Calculate total salary including commission and deductions
+                        double totalSalary = deductedWeekSal + totalCommissionPerEmp;
+                        double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
+                        double totalSalaryDeducted = totalSalary - caDeduction;
+
+                        overAllTotalSalary += totalSalaryDeducted;
+
+                        TextView perDay = makeTextView(numberFormat.format(employee.getSalary()), Color.WHITE);
+                        TextView daysPresentTextView = makeTextView(daysPresent, Color.WHITE);
+                        TextView weekSalary = makeTextView(numberFormat.format(weekSal), Color.WHITE);
+                        TextView lateDeductionTextView = makeTextView(numberFormat.format(lateDeduction), Color.WHITE);
+                        TextView deductedSalary = makeTextView(numberFormat.format(deductedWeekSal), Color.WHITE);
+                        TextView commissionTextView = makeTextView(numberFormat.format(totalCommissionPerEmp), Color.WHITE);
+                        TextView totalSalaryTextView = makeTextView(numberFormat.format(totalSalary), Color.WHITE);
+                        TextView caDeductionTextView = makeTextView(numberFormat.format(caDeduction), Color.WHITE);
+                        TextView overallSalaryTextView = makeTextView(numberFormat.format(totalSalaryDeducted), Color.WHITE);
+
+                        // Styling for the overall salary
+                        overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                        overallSalaryTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+
+                        tableRow.addView(perDay);
+                        tableRow.addView(daysPresentTextView);
+                        tableRow.addView(weekSalary);
+                        tableRow.addView(lateDeductionTextView);
+                        tableRow.addView(deductedSalary);
+                        tableRow.addView(commissionTextView);
+                        tableRow.addView(totalSalaryTextView);
+                        tableRow.addView(caDeductionTextView);
+                        tableRow.addView(overallSalaryTextView);
+
+                        // Add the row to the final salary table
+                        tblSalary.addView(tableRow);
+
                     }
                 }
 
