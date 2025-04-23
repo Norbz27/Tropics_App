@@ -73,6 +73,26 @@
                     android:textColor="@android:color/white" />
             </LinearLayout>
             <TextView
+                android:id="@+id/tvEmpName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Employee Name"
+                android:textSize="20sp"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:fontFamily="@font/manrope"
+                android:layout_marginBottom="5dp" />
+
+            <TextView
+                android:id="@+id/tvRole"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Role"
+                android:textSize="16sp"
+                android:fontFamily="@font/manrope"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginBottom="10dp" />
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="8dp"

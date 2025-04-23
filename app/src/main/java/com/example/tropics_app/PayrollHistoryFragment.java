@@ -60,6 +60,7 @@ public class PayrollHistoryFragment extends Fragment {
     private NumberFormat numberFormat;
     private Button btnSearch;
     private TableLayout tblHandler, tblWeekly, tblSalary;
+    private TextView tvEmpName, tvRole;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -89,6 +90,8 @@ public class PayrollHistoryFragment extends Fragment {
         tblHandler = view.findViewById(R.id.tblHandler);
         tblWeekly = view.findViewById(R.id.tblWeekly);
         tblSalary = view.findViewById(R.id.tblSalary);
+        tvEmpName = view.findViewById(R.id.tvEmpName);
+        tvRole = view.findViewById(R.id.tvRole);
 
         numberFormat = NumberFormat.getCurrencyInstance(new Locale("en", "PH"));
 
@@ -260,6 +263,11 @@ public class PayrollHistoryFragment extends Fragment {
                 headerCal.set(Calendar.SECOND, 0);
                 headerCal.set(Calendar.MILLISECOND, 0);
 
+                String empNameSt = employeeObj.getName();
+                String empEmailSt = employeeObj.getEmail();
+                tvEmpName.setText(empNameSt);
+                tvRole.setText(empEmailSt);
+
                 // === First Row: Dates ===
                 TableRow dateRow = new TableRow(getContext());
                 dateRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
@@ -341,7 +349,9 @@ public class PayrollHistoryFragment extends Fragment {
                     TextView emptyTextView = emptyTextView();
                     empTableRow.addView(emptyTextView);
                 }
+                TextView TotalLavel = makeTextViewBold("Total Commission",ResourcesCompat.getColor(getResources(), R.color.orange, null));
                 TextView TotalComission = makeTextViewBold(numberFormat.format(finalTotalComms),ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                empTableRow.addView(TotalLavel);
                 empTableRow.addView(TotalComission);
                 tblHandler.addView(empTableRow);
 
@@ -363,24 +373,7 @@ public class PayrollHistoryFragment extends Fragment {
                         double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
                         double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
                         double deductedWeekSal = weekSal - lateDeduction;
-                        double totalCommissionPerEmp = 0.0;
-
-                        /*
-                        // Check if the employee has sales data in the dailySalesMap
-                        double[] dailySalesArray = dailySalesMap.get(emp.getEmployeeId());
-                        if (dailySalesArray == null) {
-                            dailySalesArray = new double[7];  // Initialize with zero sales for all 7 days if not found
-                        }
-
-                        // Process sales and commissions for 7 days (weekdays and weekends)
-                        for (int i = 0; i < 7; i++) {
-                            String dateStr = sdf.format(displayCalendar3.getTime());
-                            double commissionRate = getCommissionRateByDate(employee, dateStr);
-                            double dailySales = dailySalesArray[i];
-                            double dailyCommission = (dailySales * commissionRate) / 100.0;
-                            totalCommissionPerEmp += dailyCommission;
-                            displayCalendar3.add(Calendar.DAY_OF_MONTH, 1);
-                        }*/
+                        double totalCommissionPerEmp = finalTotalComms;
 
                         // Calculate total salary including commission and deductions
                         double totalSalary = deductedWeekSal + totalCommissionPerEmp;
