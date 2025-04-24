@@ -36,7 +36,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:gravity="center"
+                android:gravity="left"
                 android:layout_marginBottom="10dp"
                 android:orientation="horizontal">
 
@@ -54,20 +54,10 @@
                     android:id="@+id/week_num"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
-
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/l9"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                android:gravity="left"
-                android:orientation="horizontal">
                 <Button
                     android:id="@+id/btnSearch"
-                    android:layout_width="match_parent"
+                    android:layout_width="120dp"
                     android:layout_height="45dp"
-                    android:layout_marginTop="16dp"
                     android:background="@drawable/custom_background_3"
                     android:text="Search"
                     android:textColor="@android:color/white" />
@@ -233,7 +223,6 @@
                 </TableLayout>
             </HorizontalScrollView>
             <TextView
-                android:id="@+id/tvFSC"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="16dp"
@@ -327,6 +316,7 @@
                     </TableRow>
                 </TableLayout>
             </HorizontalScrollView>
+
         </LinearLayout>
     </ScrollView>
     <FrameLayout
