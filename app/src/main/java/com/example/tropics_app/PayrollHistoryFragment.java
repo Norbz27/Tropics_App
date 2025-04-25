@@ -1,5 +1,6 @@
 package com.example.tropics_app;
 
+import android.app.DatePickerDialog;
 import android.graphics.Color;
 import android.os.Bundle;
 
@@ -16,7 +17,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -116,20 +119,343 @@ public class PayrollHistoryFragment extends Fragment {
             int selectedYear = Integer.parseInt(year_spinner.getSelectedItem().toString());
             int selectedWeek = Integer.parseInt(week_num.getSelectedItem().toString());
             String empName = autoCompleteTVEmployee.getText().toString();
-
-
             filterDataByMonthYearWeek(selectedMonth, selectedYear, selectedWeek, empName);
 
         });
 
+        EditText datePicker_from = view.findViewById(R.id.date_picker_from);
+        EditText datePicker_to = view.findViewById(R.id.date_picker_to);
+        ImageButton btnSearchSD = view.findViewById(R.id.btnSearchSD);
 
+        datePicker_from.setOnClickListener(v -> {
+            final Calendar calendar = Calendar.getInstance();
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+            DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(), R.style.datepicker, (view1, year1, monthOfYear, dayOfMonth) -> {
+                String selectedDate = (monthOfYear + 1) + "/" + dayOfMonth + "/" + year1;
+                datePicker_from.setText(selectedDate);
+            }, year, month, day);
+            datePickerDialog.show();
+        });
+
+        datePicker_to.setOnClickListener(v -> {
+            final Calendar calendar = Calendar.getInstance();
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+            DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(), R.style.datepicker, (view1, year1, monthOfYear, dayOfMonth) -> {
+                String selectedDate = (monthOfYear + 1) + "/" + dayOfMonth + "/" + year1;
+                datePicker_to.setText(selectedDate);
+            }, year, month, day);
+            datePickerDialog.show();
+        });
+
+        btnSearchSD.setOnClickListener(v -> {
+            String empName = autoCompleteTVEmployee.getText().toString();
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+            try {
+                Date dateFromParsed = sdf.parse(datePicker_from.getText().toString());
+                Date dateToParsed = sdf.parse(datePicker_to.getText().toString());
+                filterDataByDateFromTo(dateFromParsed, dateToParsed, empName);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         return view;
     }
 
+    private void filterDataByDateFromTo(Date dateFrom, Date dateTo, String empName){
+        if (dateFrom.equals("Date From") || dateTo.equals("Date To")) {
+            Toast.makeText(getContext(), "Please select both dates", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if(empName.isEmpty() || empName == null){
+            Toast.makeText(getContext(), "Please select an employee", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (dateFrom.after(dateTo)) {
+            Toast.makeText(getContext(), "Invalid date range", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        progressContainer1.setVisibility(View.VISIBLE);
+        btnSearch.setEnabled(false);
+        new Thread(() -> {
+            // Sort appointments by full datetime (date + time)
+            Collections.sort(appointmentsList, (a1, a2) -> {
+                try {
+                    Calendar cal1 = Calendar.getInstance();
+                    cal1.setTime(a1.getClientDateTimeAsDate());
+                    Date time1 = new SimpleDateFormat("HH:mm").parse(a1.getTime());
+                    Calendar timeCal1 = Calendar.getInstance();
+                    timeCal1.setTime(time1);
+                    cal1.set(Calendar.HOUR_OF_DAY, timeCal1.get(Calendar.HOUR_OF_DAY));
+                    cal1.set(Calendar.MINUTE, timeCal1.get(Calendar.MINUTE));
+
+                    Calendar cal2 = Calendar.getInstance();
+                    cal2.setTime(a2.getClientDateTimeAsDate());
+                    Date time2 = new SimpleDateFormat("HH:mm").parse(a2.getTime());
+                    Calendar timeCal2 = Calendar.getInstance();
+                    timeCal2.setTime(time2);
+                    cal2.set(Calendar.HOUR_OF_DAY, timeCal2.get(Calendar.HOUR_OF_DAY));
+                    cal2.set(Calendar.MINUTE, timeCal2.get(Calendar.MINUTE));
+
+                    return cal1.getTime().compareTo(cal2.getTime());
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                    return 0;
+                }
+            });
+
+            Employee employeeObj = findEmployeeByName(empName);
+            List<TableRow> generatedRows = new ArrayList<>();
+            double totalComms = 0.0;
+            String lastClientName = "";
+            String lastTime = "";
+
+            for (Appointment appointment : appointmentsList) {
+                Date appointmentDate = appointment.getClientDateTimeAsDate();
+                if (appointmentDate == null) continue;
+
+                if (!appointmentDate.before(dateFrom) && !appointmentDate.after(dateTo)) {
+                    String formattedTime = "";
+                    String formattedDate = "";
+
+                    try {
+                        formattedTime = new SimpleDateFormat("hh:mm a", Locale.getDefault())
+                                .format(new SimpleDateFormat("HH:mm").parse(appointment.getTime()));
+                        formattedDate = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+                                .format(appointmentDate);
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+
+                    for (Map<String, Object> service : appointment.getServices()) {
+                        String assignedEmployee = (String) service.get("assignedEmployee");
+                        if (assignedEmployee == null || assignedEmployee.equals("None")) continue;
+                        if (!assignedEmployee.equals(empName)) continue;
+
+                        TableRow row = new TableRow(getContext());
+                        row.setLayoutParams(new TableRow.LayoutParams(
+                                TableRow.LayoutParams.MATCH_PARENT,
+                                TableRow.LayoutParams.WRAP_CONTENT
+                        ));
+
+                        if (!appointment.getFullName().equals(lastClientName)
+                                || !appointment.getTime().equals(lastTime)) {
+
+                            row.addView(makeTextView(formattedDate, Color.WHITE));
+                            row.addView(makeTextView(formattedTime, Color.WHITE));
+                            row.addView(makeTextView(appointment.getFullName(), Color.WHITE));
+
+                            lastClientName = appointment.getFullName();
+                            lastTime = appointment.getTime();
+                        } else {
+                            row.addView(emptyTextView());
+                            row.addView(emptyTextView());
+                            row.addView(emptyTextView());
+                        }
+
+                        row.addView(makeTextView((String) service.get("serviceName"), Color.LTGRAY));
+
+                        double totalPrice = service.get("servicePrice") != null ? (Double) service.get("servicePrice") : 0.0;
+
+                        List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                        if (subServices != null) {
+                            for (Map<String, Object> sub : subServices) {
+                                totalPrice += sub.get("servicePrice") != null ? (double) sub.get("servicePrice") : 0.0;
+                            }
+                        }
+
+                        row.addView(makeTextView(numberFormat.format(totalPrice), Color.LTGRAY));
+
+                        double commissionRate = getCommissionRateByDate(employeeObj, formattedDate);
+                        double commissionAmount = totalPrice * (commissionRate / 100.0);
+                        totalComms += commissionAmount;
+                        row.addView(makeTextViewBold(numberFormat.format(commissionAmount), ResourcesCompat.getColor(getResources(), R.color.orange, null)));
+
+                        generatedRows.add(row);
+                    }
+                }
+            }
+
+            double finalTotalComms = totalComms;
+            requireActivity().runOnUiThread(() -> {
+                tblHandler.removeViews(1, tblHandler.getChildCount() - 1);
+                tblWeekly.removeViews(1, tblWeekly.getChildCount() - 1);
+                tblSalary.removeViews(1, tblSalary.getChildCount() - 1);
+
+                // Set employee header
+                String empNameSt = employeeObj.getName();
+                String empEmailSt = employeeObj.getEmail();
+                tvEmpName.setText(empNameSt);
+                tvRole.setText(empEmailSt);
+
+                // === First Row: Dates ===
+                TableRow dateRow = new TableRow(getContext());
+                dateRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                Calendar displayCalendar = Calendar.getInstance();
+                displayCalendar.setTime(dateFrom); // start from dateFrom
+                List<String> weekdayDates = new ArrayList<>();
+
+                while (!displayCalendar.getTime().after(dateTo)) {
+                    String dateStr = sdf.format(displayCalendar.getTime());
+                    weekdayDates.add(dateStr);
+
+                    TextView dateTextView = new TextView(getContext());
+                    dateTextView.setText(dateStr);
+                    dateTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope));
+                    dateTextView.setTextColor(Color.WHITE);
+                    dateTextView.setPadding(10, 10, 10, 10);
+                    dateRow.addView(dateTextView);
+
+                    displayCalendar.add(Calendar.DAY_OF_MONTH, 1);
+                }
+
+                tblWeekly.addView(dateRow);
+
+                // === Second Row: Commission Totals ===
+                TableRow commissionRow = new TableRow(getContext());
+                commissionRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                // Initialize commission totals
+                Map<String, Double> commissionPerDate = new HashMap<>();
+                for (String date : weekdayDates) {
+                    commissionPerDate.put(date, 0.0);
+                }
+
+                for (Appointment appointment : appointmentsList) {
+                    Date appointmentDate = appointment.getClientDateTimeAsDate();
+                    if (appointmentDate == null) continue;
+
+                    if (!appointmentDate.before(dateFrom) && !appointmentDate.after(dateTo)) {
+                        String formattedDate = sdf.format(appointmentDate);
+
+                        for (Map<String, Object> service : appointment.getServices()) {
+                            String assignedEmployee = (String) service.get("assignedEmployee");
+                            if (assignedEmployee == null || assignedEmployee.equals("None")) continue;
+                            if (!assignedEmployee.equals(empName)) continue;
+
+                            double totalPrice = service.get("servicePrice") != null ? (Double) service.get("servicePrice") : 0.0;
+
+                            List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                            if (subServices != null) {
+                                for (Map<String, Object> sub : subServices) {
+                                    totalPrice += sub.get("servicePrice") != null ? (double) sub.get("servicePrice") : 0.0;
+                                }
+                            }
+
+                            double commissionRate = getCommissionRateByDate(employeeObj, formattedDate);
+                            double commissionAmount = totalPrice * (commissionRate / 100.0);
+
+                            commissionPerDate.put(formattedDate, commissionPerDate.getOrDefault(formattedDate, 0.0) + commissionAmount);
+                        }
+                    }
+                }
+
+                // Add commission values to row
+                for (String date : weekdayDates) {
+                    TextView commissionTextView = makeTextViewBold(numberFormat.format(commissionPerDate.get(date)), ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                    commissionTextView.setPadding(10, 10, 10, 10);
+                    commissionRow.addView(commissionTextView);
+                }
+
+                tblWeekly.addView(commissionRow);
+
+                // Add regular service rows
+                for (TableRow row : generatedRows) {
+                    tblHandler.addView(row);
+                }
+
+                // Total commission row
+                TableRow empTableRow = new TableRow(getContext());
+                for (int empt = 0; empt < 4; empt++) {
+                    empTableRow.addView(emptyTextView());
+                }
+                TextView totalLabel = makeTextViewBold("Total Commission", ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                TextView totalCommission = makeTextViewBold(numberFormat.format(finalTotalComms), ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                empTableRow.addView(totalLabel);
+                empTableRow.addView(totalCommission);
+                tblHandler.addView(empTableRow);
+
+                // Salary section
+                double overAllTotalSalary = 0.0;
+
+                String yearStr = new SimpleDateFormat("yyyy", Locale.getDefault()).format(dateFrom);
+                String monthStr = new SimpleDateFormat("MM", Locale.getDefault()).format(dateFrom);
+
+                List<EmployeeSalaryDetails> EmployeeSalList = getSalaryForDate(Integer.parseInt(monthStr), yearStr, ""); // Week no removed
+
+                for (EmployeeSalaryDetails emp : EmployeeSalList) {
+                    Employee employee = findEmployeeByName(empName);
+                    if (employee != null && emp.getEmployeeId() != null && !"None".equals(emp.getEmployeeId())
+                            && emp.getEmployeeId().equals(empName)) {
+
+                        if ("Regular".equals(employee.getTherapist()) || employee.getSalary() != 0) {
+                            TableRow tableRow = new TableRow(getContext());
+
+                            String daysPresent = emp.getDaysPresent() != null ? emp.getDaysPresent() : "0";
+                            double weekSal = getSalaryByDate(employee, daysPresent, sdf);
+                            double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
+                            double deductedWeekSal = weekSal - lateDeduction;
+                            double totalCommissionPerEmp = finalTotalComms;
+
+                            double totalSalary = deductedWeekSal + totalCommissionPerEmp;
+                            double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
+                            double totalSalaryDeducted = totalSalary - caDeduction;
+
+                            overAllTotalSalary += totalSalaryDeducted;
+
+                            TextView perDay = makeTextView(numberFormat.format(employee.getSalary()), Color.WHITE);
+                            TextView daysPresentTextView = makeTextView(daysPresent, Color.WHITE);
+                            TextView weekSalary = makeTextView(numberFormat.format(weekSal), Color.WHITE);
+                            TextView lateDeductionTextView = makeTextView(numberFormat.format(lateDeduction), Color.WHITE);
+                            TextView deductedSalary = makeTextView(numberFormat.format(deductedWeekSal), Color.WHITE);
+                            TextView commissionTextView = makeTextView(numberFormat.format(totalCommissionPerEmp), Color.WHITE);
+                            TextView totalSalaryTextView = makeTextView(numberFormat.format(totalSalary), Color.WHITE);
+                            TextView caDeductionTextView = makeTextView(numberFormat.format(caDeduction), Color.WHITE);
+                            TextView overallSalaryTextView = makeTextView(numberFormat.format(totalSalaryDeducted), Color.WHITE);
+
+                            overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                            overallSalaryTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
+
+                            tableRow.addView(perDay);
+                            tableRow.addView(daysPresentTextView);
+                            tableRow.addView(weekSalary);
+                            tableRow.addView(lateDeductionTextView);
+                            tableRow.addView(deductedSalary);
+                            tableRow.addView(commissionTextView);
+                            tableRow.addView(totalSalaryTextView);
+                            tableRow.addView(caDeductionTextView);
+                            tableRow.addView(overallSalaryTextView);
+
+                            tblSalary.addView(tableRow);
+                        }
+                    }
+                }
+
+                progressContainer1.setVisibility(View.GONE);
+                btnSearch.setEnabled(true);
+            });
+
+        }).start();
+    }
     private void filterDataByMonthYearWeek(int month, int year, int weekNumber, String empName) {
         progressContainer1.setVisibility(View.VISIBLE);
         btnSearch.setEnabled(false);
+
+        if(empName.isEmpty() || empName == null){
+            Toast.makeText(getContext(), "Please select an employee", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         new Thread(() -> {
             Calendar calendar = Calendar.getInstance();
             calendar.set(Calendar.YEAR, year);

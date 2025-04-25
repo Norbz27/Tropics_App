@@ -41,6 +41,7 @@
             android:textColor="@color/sub_text"
             android:textColorHint="@color/sub_text"
             android:textSize="14sp" />
+
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="30dp"
