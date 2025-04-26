@@ -246,6 +246,7 @@
             </HorizontalScrollView>
             <!-- Wrap the table in a HorizontalScrollView -->
             <HorizontalScrollView
+                android:id="@+id/hscrollWeekly"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:scrollbars="horizontal"
@@ -330,6 +331,7 @@
                 android:textStyle="bold" />
 
             <HorizontalScrollView
+                android:id="@+id/hscrollSalary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
                 <TableLayout
@@ -339,6 +341,98 @@
                     android:stretchColumns="*">
 
                     <TableRow android:background="@color/gray">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="Per Day"
+                            android:textColor="@color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="No. of Days"
+                            android:textColor="@color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="Week Salary"
+                            android:textColor="@color/white" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="Late/UT or \nComm Deduction"
+                            android:textColor="@color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="Deducted Salary"
+                            android:textColor="@color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="Comm"
+                            android:textColor="@color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="Total Salary"
+                            android:textColor="@color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="CA Deduction"
+                            android:textColor="@color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="Overall Salary"
+                            android:textColor="@color/orange" />
+                    </TableRow>
+                </TableLayout>
+            </HorizontalScrollView>
+            <HorizontalScrollView
+                android:id="@+id/hscrollSalaryBFandT"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone">
+                <TableLayout
+                    android:id="@+id/tblSalaryByFandT"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:stretchColumns="*">
+
+                    <TableRow android:background="@color/gray">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="10dp"
+                            android:fontFamily="@font/manrope_bold"
+                            android:text="Payroll Period"
+                            android:textColor="@color/white" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
