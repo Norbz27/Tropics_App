@@ -56,6 +56,7 @@ public class NavigationActivity extends AppCompatActivity implements NavigationV
             Menu menu = navigationView.getMenu();
             MenuItem accountsMenuItem = menu.findItem(R.id.nav_accounts);
             MenuItem accountsMenuItem2 = menu.findItem(R.id.nav_sales_tracking);
+            MenuItem accountsMenuItem3 = menu.findItem(R.id.nav_employee_payroll);
 
             if (userId.equals("bRbfirsBN5VT0AAzUeClRr84keY2") || userId.equals("xWFc9btObrXgCZjlFcENhUtCpfu2")) {
                 accountsMenuItem.setVisible(true);

@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.tropics_app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 28
-        versionName = "2.8"
+        versionCode = 30
+        versionName = "3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

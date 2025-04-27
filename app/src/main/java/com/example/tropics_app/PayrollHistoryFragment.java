@@ -355,50 +355,37 @@ public class PayrollHistoryFragment extends Fragment {
                 tvRole.setText(empEmailSt);
 
                 SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
-                List<CoveredPeriod> coveredPeriods = new ArrayList<>();
-
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(dateFrom);
+                List<CoveredPeriod> coveredPeriods = new ArrayList<>();
 
                 while (!cal.getTime().after(dateTo)) {
-                    int weekOfMonth = cal.get(Calendar.WEEK_OF_MONTH);
-                    int month = cal.get(Calendar.MONTH); // 0 = Jan
-                    int year = cal.get(Calendar.YEAR);
-
-                    boolean alreadyExists = false;
-                    for (CoveredPeriod period : coveredPeriods) {
-                        if (period.week == weekOfMonth && period.month == month && period.year == year) {
-                            alreadyExists = true;
-                            break;
-                        }
+                    Calendar weekStart = (Calendar) cal.clone();
+                    weekStart.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                    if (weekStart.getTime().before(dateFrom)) {
+                        weekStart.setTime(dateFrom);
                     }
 
-                    if (!alreadyExists) {
-                        coveredPeriods.add(new CoveredPeriod(weekOfMonth, month, year));
+                    Calendar weekEnd = (Calendar) weekStart.clone();
+                    weekEnd.add(Calendar.DAY_OF_WEEK, 6);
+                    if (weekEnd.getTime().after(dateTo)) {
+                        weekEnd.setTime(dateTo);
                     }
 
+                    CoveredPeriod coveredPeriod = new CoveredPeriod(weekStart.getTime(), weekEnd.getTime());
+                    coveredPeriods.add(coveredPeriod);
+
+                    // Move to next week's Monday
+                    cal = (Calendar) weekEnd.clone();
                     cal.add(Calendar.DAY_OF_MONTH, 1);
                 }
 
                 String payrollPeriodLast = "";
+                double overAllTotalSalary = 0.0;
+
                 for (CoveredPeriod period : coveredPeriods) {
-                    int week = period.week;
-                    int month = period.month;
-                    int year = period.year;
-
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.set(Calendar.YEAR, year);
-                    calendar.set(Calendar.MONTH, month);
-                    calendar.set(Calendar.WEEK_OF_MONTH, week);
-                    calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-                    calendar.set(Calendar.HOUR_OF_DAY, 0);
-                    calendar.set(Calendar.MINUTE, 0);
-                    calendar.set(Calendar.SECOND, 0);
-                    calendar.set(Calendar.MILLISECOND, 0);
-
-                    Date startOfWeek = calendar.getTime();
-                    calendar.add(Calendar.DAY_OF_MONTH, 6);
-                    Date endOfWeek = calendar.getTime();
+                    Date startOfPeriod = period.startDate;
+                    Date endOfPeriod = period.endDate;
 
                     double totalComms1 = 0.0;
                     String lastClientName1 = "";
@@ -408,7 +395,7 @@ public class PayrollHistoryFragment extends Fragment {
                         Date appointmentDate = appointment.getClientDateTimeAsDate();
                         if (appointmentDate == null) continue;
 
-                        if (!appointmentDate.before(startOfWeek) && !appointmentDate.after(endOfWeek)) {
+                        if (!appointmentDate.before(startOfPeriod) && !appointmentDate.after(endOfPeriod)) {
                             String formattedTime = "";
                             String formattedDate = "";
 
@@ -449,40 +436,36 @@ public class PayrollHistoryFragment extends Fragment {
                         }
                     }
 
-                    List<EmployeeSalaryDetails> EmployeeSalList = getSalaryForDate(month, year+"", week+"");
-                    double overAllTotalSalary = 0.0;
+                    // Fetch salary details manually (because it's no longer strictly by week number now)
+                    List<EmployeeSalaryDetails> EmployeeSalList = getSalaryForDateRange(startOfPeriod, endOfPeriod);
 
                     for (EmployeeSalaryDetails emp : EmployeeSalList) {
                         Employee employee = findEmployeeByName(empName);
-                        // Check if the employee and required fields exist before proceeding
                         if (employee != null && emp.getEmployeeId() != null && !"None".equals(emp.getEmployeeId())
                                 && emp.getEmployeeId().equals(empName)) {
                             if ("Regular".equals(employee.getTherapist()) || employee.getSalary() != 0) {
                                 TableRow tableRow = new TableRow(getContext());
 
-                                // Calculate the basic weekly salary and deductions
                                 String daysPresent = emp.getDaysPresent() != "" ? emp.getDaysPresent() : "0";
                                 double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
                                 double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
                                 double deductedWeekSal = weekSal - lateDeduction;
                                 double totalCommissionPerEmp = totalComms1;
 
-                                // Calculate total salary including commission and deductions
                                 double totalSalary = deductedWeekSal + totalCommissionPerEmp;
                                 double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
                                 double totalSalaryDeducted = totalSalary - caDeduction;
 
-                                overAllTotalSalary += totalSalaryDeducted;
-
                                 SimpleDateFormat dayFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
                                 SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy", Locale.getDefault());
 
-                                String startStr = dayFormat.format(startOfWeek); // e.g., "Apr 21"
-                                String endStr = dayFormat.format(endOfWeek);     // e.g., "Apr 27"
-                                String year1 = yearFormat.format(startOfWeek);    // e.g., "2025"
+                                String startStr = dayFormat.format(startOfPeriod);
+                                String endStr = dayFormat.format(endOfPeriod);
+                                String year1 = yearFormat.format(startOfPeriod);
 
                                 String payrollPeriodStr = startStr + " - " + endStr + ", " + year1;
-                                if(!payrollPeriodLast.equals(payrollPeriodStr)){
+                                if (!payrollPeriodLast.equals(payrollPeriodStr)) {
+                                    overAllTotalSalary += totalSalaryDeducted;
                                     payrollPeriodLast = payrollPeriodStr;
                                     TextView payrollPeriod = makeTextView(payrollPeriodStr, Color.WHITE);
 
@@ -499,7 +482,6 @@ public class PayrollHistoryFragment extends Fragment {
                                     overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
                                     overallSalaryTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
 
-                                    // Add all views to the row
                                     tableRow.addView(payrollPeriod);
                                     tableRow.addView(perDay);
                                     tableRow.addView(daysPresentTextView);
@@ -511,7 +493,6 @@ public class PayrollHistoryFragment extends Fragment {
                                     tableRow.addView(caDeductionTextView);
                                     tableRow.addView(overallSalaryTextView);
 
-                                    // Add the row to the final salary table
                                     tblSalaryByFandT.addView(tableRow);
                                 }
                             }
@@ -519,6 +500,18 @@ public class PayrollHistoryFragment extends Fragment {
                     }
                 }
 
+
+                TableRow tableRow4 = new TableRow(getContext());
+                for(int i = 0; i < 8; i++){
+                    TextView TextView5 = emptyTextView();
+                    tableRow4.addView(TextView5);
+                }
+
+                TextView dateTextView4 = makeTextViewBold("Overall Salary", ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                TextView ovSal1 = makeTextViewBold(numberFormat.format(overAllTotalSalary), ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                tableRow4.addView(dateTextView4);
+                tableRow4.addView(ovSal1);
+                tblSalaryByFandT.addView(tableRow4);
 
                 progressContainer1.setVisibility(View.GONE);
                 btnSearch.setEnabled(true);
@@ -871,18 +864,42 @@ public class PayrollHistoryFragment extends Fragment {
         Log.d("SalesFragments", "Matching Date: " + matchingDate);
         return matchingDate; // Return the list of matching expenses
     }
-    private List<EmployeeSalaryDetails> getSalaryForDateByFandT(int month, String year, List<Integer> coveredWeeks) {
-        List<EmployeeSalaryDetails> matchingDate = new ArrayList<>();
+
+    private List<EmployeeSalaryDetails> getSalaryForDateRange(Date startDate, Date endDate) {
+        List<EmployeeSalaryDetails> matchingSalaries = new ArrayList<>();
+        Calendar startCal = Calendar.getInstance();
+        startCal.setTime(startDate);
+        int startMonth = startCal.get(Calendar.MONTH); // 0 = Jan
+        int startYear = startCal.get(Calendar.YEAR);
+
+        Calendar endCal = Calendar.getInstance();
+        endCal.setTime(endDate);
+        int endMonth = endCal.get(Calendar.MONTH);
+        int endYear = endCal.get(Calendar.YEAR);
+
         for (EmployeeSalaryDetails salary : salaryDetailsList) {
-            if (salary.getMonth() == month && salary.getYear().equalsIgnoreCase(year)) {
-                int salaryWeek = Integer.parseInt(salary.getWeek());
-                Log.d("SalesFragments", "Salary Week1: " + salaryWeek);
-                if (coveredWeeks.contains(salaryWeek)) {
-                    matchingDate.add(salary);
-                }
+            int salaryMonth = salary.getMonth();
+            int salaryYear;
+            try {
+                salaryYear = Integer.parseInt(salary.getYear());
+            } catch (NumberFormatException e) {
+                continue;
             }
+
+            if (salaryYear < startYear || salaryYear > endYear) {
+                continue;
+            }
+            if (salaryYear == startYear && salaryMonth < startMonth) {
+                continue;
+            }
+            if (salaryYear == endYear && salaryMonth > endMonth) {
+                continue;
+            }
+
+            matchingSalaries.add(salary);
         }
-        return matchingDate;
+
+        return matchingSalaries;
     }
 
 
