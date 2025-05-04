@@ -32,7 +32,7 @@ public class AppointmentFragment extends Fragment {
                 reloadFragment();
             }
         };
-        requireActivity().getOnBackPressedDispatcher().addCallback(this, callback);
+        requireActivity().getOnBackPressedDispatcher().addCallback(getActivity(), callback);
 
         return view;
     }

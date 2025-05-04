@@ -1,6 +1,8 @@
 package com.example.tropics_app;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -9,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,14 +21,18 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AppointmentClientInfoFragment extends Fragment {
 
@@ -35,6 +42,10 @@ public class AppointmentClientInfoFragment extends Fragment {
     private List<Client> clientList = new ArrayList<>();
     private ClientAdapter clientAdapter;
     private FirebaseFirestore db;
+    private final List<Client> allClients = new ArrayList<>();
+    private FrameLayout progressContainer1;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private Task<QuerySnapshot> preloadTask;  // track the task
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -64,11 +75,14 @@ public class AppointmentClientInfoFragment extends Fragment {
         edEmail = view.findViewById(R.id.edEmail);
         edSearchFirstname = view.findViewById(R.id.edSearchFirstname);
         rvSearchResults = view.findViewById(R.id.rvSearchResults);
+        progressContainer1 = view.findViewById(R.id.progressContainer1);
 
         // Set up RecyclerView
         clientAdapter = new ClientAdapter(clientList, this::onClientSelected);
         rvSearchResults.setLayoutManager(new LinearLayoutManager(getContext()));
         rvSearchResults.setAdapter(clientAdapter);
+
+        preloadAllClients();
 
         // Add TextWatcher to search EditText
         edSearchFirstname.addTextChangedListener(new TextWatcher() {
@@ -130,6 +144,41 @@ public class AppointmentClientInfoFragment extends Fragment {
         clientList.clear(); // Clear the client list
         clientAdapter.notifyDataSetChanged(); // Notify adapter of data change
     }
+    private void preloadAllClients() {
+        mainHandler.post(() -> progressContainer1.setVisibility(View.VISIBLE));
+
+        preloadTask = db.collection("appointments")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (!isAdded()) return;
+
+                    if (task.isSuccessful()) {
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            Set<String> uniqueFullNames = new HashSet<>();
+                            List<Client> tempClients = new ArrayList<>();
+
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                Client client = document.toObject(Client.class);
+                                String fullName = client.getFullName();
+
+                                if (uniqueFullNames.add(fullName)) {
+                                    tempClients.add(client);
+                                }
+                            }
+
+                            // Now update the UI and shared data back on the main thread
+                            mainHandler.post(() -> {
+                                allClients.clear();
+                                allClients.addAll(tempClients);
+                                progressContainer1.setVisibility(View.GONE);
+                            });
+                        });
+                    } else {
+                        Log.e("Firestore Error", "Error preloading clients: ", task.getException());
+                        mainHandler.post(() -> progressContainer1.setVisibility(View.GONE));
+                    }
+                });
+    }
 
     private void searchClientByFirstName(String firstName) {
         if (firstName.isEmpty()) {
@@ -139,36 +188,19 @@ public class AppointmentClientInfoFragment extends Fragment {
             return;
         }
 
-        rvSearchResults.setVisibility(View.VISIBLE); // Show RecyclerView when searching
-        // Optionally, show a loading indicator here
+        rvSearchResults.setVisibility(View.VISIBLE);
 
-        db.collection("appointments")
-                .whereGreaterThanOrEqualTo("fullName", firstName)
-                .whereLessThanOrEqualTo("fullName", firstName + "\uf8ff") // Get clients starting with that name
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        clientList.clear();
-                        Set<String> uniqueFullNames = new HashSet<>(); // Set to track unique full names
+        List<Client> filteredClients = new ArrayList<>();
+        for (Client client : allClients) {
+            if (client.getFullName().toLowerCase().startsWith(firstName.toLowerCase())) {
+                filteredClients.add(client);
+            }
+        }
 
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            Client client = document.toObject(Client.class); // Ensure Client class matches Firestore structure
-                            String fullName = client.getFullName(); // Adjust according to your Client class structure
-
-                            // Check if the full name is unique
-                            if (uniqueFullNames.add(fullName)) { // add() returns true if the name was added, false if it was already present
-                                clientList.add(client); // Only add the client if the name is unique
-                            }
-                        }
-
-                        clientAdapter.notifyDataSetChanged();
-                        rvSearchResults.setVisibility(clientList.isEmpty() ? View.GONE : View.VISIBLE);
-                    } else {
-                        // Handle error
-                        Log.e("Firestore Error", "Error getting documents: ", task.getException());
-                    }
-                    // Hide loading indicator here
-                });
+        clientList.clear();
+        clientList.addAll(filteredClients);
+        clientAdapter.notifyDataSetChanged();
+        rvSearchResults.setVisibility(clientList.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     private void onClientSelected(Client client) {
@@ -187,4 +219,10 @@ public class AppointmentClientInfoFragment extends Fragment {
         viewModel.setPhone(edPhone.getText().toString());
         viewModel.setEmail(edEmail.getText().toString());
     }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        preloadTask = null; // prevent UI update after destroy
+    }
+
 }
