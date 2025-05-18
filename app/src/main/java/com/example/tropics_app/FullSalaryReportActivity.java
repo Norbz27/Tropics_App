@@ -181,11 +181,13 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                         EditText etDaysPresent = createEditText();
                                         EditText etLateDeduction = createEditText();
                                         EditText etCADeduction = createEditText();
+                                        EditText etOTPay = createEditText();
 
                                         tableRow.addView(employeeName);
                                         tableRow.addView(etDaysPresent);
                                         tableRow.addView(etLateDeduction);
                                         tableRow.addView(etCADeduction);
+                                        tableRow.addView(etOTPay);
                                         employeeTable.addView(tableRow);
 
                                         // Check if salary details exist
@@ -201,23 +203,27 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                         etDaysPresent.setEnabled(false);
                                                         etLateDeduction.setEnabled(false);
                                                         etCADeduction.setEnabled(false);
+                                                        etOTPay.setEnabled(false);
                                                         for (QueryDocumentSnapshot salaryDoc : queryDocumentSnapshots) {
 
                                                             if (editSalary) {
                                                                 etDaysPresent.setEnabled(true);
                                                                 etLateDeduction.setEnabled(true);
                                                                 etCADeduction.setEnabled(true);
+                                                                etOTPay.setEnabled(true);
                                                             }
 
                                                             etDaysPresent.setText(salaryDoc.getString("daysPresent"));
                                                             etLateDeduction.setText(salaryDoc.getString("lateDeduction"));
                                                             etCADeduction.setText(salaryDoc.getString("caDeduction"));
+                                                            etOTPay.setText(salaryDoc.getString("otPay"));
                                                         }
                                                     } else {
                                                         // If no record exists, enable fields if user has permission
                                                         etDaysPresent.setEnabled(true);
                                                         etLateDeduction.setEnabled(true);
                                                         etCADeduction.setEnabled(true);
+                                                        etOTPay.setEnabled(true);
                                                     }
                                                 });
 
@@ -254,11 +260,13 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                                 EditText daysPresentInput = (EditText) row.getChildAt(1); // Days Present
                                                                 EditText lateDeductionInput = (EditText) row.getChildAt(2); // Late Deduction
                                                                 EditText caDeductionInput = (EditText) row.getChildAt(3); // CA Deduction
+                                                                EditText otPayInput = (EditText) row.getChildAt(4); // OT
 
                                                                 String employeeName2 = employeeNameView.getText().toString().trim();
                                                                 String daysPresent = daysPresentInput.getText().toString().trim();
                                                                 String lateDeduction = lateDeductionInput.getText().toString().trim();
                                                                 String caDeduction = caDeductionInput.getText().toString().trim();
+                                                                String otPay = otPayInput.getText().toString().trim();
 
                                                                 if (existingEmployees.containsKey(employeeName2)) {
 
@@ -268,6 +276,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                                     deductionData.put("daysPresent", daysPresent);
                                                                     deductionData.put("lateDeduction", lateDeduction);
                                                                     deductionData.put("caDeduction", caDeduction);
+                                                                    deductionData.put("otPay", otPay);
                                                                     deductionData.put("timestamp", currentDate);
 
                                                                     db.collection("salary_details")
@@ -282,6 +291,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                                     deductionData.put("daysPresent", daysPresent);
                                                                     deductionData.put("lateDeduction", lateDeduction);
                                                                     deductionData.put("caDeduction", caDeduction);
+                                                                    deductionData.put("otPay", otPay);
                                                                     deductionData.put("month", getMonthNumber(month));
                                                                     deductionData.put("year", year);
                                                                     deductionData.put("week", week);
