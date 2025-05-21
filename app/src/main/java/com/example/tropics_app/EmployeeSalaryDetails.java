@@ -1,13 +1,15 @@
 package com.example.tropics_app;
 
-import java.security.Timestamp;
-
 public class EmployeeSalaryDetails {
     private String employeeId;
     private String daysPresent;
     private String lateDeduction;
     private String deductedSalary;
     private String caDeduction;
+    private String SSS;
+    private String HDMF;
+    private String PHIC;
+    private String otPay;
     private int month;
     private String year;
     private String week;
@@ -18,7 +20,7 @@ public class EmployeeSalaryDetails {
     }
 
     // Constructor
-    public EmployeeSalaryDetails(String employeeId, String daysPresent, String lateDeduction, String deductedSalary, String caDeduction, int month, String year, String week, String timestamp) {
+    public EmployeeSalaryDetails(String employeeId, String daysPresent, String lateDeduction, String deductedSalary, String caDeduction, String SSS, String HDMF, String PHIC, String otPay, int month, String year, String week, String timestamp) {
         this.employeeId = employeeId;
         this.daysPresent = daysPresent;
         this.lateDeduction = lateDeduction;
@@ -27,6 +29,10 @@ public class EmployeeSalaryDetails {
         this.month = month;
         this.year = year;
         this.week = week;
+        this.SSS = SSS;
+        this.HDMF = HDMF;
+        this.PHIC = PHIC;
+        this.otPay = otPay;
         this.timestamp = timestamp;
     }
 
@@ -49,6 +55,19 @@ public class EmployeeSalaryDetails {
 
     public String getCaDeduction() {
         return caDeduction;
+    }
+
+    public String getSSS() {
+        return SSS;
+    }
+    public String getHDMF() {
+        return HDMF;
+    }
+    public String getPHIC() {
+        return PHIC;
+    }
+    public String getOtPay() {
+        return otPay;
     }
     public int getMonth() {
         return month;
@@ -79,6 +98,19 @@ public class EmployeeSalaryDetails {
 
     public void setCaDeduction(String caDeduction) {
         this.caDeduction = caDeduction;
+    }
+
+    public void setSSS() {
+        this.SSS = SSS;
+    }
+    public void setHDMF() {
+        this.HDMF = HDMF;
+    }
+    public void setPHIC() {
+        this.PHIC = PHIC;
+    }
+    public void setOT() {
+        this.otPay = otPay;
     }
 
     public void setMonth(int month) {

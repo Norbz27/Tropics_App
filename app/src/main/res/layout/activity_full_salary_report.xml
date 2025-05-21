@@ -253,7 +253,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
-                                    android:fontFamily="@font/manrope_bold"
+                                    android:fontFamily="@font/manrope_extrabold"
                                     android:text="NAME"
                                     android:textColor="@color/white" />
 
@@ -262,7 +262,7 @@
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
                                     android:fontFamily="@font/manrope_bold"
-                                    android:text="Per Day"
+                                    android:text="Daily \nSalary"
                                     android:textColor="@color/white" />
 
                                 <TextView
@@ -270,7 +270,22 @@
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
                                     android:fontFamily="@font/manrope_bold"
-                                    android:text="No. of Days"
+                                    android:text="Days \nPresent"
+                                    android:textColor="@color/white" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/manrope_extrabold"
+                                    android:padding="10dp"
+                                    android:text="Basic Pay"
+                                    android:textColor="@color/white" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:padding="10dp"
+                                    android:fontFamily="@font/manrope_bold"
+                                    android:text="Commission"
                                     android:textColor="@color/white" />
 
                                 <TextView
@@ -278,14 +293,15 @@
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
                                     android:fontFamily="@font/manrope_bold"
-                                    android:text="Week Salary"
+                                    android:text="OT"
                                     android:textColor="@color/white" />
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
-                                    android:fontFamily="@font/manrope_bold"
-                                    android:text="Late/UT or \nComm Deduction"
+                                    android:fontFamily="@font/manrope_extrabold"
+                                    android:text="Total \nEarnings"
                                     android:textColor="@color/white" />
 
                                 <TextView
@@ -293,7 +309,7 @@
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
                                     android:fontFamily="@font/manrope_bold"
-                                    android:text="Deducted Salary"
+                                    android:text="Late/UT \nDeduction"
                                     android:textColor="@color/white" />
 
                                 <TextView
@@ -301,7 +317,7 @@
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
                                     android:fontFamily="@font/manrope_bold"
-                                    android:text="Comm"
+                                    android:text="CA \nDeduction"
                                     android:textColor="@color/white" />
 
                                 <TextView
@@ -309,7 +325,7 @@
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
                                     android:fontFamily="@font/manrope_bold"
-                                    android:text="Total Salary"
+                                    android:text="SSS"
                                     android:textColor="@color/white" />
 
                                 <TextView
@@ -317,7 +333,7 @@
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
                                     android:fontFamily="@font/manrope_bold"
-                                    android:text="CA Deduction"
+                                    android:text="HDMF"
                                     android:textColor="@color/white" />
 
                                 <TextView
@@ -325,7 +341,23 @@
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
                                     android:fontFamily="@font/manrope_bold"
-                                    android:text="Overall Salary"
+                                    android:text="PHIC"
+                                    android:textColor="@color/white" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:padding="10dp"
+                                    android:fontFamily="@font/manrope_extrabold"
+                                    android:text="Total \nDeduction"
+                                    android:textColor="@color/white" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:padding="10dp"
+                                    android:fontFamily="@font/manrope_extrabold"
+                                    android:text="Net Pay"
                                     android:textColor="@color/orange" />
                             </TableRow>
                         </TableLayout>

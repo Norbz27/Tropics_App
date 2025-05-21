@@ -3,12 +3,10 @@ package com.example.tropics_app;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.text.InputType;
 import android.util.Log;
-import android.view.Gravity;
+import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,16 +20,10 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.res.ResourcesCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.graphics.drawable.DrawableCompat;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -48,7 +40,6 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -136,6 +127,22 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         textView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
         return textView;
     }
+    private TextView createTextViewBold(String text) {
+        TextView textView = new TextView(this);
+        textView.setText(text);
+        textView.setPadding(10, 10, 10, 10);
+        textView.setTextColor(getResources().getColor(android.R.color.white));
+        textView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+        return textView;
+    }
+    private TextView createTextViewExtraBold(String text) {
+        TextView textView = new TextView(this);
+        textView.setText(text);
+        textView.setPadding(10, 10, 10, 10);
+        textView.setTextColor(getResources().getColor(android.R.color.white));
+        textView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_extrabold));
+        return textView;
+    }
 
     private void showSalaryComputationDialog(String month, String year, String week) {
         Dialog dialog = new Dialog(this);
@@ -175,19 +182,26 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                         employeeName.setText(employee.getName());
                                         employeeName.setTextSize(16);
                                         employeeName.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
-                                        employeeName.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
+                                        employeeName.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
                                         employeeName.setTextColor(getResources().getColor(android.R.color.white));
 
                                         EditText etDaysPresent = createEditText();
                                         EditText etLateDeduction = createEditText();
                                         EditText etCADeduction = createEditText();
                                         EditText etOTPay = createEditText();
+                                        EditText etSSS = createEditText();
+                                        EditText etHDMF = createEditText();
+                                        EditText etPHIC = createEditText();
 
                                         tableRow.addView(employeeName);
                                         tableRow.addView(etDaysPresent);
                                         tableRow.addView(etLateDeduction);
                                         tableRow.addView(etCADeduction);
                                         tableRow.addView(etOTPay);
+                                        tableRow.addView(etSSS);
+                                        tableRow.addView(etHDMF);
+                                        tableRow.addView(etPHIC);
+
                                         employeeTable.addView(tableRow);
 
                                         // Check if salary details exist
@@ -204,6 +218,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                         etLateDeduction.setEnabled(false);
                                                         etCADeduction.setEnabled(false);
                                                         etOTPay.setEnabled(false);
+                                                        etSSS.setEnabled(false);
+                                                        etHDMF.setEnabled(false);
+                                                        etPHIC.setEnabled(false);
                                                         for (QueryDocumentSnapshot salaryDoc : queryDocumentSnapshots) {
 
                                                             if (editSalary) {
@@ -211,12 +228,18 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                                 etLateDeduction.setEnabled(true);
                                                                 etCADeduction.setEnabled(true);
                                                                 etOTPay.setEnabled(true);
+                                                                etSSS.setEnabled(true);
+                                                                etHDMF.setEnabled(true);
+                                                                etPHIC.setEnabled(true);
                                                             }
 
                                                             etDaysPresent.setText(salaryDoc.getString("daysPresent"));
                                                             etLateDeduction.setText(salaryDoc.getString("lateDeduction"));
                                                             etCADeduction.setText(salaryDoc.getString("caDeduction"));
                                                             etOTPay.setText(salaryDoc.getString("otPay"));
+                                                            etSSS.setText(salaryDoc.getString("SSS"));
+                                                            etHDMF.setText(salaryDoc.getString("HDMF"));
+                                                            etPHIC.setText(salaryDoc.getString("PHIC"));
                                                         }
                                                     } else {
                                                         // If no record exists, enable fields if user has permission
@@ -224,6 +247,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                         etLateDeduction.setEnabled(true);
                                                         etCADeduction.setEnabled(true);
                                                         etOTPay.setEnabled(true);
+                                                        etSSS.setEnabled(true);
+                                                        etHDMF.setEnabled(true);
+                                                        etPHIC.setEnabled(true);
                                                     }
                                                 });
 
@@ -260,13 +286,19 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                                 EditText daysPresentInput = (EditText) row.getChildAt(1); // Days Present
                                                                 EditText lateDeductionInput = (EditText) row.getChildAt(2); // Late Deduction
                                                                 EditText caDeductionInput = (EditText) row.getChildAt(3); // CA Deduction
-                                                                EditText otPayInput = (EditText) row.getChildAt(4); // OT
+                                                                EditText otPayInput = (EditText) row.getChildAt(4);
+                                                                EditText sssInput = (EditText) row.getChildAt(5);
+                                                                EditText hdmfInput = (EditText) row.getChildAt(6);
+                                                                EditText phicInput = (EditText) row.getChildAt(7);
 
                                                                 String employeeName2 = employeeNameView.getText().toString().trim();
                                                                 String daysPresent = daysPresentInput.getText().toString().trim();
                                                                 String lateDeduction = lateDeductionInput.getText().toString().trim();
                                                                 String caDeduction = caDeductionInput.getText().toString().trim();
                                                                 String otPay = otPayInput.getText().toString().trim();
+                                                                String sss = sssInput.getText().toString().trim();
+                                                                String hdmf = hdmfInput.getText().toString().trim();
+                                                                String phic = phicInput.getText().toString().trim();
 
                                                                 if (existingEmployees.containsKey(employeeName2)) {
 
@@ -277,6 +309,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                                     deductionData.put("lateDeduction", lateDeduction);
                                                                     deductionData.put("caDeduction", caDeduction);
                                                                     deductionData.put("otPay", otPay);
+                                                                    deductionData.put("SSS", sss);
+                                                                    deductionData.put("HDMF", hdmf);
+                                                                    deductionData.put("PHIC", phic);
                                                                     deductionData.put("timestamp", currentDate);
 
                                                                     db.collection("salary_details")
@@ -292,6 +327,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                                     deductionData.put("lateDeduction", lateDeduction);
                                                                     deductionData.put("caDeduction", caDeduction);
                                                                     deductionData.put("otPay", otPay);
+                                                                    deductionData.put("SSS", sss);
+                                                                    deductionData.put("HDMF", hdmf);
+                                                                    deductionData.put("PHIC", phic);
                                                                     deductionData.put("month", getMonthNumber(month));
                                                                     deductionData.put("year", year);
                                                                     deductionData.put("week", week);
@@ -309,8 +347,8 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                         Toast.makeText(this, "Salary details submitted!", Toast.LENGTH_SHORT).show();
                                                         progressDialog.dismiss();
                                                         dialog.dismiss();
-                                                        loadSalaryData();
-                                                        filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                        //loadSalaryData();
+                                                        //filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
                                                         Toast.makeText(this, "Reload for updated data", Toast.LENGTH_SHORT).show();
                                                     });
                                                 });
@@ -334,7 +372,20 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         editText.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_medium));
         editText.setInputType(InputType.TYPE_CLASS_NUMBER);
         editText.setPadding(12, 5, 12, 5);
-        editText.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1));
+
+        int widthInDp = 100; // change this as needed
+        int widthInPx = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                widthInDp,
+                getResources().getDisplayMetrics()
+        );
+
+        TableRow.LayoutParams params = new TableRow.LayoutParams(
+                widthInPx,
+                TableRow.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(8, 8, 8, 8); // left, top, right, bottom
+        editText.setLayoutParams(params);
         editText.setId(View.generateViewId());
         return editText;
     }
@@ -807,6 +858,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             calendar.set(Calendar.MILLISECOND, 0);
             Calendar displayCalendar3 = (Calendar) calendar.clone();
             double overAllTotalSalary = 0.0;
+            Log.d("Employee List", EmployeeSalList.toString());
             for (EmployeeSalaryDetails emp : EmployeeSalList) {
                 Employee employee = findEmployeeByName(emp.getEmployeeId());
                 Log.d("FullSalaryReportsID", emp.getEmployeeId());
@@ -821,9 +873,13 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
                         // Calculate the basic weekly salary and deductions
                         String daysPresent = emp.getDaysPresent()!= "" ? emp.getDaysPresent() : "0";
-                        double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
+
                         double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
-                        double deductedWeekSal = weekSal - lateDeduction;
+                        double sss = (emp.getSSS() == null || emp.getSSS().isEmpty()) ? 0.0 : Double.parseDouble(emp.getSSS());
+                        double hdmf = (emp.getHDMF() == null || emp.getHDMF().isEmpty()) ? 0.0 : Double.parseDouble(emp.getHDMF());
+                        double phic = (emp.getPHIC() == null || emp.getPHIC().isEmpty()) ? 0.0 : Double.parseDouble(emp.getPHIC());
+                        double ot = (emp.getOtPay() == null || emp.getOtPay().isEmpty()) ? 0.0 : Double.parseDouble(emp.getOtPay());
+
                         double totalCommissionPerEmp = 0.0;
 
                         // Check if the employee has sales data in the dailySalesMap
@@ -842,39 +898,49 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                             displayCalendar3.add(Calendar.DAY_OF_MONTH, 1);
                         }
 
-                        // Calculate total salary including commission and deductions
-                        double totalSalary = deductedWeekSal + totalCommissionPerEmp;
-                        double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
-                        double totalSalaryDeducted = totalSalary - caDeduction;
+                        double caDeduction = (emp.getCaDeduction() == null || emp.getCaDeduction().isEmpty()) ? 0.0 : Double.parseDouble(emp.getCaDeduction());
+                        double basicPay = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
+                        double totalEarnings = totalCommissionPerEmp + ot;
+                        double totalDeduction = lateDeduction + sss + hdmf + phic + caDeduction;
+                        double netPay = (basicPay + totalEarnings) - totalDeduction;
 
-                        overAllTotalSalary += totalSalaryDeducted;
+                        overAllTotalSalary += netPay;
 
                         // Create TextViews for displaying employee details
-                        TextView name = createTextView(emp.getEmployeeId());
-                        TextView perDay = createTextView(numberFormat.format(employee.getSalary()));
-                        TextView daysPresentTextView = createTextView(daysPresent);
-                        TextView weekSalary = createTextView(numberFormat.format(weekSal));
+                        TextView nameTV = createTextViewBold(emp.getEmployeeId());
+                        TextView dailySalaryTV = createTextView(numberFormat.format(employee.getSalary()));
+                        TextView daysPresentTV = createTextView(daysPresent);
+                        TextView basicPayTV = createTextViewBold(numberFormat.format(basicPay));
+                        TextView commissionTV = createTextView(numberFormat.format(totalCommissionPerEmp));
+                        TextView otTV = createTextView(numberFormat.format(ot));
+                        TextView totalEarningsTV = createTextViewBold(numberFormat.format(totalEarnings));
                         TextView lateDeductionTextView = createTextView(numberFormat.format(lateDeduction));
-                        TextView deductedSalary = createTextView(numberFormat.format(deductedWeekSal));
-                        TextView commissionTextView = createTextView(numberFormat.format(totalCommissionPerEmp));
-                        TextView totalSalaryTextView = createTextView(numberFormat.format(totalSalary));
-                        TextView caDeductionTextView = createTextView(numberFormat.format(caDeduction));
-                        TextView overallSalaryTextView = createTextView(numberFormat.format(totalSalaryDeducted));
+                        TextView caDeductionTV = createTextView(numberFormat.format(caDeduction));
+                        TextView sssTV = createTextView(numberFormat.format(sss));
+                        TextView hdmfTV = createTextView(numberFormat.format(hdmf));
+                        TextView phicTV = createTextView(numberFormat.format(phic));
+                        TextView totalDeductionTV = createTextViewBold(numberFormat.format(totalDeduction));
+
+                        TextView overallSalaryTextView = createTextViewBold(numberFormat.format(netPay));
 
                         // Styling for the overall salary
                         overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
                         overallSalaryTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
 
                         // Add TextViews to the table row
-                        tableRow.addView(name);
-                        tableRow.addView(perDay);
-                        tableRow.addView(daysPresentTextView);
-                        tableRow.addView(weekSalary);
+                        tableRow.addView(nameTV);
+                        tableRow.addView(dailySalaryTV);
+                        tableRow.addView(daysPresentTV);
+                        tableRow.addView(basicPayTV);
+                        tableRow.addView(commissionTV);
+                        tableRow.addView(otTV);
+                        tableRow.addView(totalEarningsTV);
                         tableRow.addView(lateDeductionTextView);
-                        tableRow.addView(deductedSalary);
-                        tableRow.addView(commissionTextView);
-                        tableRow.addView(totalSalaryTextView);
-                        tableRow.addView(caDeductionTextView);
+                        tableRow.addView(caDeductionTV);
+                        tableRow.addView(sssTV);
+                        tableRow.addView(hdmfTV);
+                        tableRow.addView(phicTV);
+                        tableRow.addView(totalDeductionTV);
                         tableRow.addView(overallSalaryTextView);
 
                         // Add the row to the final salary table
@@ -884,7 +950,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             }
 
             TableRow tableRow4 = new TableRow(this);
-            for(int i = 0; i < 8; i++){
+            for(int i = 0; i < 12; i++){
                 TextView TextView5 = createTextView("");
                 tableRow4.addView(TextView5);
             }

@@ -23,71 +23,92 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
-
-        <TableLayout
-            android:id="@+id/employeeTable"
+        <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:stretchColumns="1,2,3"
-            android:padding="8dp">
-
-        <!-- Table Header -->
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:layout_width="0dp"
+            android:scrollbars="horizontal">
+            <TableLayout
+                android:id="@+id/employeeTable"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Employee"
-                android:textColor="@android:color/white"
-                android:padding="8dp"
-                android:fontFamily="@font/manrope_bold"
-                android:textSize="16sp" />
+                android:stretchColumns="*">
+            <!-- Table Header -->
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Days \nPresent"
-                android:textColor="@android:color/white"
-                android:padding="8dp"
-                android:fontFamily="@font/manrope_bold"
-                android:textSize="16sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Employee"
+                        android:textColor="@android:color/white"
+                        android:padding="8dp"
+                        android:fontFamily="@font/manrope_bold"
+                        android:textSize="16sp" />
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Late/UT \nDeduction"
-                android:textColor="@android:color/white"
-                android:padding="8dp"
-                android:fontFamily="@font/manrope_bold"
-                android:textSize="16sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Days \nPresent"
+                        android:textColor="@android:color/white"
+                        android:padding="8dp"
+                        android:fontFamily="@font/manrope_bold"
+                        android:textSize="16sp" />
 
-            <TextView
-                android:id="@+id/textView"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/manrope_bold"
-                android:padding="8dp"
-                android:text="CA \nDeduction"
-                android:textColor="@android:color/white"
-                android:textSize="16sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Late/UT \nDeduction"
+                        android:textColor="@android:color/white"
+                        android:padding="8dp"
+                        android:fontFamily="@font/manrope_bold"
+                        android:textSize="16sp" />
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="OT \nPay"
-                android:textColor="@android:color/white"
-                android:padding="8dp"
-                android:fontFamily="@font/manrope_bold"
-                android:textSize="16sp" />
-        </TableRow>
-    </TableLayout>
+                    <TextView
+                        android:id="@+id/textView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/manrope_bold"
+                        android:padding="8dp"
+                        android:text="CA \nDeduction"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="OT \nPay"
+                        android:textColor="@android:color/white"
+                        android:padding="8dp"
+                        android:fontFamily="@font/manrope_bold"
+                        android:textSize="16sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="SSS"
+                        android:textColor="@android:color/white"
+                        android:padding="8dp"
+                        android:fontFamily="@font/manrope_bold"
+                        android:textSize="16sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="HDMF"
+                        android:textColor="@android:color/white"
+                        android:padding="8dp"
+                        android:fontFamily="@font/manrope_bold"
+                        android:textSize="16sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PHIC"
+                        android:textColor="@android:color/white"
+                        android:padding="8dp"
+                        android:fontFamily="@font/manrope_bold"
+                        android:textSize="16sp" />
+                </TableRow>
+            </TableLayout>
+        </HorizontalScrollView>
 </ScrollView>
 
     <!-- Submit Button -->
