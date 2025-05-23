@@ -47,7 +47,6 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="20dp"
                         android:gravity="center"
-                        android:layout_marginBottom="10dp"
                         android:orientation="horizontal">
 
                         <Spinner
@@ -65,6 +64,22 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
                     </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnSearch"
+                        android:layout_width="match_parent"
+                        android:layout_height="45dp"
+                        android:text="Search"
+                        android:layout_marginBottom="10dp"
+                        android:textColor="@android:color/white"
+                        android:background="@drawable/custom_background_3"
+                        android:layout_marginTop="16dp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="20dp"
+                        android:background="@android:color/darker_gray" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -301,9 +316,15 @@
                                     android:layout_height="wrap_content"
                                     android:padding="10dp"
                                     android:fontFamily="@font/manrope_extrabold"
-                                    android:text="Total \nEarnings"
+                                    android:text="Total \nEarnings Pay"
                                     android:textColor="@color/white" />
-
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:padding="10dp"
+                                    android:fontFamily="@font/manrope_extrabold"
+                                    android:text="Gross Pay"
+                                    android:textColor="@color/white" />
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -435,4 +456,20 @@
         app:maxImageSize="30dp"
         android:tint="@color/white"
         app:fabSize="normal" />
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:background="@android:color/transparent"
+        android:visibility="gone"
+        android:id="@+id/progressContainer1">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            style="@android:style/Widget.ProgressBar.Large"
+            android:indeterminate="true"/>
+    </FrameLayout>
 </FrameLayout>

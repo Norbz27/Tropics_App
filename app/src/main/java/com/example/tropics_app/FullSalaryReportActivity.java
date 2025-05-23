@@ -1,5 +1,7 @@
 package com.example.tropics_app;
 
+import static androidx.core.content.ContentProviderCompat.requireContext;
+
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.graphics.Color;
@@ -12,8 +14,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -28,6 +32,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -65,6 +70,9 @@ public class FullSalaryReportActivity extends AppCompatActivity {
     private double totalSalesFtS = 0.0;
     private NumberFormat numberFormat;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private FrameLayout progressContainer1;
+    private Button btnSearch;
+    private boolean isDestroyed = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +90,8 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         year_spinner = findViewById(R.id.year_spinner);
         week_num = findViewById(R.id.week_num);
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+        progressContainer1 = findViewById(R.id.progressContainer1);
+        btnSearch = findViewById(R.id.btnSearch);
 
         appointmentsList = new ArrayList<>();
         employeeList = new ArrayList<>();
@@ -95,24 +105,17 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
-        loadExpensesData();
-        loadGcashData();
-        loadFundsData();
-        loadAppointmentData();
-        loadEmployeeData();
-        loadSalaryData();
+        fetchAppointmentDataNoDisplay();
         spinnerSetup();
+
+        btnSearch.setOnClickListener(view -> {
+            filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+        });
 
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                loadExpensesData();
-                loadGcashData();
-                loadFundsData();
-                loadAppointmentData();
-                loadEmployeeData();
-                loadSalaryData();
-                filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                fetchAppointmentData();
             }
         });
         fabCompFiSal.setOnClickListener(v -> showSalaryComputationDialog(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString()));
@@ -433,7 +436,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 int selectedMonth = position;
                 int selectedYear = Integer.parseInt(year_spinner.getSelectedItem().toString());
                 updateWeekSpinner(selectedYear, selectedMonth, currentWeek); // Update the week spinner based on the new month and year
-                filterDataByMonthYearWeek(months[selectedMonth], year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                //filterDataByMonthYearWeek(months[selectedMonth], year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
             }
 
             @Override
@@ -448,7 +451,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                 int selectedYear = Integer.parseInt(parentView.getItemAtPosition(position).toString());
                 int selectedMonth = month_spinner.getSelectedItemPosition();
                 updateWeekSpinner(selectedYear, selectedMonth, currentWeek); // Update the week spinner based on the new year
-                filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), String.valueOf(selectedYear), week_num.getSelectedItem().toString());
+                //filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), String.valueOf(selectedYear), week_num.getSelectedItem().toString());
             }
 
             @Override
@@ -461,7 +464,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 String selectedWeek = week_num.getSelectedItem().toString();
-                filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), selectedWeek);
+                //filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), selectedWeek);
             }
 
             @Override
@@ -625,382 +628,391 @@ public class FullSalaryReportActivity extends AppCompatActivity {
 
 
     private void filterDataByMonthYearWeek(String selectedMonth, String selectedYear, String selectedWeekNumber) {
+        progressContainer1.setVisibility(View.VISIBLE);
 
-        Calendar calendar = Calendar.getInstance();
-        totalSalesFtS = 0.0;
-        Map<String, Double> employeeSalesMap = new HashMap<>(); // To store total sales by employee
-        Map<String, double[]> dailySalesMap = new HashMap<>(); // To store daily sales by employee for each day of the week (Monday to Thursday)
-        double totalSales = 0.0;
+        new Thread(() -> {
+            Calendar calendar = Calendar.getInstance();
+            totalSalesFtS = 0.0;
+            Map<String, Double> employeeSalesMap = new HashMap<>(); // To store total sales by employee
+            Map<String, double[]> dailySalesMap = new HashMap<>(); // To store daily sales by employee for each day of the week (Monday to Thursday)
+            double totalSales = 0.0;
 
-        try {
-            // Create a mapping from month names to month numbers
-            int month = getMonthNumber(selectedMonth); // Convert month name to month number
-            int year = Integer.parseInt(selectedYear);
-            int weekNumber = Integer.parseInt(selectedWeekNumber);
-            List<EmployeeSalaryDetails> EmployeeSalList = getSalaryForDate(month, selectedYear, selectedWeekNumber);
-            // Set the calendar to the first day of the selected week
-            calendar.set(Calendar.YEAR, year);
-            calendar.set(Calendar.MONTH, month);
-            calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
-            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday
-            Log.d("SalesFragment", "Selected Calendar: " + calendar);
-            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+            try {
+                // Create a mapping from month names to month numbers
+                int month = getMonthNumber(selectedMonth); // Convert month name to month number
+                int year = Integer.parseInt(selectedYear);
+                int weekNumber = Integer.parseInt(selectedWeekNumber);
+                List<EmployeeSalaryDetails> EmployeeSalList = getSalaryForDate(month, selectedYear, selectedWeekNumber);
+                // Set the calendar to the first day of the selected week
+                calendar.set(Calendar.YEAR, year);
+                calendar.set(Calendar.MONTH, month);
+                calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
+                calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday
+                Log.d("SalesFragment", "Selected Calendar: " + calendar);
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
 
-            // Clear previous rows
-            daily_table.removeViews(1, daily_table.getChildCount() - 1); // Keep header
-            //weekend_table.removeViews(1, weekend_table.getChildCount() - 1); // Keep header
-            finalSalaryTable.removeViews(1, finalSalaryTable.getChildCount() - 1);
-            breakdown_table.removeViews(1, breakdown_table.getChildCount() - 1);
+                // Clear previous rows
+                runOnUiThread(() -> {
+                    daily_table.removeViews(1, daily_table.getChildCount() - 1); // Keep header
+                    //weekend_table.removeViews(1, weekend_table.getChildCount() - 1); // Keep header
+                    finalSalaryTable.removeViews(1, finalSalaryTable.getChildCount() - 1);
+                    breakdown_table.removeViews(1, breakdown_table.getChildCount() - 1);
 
-            // Create a header row for dates (only for Monday to Thursday)
-            TableRow dateRow = new TableRow(this);
-            dateRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+                    // Create a header row for dates (only for Monday to Thursday)
+                    TableRow dateRow = new TableRow(this);
+                    dateRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
-            // Create layout parameters for TextView with layout_weight
-            TableRow.LayoutParams params = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f); // 0dp width, weight of 1
-            TextView TextView = new TextView(this);
-            TextView.setText("");
-            TextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-            TextView.setTextColor(Color.WHITE);
-            TextView.setPadding(10, 10, 10, 10);
-            dateRow.addView(TextView);
+                    // Create layout parameters for TextView with layout_weight
+                    TableRow.LayoutParams params = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f); // 0dp width, weight of 1
+                    TextView TextView = new TextView(this);
+                    TextView.setText("");
+                    TextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
+                    TextView.setTextColor(Color.WHITE);
+                    TextView.setPadding(10, 10, 10, 10);
+                    dateRow.addView(TextView);
 
-            // Add dates to the dateRow (only Monday to Thursday)
-            Calendar displayCalendar = (Calendar) calendar.clone(); // Clone to keep the original calendar unchanged
-            for (int i = 0; i < 7; i++) { // Loop for Monday to Thursday
-                TextView dateTextView = new TextView(this);
-                String dateStr = sdf.format(displayCalendar.getTime());
-                dateTextView.setText(dateStr);
-                dateTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-                dateTextView.setTextColor(Color.WHITE);
-                dateTextView.setPadding(10, 10, 10, 10);
-                dateRow.addView(dateTextView);
-                displayCalendar.add(Calendar.DAY_OF_MONTH, 1);
+                    // Add dates to the dateRow (only Monday to Thursday)
+                    Calendar displayCalendar = (Calendar) calendar.clone(); // Clone to keep the original calendar unchanged
+                    for (int i = 0; i < 7; i++) { // Loop for Monday to Thursday
+                        TextView dateTextView = new TextView(this);
+                        String dateStr = sdf.format(displayCalendar.getTime());
+                        dateTextView.setText(dateStr);
+                        dateTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
+                        dateTextView.setTextColor(Color.WHITE);
+                        dateTextView.setPadding(10, 10, 10, 10);
+                        dateRow.addView(dateTextView);
+                        displayCalendar.add(Calendar.DAY_OF_MONTH, 1);
 
-                TextView TextView3 = new TextView(this);
-                TextView3.setText("");
-                TextView3.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
-                TextView3.setTextColor(Color.WHITE);
-                TextView3.setPadding(10, 10, 10, 10);
-                dateRow.addView(TextView3);
-                if(i > 3){
-                    filterDataByDate(dateStr);
-                }
-            }
+                        TextView TextView3 = new TextView(this);
+                        TextView3.setText("");
+                        TextView3.setTypeface(ResourcesCompat.getFont(this, R.font.manrope));
+                        TextView3.setTextColor(Color.WHITE);
+                        TextView3.setPadding(10, 10, 10, 10);
+                        dateRow.addView(TextView3);
+                        if (i > 3) {
+                            filterDataByDate(dateStr);
+                        }
+                    }
 
-            // Add the dateRow to the table
-            daily_table.addView(dateRow);
-           //weekend_table.addView(dateRowWeekend);
-            // Reset calendar to the start of the selected week for filtering appointments
-            calendar.set(Calendar.YEAR, year);
-            calendar.set(Calendar.MONTH, month);
-            calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
-            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday// Reset time to midnight (start of the day)
-            calendar.set(Calendar.HOUR_OF_DAY, 0);
-            calendar.set(Calendar.MINUTE, 0);
-            calendar.set(Calendar.SECOND, 0);
-            calendar.set(Calendar.MILLISECOND, 0);
+                    // Add the dateRow to the table
+                    daily_table.addView(dateRow);
+                    //weekend_table.addView(dateRowWeekend);
+                    // Reset calendar to the start of the selected week for filtering appointments
+                    calendar.set(Calendar.YEAR, year);
+                    calendar.set(Calendar.MONTH, month);
+                    calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
+                    calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday// Reset time to midnight (start of the day)
+                    calendar.set(Calendar.HOUR_OF_DAY, 0);
+                    calendar.set(Calendar.MINUTE, 0);
+                    calendar.set(Calendar.SECOND, 0);
+                    calendar.set(Calendar.MILLISECOND, 0);
 
-            Date startOfWeek = calendar.getTime();
-            Log.d("SalesFragment", "Start of Week (reset to midnight): " + startOfWeek);
+                    Date startOfWeek = calendar.getTime();
+                    Log.d("SalesFragment", "Start of Week (reset to midnight): " + startOfWeek);
 
-            calendar.add(Calendar.DAY_OF_MONTH, 6); // Add 6 days to get to Sunday
-            Date endOfWeek = calendar.getTime();
-            Log.d("SalesFragment", "End of Week (reset to midnight): " + endOfWeek);
+                    calendar.add(Calendar.DAY_OF_MONTH, 6); // Add 6 days to get to Sunday
+                    Date endOfWeek = calendar.getTime();
+                    Log.d("SalesFragment", "End of Week (reset to midnight): " + endOfWeek);
 
-            // Initialize daily sales for each employee for each day of the week (only Monday to Thursday)
-            for (Appointment appointment : appointmentsList) {
-                Date appointmentDate = appointment.getClientDateTimeAsDate();
-                if (appointmentDate != null && (appointmentDate.after(startOfWeek) || appointmentDate.equals(startOfWeek)) && (appointmentDate.before(endOfWeek) || appointmentDate.equals(endOfWeek))) {
-                    // Check for and display sub-services
-                    List<Map<String, Object>> services = appointment.getServices();
-                    for (Map<String, Object> service : services) {
-                        Object employeeObj = service.get("assignedEmployee");
+                    // Initialize daily sales for each employee for each day of the week (only Monday to Thursday)
+                    for (Appointment appointment : appointmentsList) {
+                        Date appointmentDate = appointment.getClientDateTimeAsDate();
+                        if (appointmentDate != null && (appointmentDate.after(startOfWeek) || appointmentDate.equals(startOfWeek)) && (appointmentDate.before(endOfWeek) || appointmentDate.equals(endOfWeek))) {
+                            // Check for and display sub-services
+                            List<Map<String, Object>> services = appointment.getServices();
+                            for (Map<String, Object> service : services) {
+                                Object employeeObj = service.get("assignedEmployee");
 
-                        if (employeeObj != null && !"None".equals(employeeObj.toString())) {
-                            String employee = employeeObj.toString();
-                            double totalPriceForService = (Double) service.get("servicePrice");
+                                if (employeeObj != null && !"None".equals(employeeObj.toString())) {
+                                    String employee = employeeObj.toString();
+                                    double totalPriceForService = (Double) service.get("servicePrice");
 
-                            // Handle sub-services
-                            List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
-                            if (subServices != null) {
-                                for (Map<String, Object> subService : subServices) {
-                                    Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
-                                    totalPriceForService += subServicePrice;
+                                    // Handle sub-services
+                                    List<Map<String, Object>> subServices = (List<Map<String, Object>>) service.get("subServices");
+                                    if (subServices != null) {
+                                        for (Map<String, Object> subService : subServices) {
+                                            Double subServicePrice = subService.get("servicePrice") != null ? (double) subService.get("servicePrice") : 0.0;
+                                            totalPriceForService += subServicePrice;
+                                        }
+                                    }
+
+                                    // Update the employee's total sales
+                                    employeeSalesMap.put(employee, employeeSalesMap.getOrDefault(employee, 0.0) + totalPriceForService);
+
+                                    // Ensure dailySalesMap is initialized for 7 days (Monday to Sunday)
+                                    if (!dailySalesMap.containsKey(employee)) {
+                                        dailySalesMap.put(employee, new double[7]); // Array for 7 days (Monday to Sunday)
+                                    }
+
+                                    // Calculate which day of the week the appointment occurred
+                                    Calendar appointmentCalendar = Calendar.getInstance();
+                                    appointmentCalendar.setTime(appointmentDate);
+                                    int dayOfWeek = appointmentCalendar.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY; // Adjust to 0-based index (Monday = 0)
+
+                                    // Correct this logic to handle Sunday as well
+                                    if (dayOfWeek < 0) {
+                                        dayOfWeek = 6; // If it's Sunday, set index to 6
+                                    }
+
+                                    if (dayOfWeek >= 0 && dayOfWeek < 7) { // Ensure the day is within the range Monday-Sunday
+                                        dailySalesMap.get(employee)[dayOfWeek] += totalPriceForService;
+                                    }
                                 }
                             }
-
-                            // Update the employee's total sales
-                            employeeSalesMap.put(employee, employeeSalesMap.getOrDefault(employee, 0.0) + totalPriceForService);
-
-                            // Ensure dailySalesMap is initialized for 7 days (Monday to Sunday)
-                            if (!dailySalesMap.containsKey(employee)) {
-                                dailySalesMap.put(employee, new double[7]); // Array for 7 days (Monday to Sunday)
-                            }
-
-                            // Calculate which day of the week the appointment occurred
-                            Calendar appointmentCalendar = Calendar.getInstance();
-                            appointmentCalendar.setTime(appointmentDate);
-                            int dayOfWeek = appointmentCalendar.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY; // Adjust to 0-based index (Monday = 0)
-
-                            // Correct this logic to handle Sunday as well
-                            if (dayOfWeek < 0) {
-                                dayOfWeek = 6; // If it's Sunday, set index to 6
-                            }
-
-                            if (dayOfWeek >= 0 && dayOfWeek < 7) { // Ensure the day is within the range Monday-Sunday
-                                dailySalesMap.get(employee)[dayOfWeek] += totalPriceForService;
-                            }
                         }
                     }
-                }
-            }
 
 
-            calendar.set(Calendar.YEAR, year);
-            calendar.set(Calendar.MONTH, month);
-            calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
-            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday// Reset time to midnight (start of the day)
-            calendar.set(Calendar.HOUR_OF_DAY, 0);
-            calendar.set(Calendar.MINUTE, 0);
-            calendar.set(Calendar.SECOND, 0);
-            calendar.set(Calendar.MILLISECOND, 0);
+                    calendar.set(Calendar.YEAR, year);
+                    calendar.set(Calendar.MONTH, month);
+                    calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
+                    calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday// Reset time to midnight (start of the day)
+                    calendar.set(Calendar.HOUR_OF_DAY, 0);
+                    calendar.set(Calendar.MINUTE, 0);
+                    calendar.set(Calendar.SECOND, 0);
+                    calendar.set(Calendar.MILLISECOND, 0);
 
-            Map<String, Double> sortedEmployeeSalesMap = new TreeMap<>(employeeSalesMap);
-            Calendar displayCalendar2 = (Calendar) calendar.clone();
-            for (Map.Entry<String, Double> entry : sortedEmployeeSalesMap.entrySet()) {
-                String employeeName = entry.getKey();
-                double sales = entry.getValue();
-                // Find the employee details
-                Employee employee = findEmployeeByName(employeeName);
-                if (employee != null) {
+                    Map<String, Double> sortedEmployeeSalesMap = new TreeMap<>(employeeSalesMap);
+                    Calendar displayCalendar2 = (Calendar) calendar.clone();
+                    for (Map.Entry<String, Double> entry : sortedEmployeeSalesMap.entrySet()) {
+                        String employeeName = entry.getKey();
+                        double sales = entry.getValue();
+                        // Find the employee details
+                        Employee employee = findEmployeeByName(employeeName);
+                        if (employee != null) {
 
-                    // Create rows for weekdays and weekends
-                    TableRow rowCommission = new TableRow(this);
-                    rowCommission.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+                            // Create rows for weekdays and weekends
+                            TableRow rowCommission = new TableRow(this);
+                            rowCommission.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
-                    TableRow rowWeekend = new TableRow(this);
-                    rowWeekend.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+                            TableRow rowWeekend = new TableRow(this);
+                            rowWeekend.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
-                    // Add employee name for weekdays and weekends
-                    TextView nameTextView = createTextView(employeeName);
-                    rowCommission.addView(nameTextView);
+                            // Add employee name for weekdays and weekends
+                            TextView nameTextView = createTextView(employeeName);
+                            rowCommission.addView(nameTextView);
 
-                    double totalSalesPerEmp = 0.0;
-                    double totalCommissionPerEmp = 0.0;
+                            double totalSalesPerEmp = 0.0;
+                            double totalCommissionPerEmp = 0.0;
 
-                    // Process sales and commissions for 7 days (weekdays and weekends)
-                    for (int i = 0; i < 7; i++) { // Process 7 days of the week
-                        Calendar currentDayCalendar = (Calendar) displayCalendar2.clone();
+                            // Process sales and commissions for 7 days (weekdays and weekends)
+                            for (int i = 0; i < 7; i++) { // Process 7 days of the week
+                                Calendar currentDayCalendar = (Calendar) displayCalendar2.clone();
 
-                        String dateStr = sdf.format(currentDayCalendar.getTime());
-                        Log.d("SelectedDate", dateStr);
+                                String dateStr = sdf.format(currentDayCalendar.getTime());
+                                Log.d("SelectedDate", dateStr);
 
-                        // Ensure that you are displaying the sales data for all 7 days, including Sunday
-                        double[] salesData = dailySalesMap.get(employeeName);
-                        if (salesData != null && salesData.length > i) {
-                            double dailySales = salesData[i];
-                            double commissionRate = getCommissionRateByDate(employee, dateStr);
-                            double dailyCommission = (dailySales * commissionRate) / 100.0;
-                            if (i == 6) { // Index 6 is Sunday
-                                Log.d("SundaySales", "Sunday sales for " + employeeName + ": " + dailySales);
+                                // Ensure that you are displaying the sales data for all 7 days, including Sunday
+                                double[] salesData = dailySalesMap.get(employeeName);
+                                if (salesData != null && salesData.length > i) {
+                                    double dailySales = salesData[i];
+                                    double commissionRate = getCommissionRateByDate(employee, dateStr);
+                                    double dailyCommission = (dailySales * commissionRate) / 100.0;
+                                    if (i == 6) { // Index 6 is Sunday
+                                        Log.d("SundaySales", "Sunday sales for " + employeeName + ": " + dailySales);
+                                    }
+                                    // Display sales and commission for each day
+                                    TextView dailySalesTextView = createTextView(numberFormat.format(dailySales));
+                                    TextView dailyCommissionTextView = createTextView(numberFormat.format(dailyCommission));
+
+                                    rowCommission.addView(dailySalesTextView);
+                                    rowCommission.addView(dailyCommissionTextView);
+
+                                    totalSalesPerEmp += dailySales;
+                                    totalCommissionPerEmp += dailyCommission;
+                                } else {
+                                    Log.d("SalesData", "No sales data available for day " + i + " for employee " + employeeName);
+                                }
+
+                                // Move to the next day
+                                displayCalendar2.add(Calendar.DAY_OF_MONTH, 1);
                             }
-                            // Display sales and commission for each day
-                            TextView dailySalesTextView = createTextView(numberFormat.format(dailySales));
-                            TextView dailyCommissionTextView = createTextView(numberFormat.format(dailyCommission));
 
-                            rowCommission.addView(dailySalesTextView);
-                            rowCommission.addView(dailyCommissionTextView);
 
-                            totalSalesPerEmp += dailySales;
-                            totalCommissionPerEmp += dailyCommission;
-                        } else {
-                            Log.d("SalesData", "No sales data available for day " + i + " for employee " + employeeName);
+                            // Add total sales and commission for weekends
+                            TextView totalSalesTextView = createTextView(numberFormat.format(totalSalesPerEmp));
+                            totalSalesTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                            totalSalesTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+                            TextView totalCommissionTextView = createTextView(numberFormat.format(totalCommissionPerEmp));
+                            totalCommissionTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                            totalCommissionTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+                            rowCommission.addView(totalSalesTextView);
+                            rowCommission.addView(totalCommissionTextView);
+
+                            // Add rows to respective tables
+                            daily_table.addView(rowCommission);
+                            //weekend_table.addView(rowWeekend);
                         }
-
-                        // Move to the next day
-                        displayCalendar2.add(Calendar.DAY_OF_MONTH, 1);
                     }
 
 
-                    // Add total sales and commission for weekends
-                    TextView totalSalesTextView = createTextView(numberFormat.format(totalSalesPerEmp));
-                    totalSalesTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-                    totalSalesTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-                    TextView totalCommissionTextView = createTextView(numberFormat.format(totalCommissionPerEmp));
-                    totalCommissionTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-                    totalCommissionTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-                    rowCommission.addView(totalSalesTextView);
-                    rowCommission.addView(totalCommissionTextView);
-
-                    // Add rows to respective tables
-                    daily_table.addView(rowCommission);
-                    //weekend_table.addView(rowWeekend);
-                }
-            }
-
-
-            // Sort EmployeeSalList alphabetically by employee name (or ID)
-            Collections.sort(EmployeeSalList, new Comparator<EmployeeSalaryDetails>() {
-                @Override
-                public int compare(EmployeeSalaryDetails emp1, EmployeeSalaryDetails emp2) {
-                    return emp1.getEmployeeId().compareToIgnoreCase(emp2.getEmployeeId());
-                }
-            });
-
-            calendar.set(Calendar.YEAR, year);
-            calendar.set(Calendar.MONTH, month);
-            calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
-            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday// Reset time to midnight (start of the day)
-            calendar.set(Calendar.HOUR_OF_DAY, 0);
-            calendar.set(Calendar.MINUTE, 0);
-            calendar.set(Calendar.SECOND, 0);
-            calendar.set(Calendar.MILLISECOND, 0);
-            Calendar displayCalendar3 = (Calendar) calendar.clone();
-            double overAllTotalSalary = 0.0;
-            Log.d("Employee List", EmployeeSalList.toString());
-            for (EmployeeSalaryDetails emp : EmployeeSalList) {
-                Employee employee = findEmployeeByName(emp.getEmployeeId());
-                Log.d("FullSalaryReportsID", emp.getEmployeeId());
-
-                // Check if the employee and required fields exist before proceeding
-                if (employee != null && emp.getEmployeeId() != null && !"None".equals(emp.getEmployeeId())) {
-
-                    // Check if the employee role is "Regular"
-                    if ("Regular".equals(employee.getTherapist()) || employee.getSalary() != 0) {
-                        TableRow tableRow = new TableRow(this);
-                        Log.d("FullSalaryReports", emp.getLateDeduction());
-
-                        // Calculate the basic weekly salary and deductions
-                        String daysPresent = emp.getDaysPresent()!= "" ? emp.getDaysPresent() : "0";
-
-                        double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
-                        double sss = (emp.getSSS() == null || emp.getSSS().isEmpty()) ? 0.0 : Double.parseDouble(emp.getSSS());
-                        double hdmf = (emp.getHDMF() == null || emp.getHDMF().isEmpty()) ? 0.0 : Double.parseDouble(emp.getHDMF());
-                        double phic = (emp.getPHIC() == null || emp.getPHIC().isEmpty()) ? 0.0 : Double.parseDouble(emp.getPHIC());
-                        double ot = (emp.getOtPay() == null || emp.getOtPay().isEmpty()) ? 0.0 : Double.parseDouble(emp.getOtPay());
-
-                        double totalCommissionPerEmp = 0.0;
-
-                        // Check if the employee has sales data in the dailySalesMap
-                        double[] dailySalesArray = dailySalesMap.get(emp.getEmployeeId());
-                        if (dailySalesArray == null) {
-                            dailySalesArray = new double[7];  // Initialize with zero sales for all 7 days if not found
+                    // Sort EmployeeSalList alphabetically by employee name (or ID)
+                    Collections.sort(EmployeeSalList, new Comparator<EmployeeSalaryDetails>() {
+                        @Override
+                        public int compare(EmployeeSalaryDetails emp1, EmployeeSalaryDetails emp2) {
+                            return emp1.getEmployeeId().compareToIgnoreCase(emp2.getEmployeeId());
                         }
+                    });
 
-                        // Process sales and commissions for 7 days (weekdays and weekends)
-                        for (int i = 0; i < 7; i++) {
-                            String dateStr = sdf.format(displayCalendar3.getTime());
-                            double commissionRate = getCommissionRateByDate(employee, dateStr);
-                            double dailySales = dailySalesArray[i];
-                            double dailyCommission = (dailySales * commissionRate) / 100.0;
-                            totalCommissionPerEmp += dailyCommission;
-                            displayCalendar3.add(Calendar.DAY_OF_MONTH, 1);
+                    calendar.set(Calendar.YEAR, year);
+                    calendar.set(Calendar.MONTH, month);
+                    calendar.set(Calendar.WEEK_OF_MONTH, weekNumber);
+                    calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY); // Start from Monday// Reset time to midnight (start of the day)
+                    calendar.set(Calendar.HOUR_OF_DAY, 0);
+                    calendar.set(Calendar.MINUTE, 0);
+                    calendar.set(Calendar.SECOND, 0);
+                    calendar.set(Calendar.MILLISECOND, 0);
+                    Calendar displayCalendar3 = (Calendar) calendar.clone();
+                    double overAllTotalSalary = 0.0;
+                    Log.d("Employee List", EmployeeSalList.toString());
+                    for (EmployeeSalaryDetails emp : EmployeeSalList) {
+                        Employee employee = findEmployeeByName(emp.getEmployeeId());
+                        Log.d("FullSalaryReportsID", emp.getEmployeeId());
+
+                        // Check if the employee and required fields exist before proceeding
+                        if (employee != null && emp.getEmployeeId() != null && !"None".equals(emp.getEmployeeId())) {
+
+                            // Check if the employee role is "Regular"
+                            if ("Regular".equals(employee.getTherapist()) || employee.getSalary() != 0) {
+                                TableRow tableRow = new TableRow(this);
+                                Log.d("FullSalaryReports", emp.getLateDeduction());
+
+                                // Calculate the basic weekly salary and deductions
+                                String daysPresent = emp.getDaysPresent() != "" ? emp.getDaysPresent() : "0";
+
+                                double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
+                                double sss = (emp.getSSS() == null || emp.getSSS().isEmpty()) ? 0.0 : Double.parseDouble(emp.getSSS());
+                                double hdmf = (emp.getHDMF() == null || emp.getHDMF().isEmpty()) ? 0.0 : Double.parseDouble(emp.getHDMF());
+                                double phic = (emp.getPHIC() == null || emp.getPHIC().isEmpty()) ? 0.0 : Double.parseDouble(emp.getPHIC());
+                                double ot = (emp.getOtPay() == null || emp.getOtPay().isEmpty()) ? 0.0 : Double.parseDouble(emp.getOtPay());
+
+                                double totalCommissionPerEmp = 0.0;
+
+                                // Check if the employee has sales data in the dailySalesMap
+                                double[] dailySalesArray = dailySalesMap.get(emp.getEmployeeId());
+                                if (dailySalesArray == null) {
+                                    dailySalesArray = new double[7];  // Initialize with zero sales for all 7 days if not found
+                                }
+
+                                // Process sales and commissions for 7 days (weekdays and weekends)
+                                for (int i = 0; i < 7; i++) {
+                                    String dateStr = sdf.format(displayCalendar3.getTime());
+                                    double commissionRate = getCommissionRateByDate(employee, dateStr);
+                                    double dailySales = dailySalesArray[i];
+                                    double dailyCommission = (dailySales * commissionRate) / 100.0;
+                                    totalCommissionPerEmp += dailyCommission;
+                                    displayCalendar3.add(Calendar.DAY_OF_MONTH, 1);
+                                }
+
+                                double caDeduction = (emp.getCaDeduction() == null || emp.getCaDeduction().isEmpty()) ? 0.0 : Double.parseDouble(emp.getCaDeduction());
+                                double basicPay = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
+                                double totalEarnings = totalCommissionPerEmp + ot;
+                                double grossPay = totalEarnings + basicPay;
+                                double totalDeduction = lateDeduction + sss + hdmf + phic + caDeduction;
+                                double netPay = grossPay - totalDeduction;
+
+                                overAllTotalSalary += netPay;
+
+                                // Create TextViews for displaying employee details
+                                TextView nameTV = createTextViewBold(emp.getEmployeeId());
+                                TextView dailySalaryTV = createTextView(numberFormat.format(employee.getSalary()));
+                                TextView daysPresentTV = createTextView(daysPresent);
+                                TextView basicPayTV = createTextViewBold(numberFormat.format(basicPay));
+                                TextView commissionTV = createTextView(numberFormat.format(totalCommissionPerEmp));
+                                TextView otTV = createTextView(numberFormat.format(ot));
+                                TextView totalEarningsTV = createTextViewBold(numberFormat.format(totalEarnings));
+                                TextView grossPayTV = createTextViewBold(numberFormat.format(grossPay));
+                                TextView lateDeductionTextView = createTextView(numberFormat.format(lateDeduction));
+                                TextView caDeductionTV = createTextView(numberFormat.format(caDeduction));
+                                TextView sssTV = createTextView(numberFormat.format(sss));
+                                TextView hdmfTV = createTextView(numberFormat.format(hdmf));
+                                TextView phicTV = createTextView(numberFormat.format(phic));
+                                TextView totalDeductionTV = createTextViewBold(numberFormat.format(totalDeduction));
+
+                                TextView overallSalaryTextView = createTextViewBold(numberFormat.format(netPay));
+
+                                // Styling for the overall salary
+                                overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                                overallSalaryTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+
+                                // Add TextViews to the table row
+                                tableRow.addView(nameTV);
+                                tableRow.addView(dailySalaryTV);
+                                tableRow.addView(daysPresentTV);
+                                tableRow.addView(basicPayTV);
+                                tableRow.addView(commissionTV);
+                                tableRow.addView(otTV);
+                                tableRow.addView(totalEarningsTV);
+                                tableRow.addView(grossPayTV);
+                                tableRow.addView(lateDeductionTextView);
+                                tableRow.addView(caDeductionTV);
+                                tableRow.addView(sssTV);
+                                tableRow.addView(hdmfTV);
+                                tableRow.addView(phicTV);
+                                tableRow.addView(totalDeductionTV);
+                                tableRow.addView(overallSalaryTextView);
+
+                                // Add the row to the final salary table
+                                finalSalaryTable.addView(tableRow);
+                            }
                         }
-
-                        double caDeduction = (emp.getCaDeduction() == null || emp.getCaDeduction().isEmpty()) ? 0.0 : Double.parseDouble(emp.getCaDeduction());
-                        double basicPay = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
-                        double totalEarnings = totalCommissionPerEmp + ot;
-                        double totalDeduction = lateDeduction + sss + hdmf + phic + caDeduction;
-                        double netPay = (basicPay + totalEarnings) - totalDeduction;
-
-                        overAllTotalSalary += netPay;
-
-                        // Create TextViews for displaying employee details
-                        TextView nameTV = createTextViewBold(emp.getEmployeeId());
-                        TextView dailySalaryTV = createTextView(numberFormat.format(employee.getSalary()));
-                        TextView daysPresentTV = createTextView(daysPresent);
-                        TextView basicPayTV = createTextViewBold(numberFormat.format(basicPay));
-                        TextView commissionTV = createTextView(numberFormat.format(totalCommissionPerEmp));
-                        TextView otTV = createTextView(numberFormat.format(ot));
-                        TextView totalEarningsTV = createTextViewBold(numberFormat.format(totalEarnings));
-                        TextView lateDeductionTextView = createTextView(numberFormat.format(lateDeduction));
-                        TextView caDeductionTV = createTextView(numberFormat.format(caDeduction));
-                        TextView sssTV = createTextView(numberFormat.format(sss));
-                        TextView hdmfTV = createTextView(numberFormat.format(hdmf));
-                        TextView phicTV = createTextView(numberFormat.format(phic));
-                        TextView totalDeductionTV = createTextViewBold(numberFormat.format(totalDeduction));
-
-                        TextView overallSalaryTextView = createTextViewBold(numberFormat.format(netPay));
-
-                        // Styling for the overall salary
-                        overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-                        overallSalaryTextView.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-
-                        // Add TextViews to the table row
-                        tableRow.addView(nameTV);
-                        tableRow.addView(dailySalaryTV);
-                        tableRow.addView(daysPresentTV);
-                        tableRow.addView(basicPayTV);
-                        tableRow.addView(commissionTV);
-                        tableRow.addView(otTV);
-                        tableRow.addView(totalEarningsTV);
-                        tableRow.addView(lateDeductionTextView);
-                        tableRow.addView(caDeductionTV);
-                        tableRow.addView(sssTV);
-                        tableRow.addView(hdmfTV);
-                        tableRow.addView(phicTV);
-                        tableRow.addView(totalDeductionTV);
-                        tableRow.addView(overallSalaryTextView);
-
-                        // Add the row to the final salary table
-                        finalSalaryTable.addView(tableRow);
                     }
-                }
+
+                    TableRow tableRow4 = new TableRow(this);
+                    for (int i = 0; i < 13; i++) {
+                        TextView TextView5 = createTextView("");
+                        tableRow4.addView(TextView5);
+                    }
+                    double remainingBal = 0.0;
+
+                    TextView dateTextView4 = createTextView("Overall Salary");
+                    dateTextView4.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                    dateTextView4.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+                    TextView ovSal1 = createTextView(numberFormat.format(overAllTotalSalary));
+                    ovSal1.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                    ovSal1.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+                    tableRow4.addView(dateTextView4);
+                    tableRow4.addView(ovSal1);
+                    finalSalaryTable.addView(tableRow4);
+
+                    remainingBal = totalSalesFtS - overAllTotalSalary;
+                    TableRow tableRow = new TableRow(this);
+                    tableRow.setBackgroundResource(R.color.gray);
+                    // Set the formatted date to TextView
+                    TextView dateTextView = createTextView("Total");
+                    TextView bal = createTextView(numberFormat.format(totalSalesFtS));
+
+
+                    tableRow.addView(dateTextView);
+                    tableRow.addView(bal);
+
+                    TableRow tableRow2 = new TableRow(this);
+                    TextView dateTextView2 = createTextView("Overall Salary");
+                    TextView ovSal = createTextView("-" + numberFormat.format(overAllTotalSalary));
+                    tableRow2.addView(dateTextView2);
+                    tableRow2.addView(ovSal);
+
+                    TableRow tableRow3 = new TableRow(this);
+                    tableRow3.setBackgroundResource(R.color.gray);
+                    TextView dateTextView3 = createTextView("");
+                    TextView Rbal = createTextView(numberFormat.format(remainingBal));
+                    Rbal.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
+                    Rbal.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
+                    Rbal.setTextSize(20);
+                    tableRow3.addView(dateTextView3);
+                    tableRow3.addView(Rbal);
+                    breakdown_table.addView(tableRow);
+                    breakdown_table.addView(tableRow2);
+                    breakdown_table.addView(tableRow3);
+                    swipeRefreshLayout.setRefreshing(false);
+                    progressContainer1.setVisibility(View.GONE);
+                });
+            } catch (Exception e) {
+                Log.e("SalesFragment", "Error filtering data: ", e);
+                swipeRefreshLayout.setRefreshing(false);
             }
-
-            TableRow tableRow4 = new TableRow(this);
-            for(int i = 0; i < 12; i++){
-                TextView TextView5 = createTextView("");
-                tableRow4.addView(TextView5);
-            }
-            double remainingBal = 0.0;
-
-            TextView dateTextView4 = createTextView("Overall Salary");
-            dateTextView4.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-            dateTextView4.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-            TextView ovSal1 = createTextView(numberFormat.format(overAllTotalSalary));
-            ovSal1.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-            ovSal1.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-            tableRow4.addView(dateTextView4);
-            tableRow4.addView(ovSal1);
-            finalSalaryTable.addView(tableRow4);
-
-            remainingBal = totalSalesFtS - overAllTotalSalary;
-            TableRow tableRow = new TableRow(this);
-            tableRow.setBackgroundResource(R.color.gray);
-            // Set the formatted date to TextView
-            TextView dateTextView = createTextView("Total");
-            TextView bal = createTextView(numberFormat.format(totalSalesFtS));
-
-
-            tableRow.addView(dateTextView);
-            tableRow.addView(bal);
-
-            TableRow tableRow2 = new TableRow(this);
-            TextView dateTextView2 = createTextView("Overall Salary");
-            TextView ovSal = createTextView("-"+numberFormat.format(overAllTotalSalary));
-            tableRow2.addView(dateTextView2);
-            tableRow2.addView(ovSal);
-
-            TableRow tableRow3 = new TableRow(this);
-            tableRow3.setBackgroundResource(R.color.gray);
-            TextView dateTextView3 = createTextView("");
-            TextView Rbal = createTextView(numberFormat.format(remainingBal));
-            Rbal.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
-            Rbal.setTypeface(ResourcesCompat.getFont(this, R.font.manrope_bold));
-            Rbal.setTextSize(20);
-            tableRow3.addView(dateTextView3);
-            tableRow3.addView(Rbal);
-            breakdown_table.addView(tableRow);
-            breakdown_table.addView(tableRow2);
-            breakdown_table.addView(tableRow3);
             swipeRefreshLayout.setRefreshing(false);
-        } catch (Exception e) {
-            Log.e("SalesFragment", "Error filtering data: ", e);
-            swipeRefreshLayout.setRefreshing(false);
-        }
-        swipeRefreshLayout.setRefreshing(false);
+        }).start();
     }
 
     private void filterDataByDate(String selectedDate) {
@@ -1201,51 +1213,6 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         return matchingFunds;
     }
 
-    private void loadFundsData() {
-        db.collection("add_funds").get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        fundsList.clear();
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            Funds funds = document.toObject(Funds.class);
-                            funds.setId(document.getId());
-                            fundsList.add(funds);
-                        }
-                    } else {
-                        Toast.makeText(this, "Failed to load data", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-    private void loadExpensesData() {
-        db.collection("expenses").get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        expensesList.clear();
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            Expenses expenses = document.toObject(Expenses.class);
-                            expenses.setId(document.getId());
-                            expensesList.add(expenses);
-                        }
-                    } else {
-                        Toast.makeText(this, "Failed to load data", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-    private void loadGcashData() {
-        db.collection("gcash_payments").get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        gcashList.clear();
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            Gcash gcash = document.toObject(Gcash.class);
-                            gcash.setId(document.getId());
-                            gcashList.add(gcash);
-                        }
-                    } else {
-                        Toast.makeText(this, "Failed to load data", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
     private Employee findEmployeeByName(String employeeName) {
         for (Employee employee : employeeList) {
             if (employee.getName().equalsIgnoreCase(employeeName)) {
@@ -1265,29 +1232,137 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         Log.d("SalesFragments", "Matching Date: " + matchingDate);
         return matchingDate; // Return the list of matching expenses
     }
-    private void loadSalaryData() {
-        db.collection("salary_details").get()
+    private void fetchAppointmentDataNoDisplay() {
+        runOnUiThread(() -> progressContainer1.setVisibility(View.VISIBLE));
+
+        List<Task<QuerySnapshot>> tasks = new ArrayList<>();
+
+        // Appointments
+        tasks.add(db.collection("appointments").get()
                 .addOnCompleteListener(task -> {
+                    if (isDestroyed) return;
+                    if (task.isSuccessful()) {
+                        appointmentsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Appointment appointment = document.toObject(Appointment.class);
+                            appointmentsList.add(appointment);
+                        }
+                    } else {
+                        Log.e("SalesActivity", "Error fetching appointments: ", task.getException());
+                    }
+                }));
+
+        // Employees
+        tasks.add(db.collection("Employees").get()
+                .addOnCompleteListener(task -> {
+                    if (isDestroyed) return;
+                    if (task.isSuccessful()) {
+                        employeeList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Employee employee = document.toObject(Employee.class);
+                            employee.setId(document.getId());
+                            employeeList.add(employee);
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to load employee data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // Expenses
+        tasks.add(db.collection("expenses").get()
+                .addOnCompleteListener(task -> {
+                    if (isDestroyed) return;
+                    if (task.isSuccessful()) {
+                        expensesList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Expenses expenses = document.toObject(Expenses.class);
+                            expenses.setId(document.getId());
+                            expensesList.add(expenses);
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to load expenses data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // Funds
+        tasks.add(db.collection("add_funds").get()
+                .addOnCompleteListener(task -> {
+                    if (isDestroyed) return;
+                    if (task.isSuccessful()) {
+                        fundsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Funds funds = document.toObject(Funds.class);
+                            funds.setId(document.getId());
+                            fundsList.add(funds);
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to load funds data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // GCash
+        tasks.add(db.collection("gcash_payments").get()
+                .addOnCompleteListener(task -> {
+                    if (isDestroyed) return;
+                    if (task.isSuccessful()) {
+                        gcashList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Gcash gcash = document.toObject(Gcash.class);
+                            gcash.setId(document.getId());
+                            gcashList.add(gcash);
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to load gcash data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // Salary Details
+        tasks.add(db.collection("salary_details").get()
+                .addOnCompleteListener(task -> {
+                    if (isDestroyed) return;
                     if (task.isSuccessful()) {
                         salaryDetailsList.clear();
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             EmployeeSalaryDetails employee = document.toObject(EmployeeSalaryDetails.class);
-                            if (employee != null) { // Check if employee is not null
+                            if (employee != null) {
                                 salaryDetailsList.add(employee);
-                                Log.d("SalesFragments", "Salary Details: " + employee);
+                                Log.d("SalesActivity", "Salary Details: " + employee);
                             } else {
-                                Log.d("SalesFragments", "Null EmployeeSalaryDetails for document: " + document.getId());
+                                Log.d("SalesActivity", "Null EmployeeSalaryDetails for document: " + document.getId());
                             }
                         }
-                        Log.d("SalesFragments", "Total Salary Details Loaded: " + salaryDetailsList.size());
+                        Log.d("SalesActivity", "Total Salary Details Loaded: " + salaryDetailsList.size());
                     } else {
-                        Toast.makeText(this, "Failed to load data", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Failed to load salary details", Toast.LENGTH_SHORT).show();
                     }
-                });
-    }
+                }));
 
-    private void loadEmployeeData() {
-        db.collection("Employees").get()
+        // Wait for all to complete
+        Tasks.whenAllComplete(tasks).addOnCompleteListener(task -> {
+            progressContainer1.setVisibility(View.GONE);
+        });
+    }
+    private void fetchAppointmentData() {
+        runOnUiThread(() -> progressContainer1.setVisibility(View.VISIBLE));
+
+        List<Task<QuerySnapshot>> tasks = new ArrayList<>();
+
+        // Appointments
+        tasks.add(db.collection("appointments").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        appointmentsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Appointment appointment = document.toObject(Appointment.class);
+                            appointmentsList.add(appointment);
+                        }
+                    } else {
+                        Log.e("SalesActivity", "Error fetching appointments: ", task.getException());
+                    }
+                }));
+
+        // Employees
+        tasks.add(db.collection("Employees").get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         employeeList.clear();
@@ -1296,29 +1371,86 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                             employee.setId(document.getId());
                             employeeList.add(employee);
                         }
-
                     } else {
-                        Toast.makeText(this, "Failed to load data", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Failed to load employee data", Toast.LENGTH_SHORT).show();
                     }
-                });
-    }
-    private void loadAppointmentData() {
-        db.collection("appointments")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            appointmentsList.clear(); // Clear the list before adding new data
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Appointment appointment = document.toObject(Appointment.class);
-                                appointmentsList.add(appointment);
-                            }
-                        } else {
-                            Log.e("SalesFragment", "Error fetching appointments: ", task.getException());
+                }));
+
+        // Expenses
+        tasks.add(db.collection("expenses").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        expensesList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Expenses expenses = document.toObject(Expenses.class);
+                            expenses.setId(document.getId());
+                            expensesList.add(expenses);
                         }
+                    } else {
+                        Toast.makeText(this, "Failed to load expenses data", Toast.LENGTH_SHORT).show();
                     }
-                });
+                }));
+
+        // Funds
+        tasks.add(db.collection("add_funds").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        fundsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Funds funds = document.toObject(Funds.class);
+                            funds.setId(document.getId());
+                            fundsList.add(funds);
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to load funds data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // GCash
+        tasks.add(db.collection("gcash_payments").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        gcashList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Gcash gcash = document.toObject(Gcash.class);
+                            gcash.setId(document.getId());
+                            gcashList.add(gcash);
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to load gcash data", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // Salary Details
+        tasks.add(db.collection("salary_details").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        salaryDetailsList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            EmployeeSalaryDetails employee = document.toObject(EmployeeSalaryDetails.class);
+                            if (employee != null) {
+                                salaryDetailsList.add(employee);
+                                Log.d("SalesActivity", "Salary Details: " + employee);
+                            } else {
+                                Log.d("SalesActivity", "Null EmployeeSalaryDetails for document: " + document.getId());
+                            }
+                        }
+                        Log.d("SalesActivity", "Total Salary Details Loaded: " + salaryDetailsList.size());
+                    } else {
+                        Toast.makeText(this, "Failed to load salary details", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+
+        // Wait for all to complete
+        Tasks.whenAllComplete(tasks).addOnCompleteListener(task -> {
+            progressContainer1.setVisibility(View.GONE);
+            filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+        });
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        isDestroyed = true;
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

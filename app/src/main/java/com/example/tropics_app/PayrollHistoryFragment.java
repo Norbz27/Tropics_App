@@ -447,14 +447,20 @@ public class PayrollHistoryFragment extends Fragment {
                                 TableRow tableRow = new TableRow(getContext());
 
                                 String daysPresent = emp.getDaysPresent() != "" ? emp.getDaysPresent() : "0";
-                                double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
-                                double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
-                                double deductedWeekSal = weekSal - lateDeduction;
                                 double totalCommissionPerEmp = totalComms1;
+                                
+                                double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
+                                double sss = (emp.getSSS() == null || emp.getSSS().isEmpty()) ? 0.0 : Double.parseDouble(emp.getSSS());
+                                double hdmf = (emp.getHDMF() == null || emp.getHDMF().isEmpty()) ? 0.0 : Double.parseDouble(emp.getHDMF());
+                                double phic = (emp.getPHIC() == null || emp.getPHIC().isEmpty()) ? 0.0 : Double.parseDouble(emp.getPHIC());
+                                double ot = (emp.getOtPay() == null || emp.getOtPay().isEmpty()) ? 0.0 : Double.parseDouble(emp.getOtPay());
 
-                                double totalSalary = deductedWeekSal + totalCommissionPerEmp;
-                                double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
-                                double totalSalaryDeducted = totalSalary - caDeduction;
+                                double caDeduction = (emp.getCaDeduction() == null || emp.getCaDeduction().isEmpty()) ? 0.0 : Double.parseDouble(emp.getCaDeduction());
+                                double basicPay = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
+                                double totalEarnings = totalCommissionPerEmp + ot;
+                                double grossPay = totalEarnings + basicPay;
+                                double totalDeduction = lateDeduction + sss + hdmf + phic + caDeduction;
+                                double netPay = grossPay - totalDeduction;
 
                                 SimpleDateFormat dayFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
                                 SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy", Locale.getDefault());
@@ -465,32 +471,44 @@ public class PayrollHistoryFragment extends Fragment {
 
                                 String payrollPeriodStr = startStr + " - " + endStr + ", " + year1;
                                 if (!payrollPeriodLast.equals(payrollPeriodStr)) {
-                                    overAllTotalSalary += totalSalaryDeducted;
+                                    overAllTotalSalary += netPay;
                                     payrollPeriodLast = payrollPeriodStr;
-                                    TextView payrollPeriod = makeTextView(payrollPeriodStr, Color.WHITE);
+                                    TextView payrollPeriod = makeTextViewBold(payrollPeriodStr, Color.WHITE);
 
-                                    TextView perDay = makeTextView(numberFormat.format(employee.getSalary()), Color.WHITE);
-                                    TextView daysPresentTextView = makeTextView(daysPresent, Color.WHITE);
-                                    TextView weekSalary = makeTextView(numberFormat.format(weekSal), Color.WHITE);
+                                    TextView dailySalaryTV = makeTextView(numberFormat.format(employee.getSalary()), Color.WHITE);
+                                    TextView daysPresentTV = makeTextView(daysPresent, Color.WHITE);
+                                    TextView basicPayTV = makeTextViewBold(numberFormat.format(basicPay), Color.WHITE);
+                                    TextView commissionTV = makeTextView(numberFormat.format(totalCommissionPerEmp), Color.WHITE);
+                                    TextView otTV = makeTextView(numberFormat.format(ot), Color.WHITE);
+                                    TextView totalEarningsTV = makeTextViewBold(numberFormat.format(totalEarnings), Color.WHITE);
+                                    TextView grossPayTV = makeTextViewBold(numberFormat.format(grossPay), Color.WHITE);
                                     TextView lateDeductionTextView = makeTextView(numberFormat.format(lateDeduction), Color.WHITE);
-                                    TextView deductedSalary = makeTextView(numberFormat.format(deductedWeekSal), Color.WHITE);
-                                    TextView commissionTextView = makeTextView(numberFormat.format(totalCommissionPerEmp), Color.WHITE);
-                                    TextView totalSalaryTextView = makeTextView(numberFormat.format(totalSalary), Color.WHITE);
-                                    TextView caDeductionTextView = makeTextView(numberFormat.format(caDeduction), Color.WHITE);
-                                    TextView overallSalaryTextView = makeTextView(numberFormat.format(totalSalaryDeducted), Color.WHITE);
+                                    TextView caDeductionTV = makeTextView(numberFormat.format(caDeduction), Color.WHITE);
+                                    TextView sssTV = makeTextView(numberFormat.format(sss), Color.WHITE);
+                                    TextView hdmfTV = makeTextView(numberFormat.format(hdmf), Color.WHITE);
+                                    TextView phicTV = makeTextView(numberFormat.format(phic), Color.WHITE);
+                                    TextView totalDeductionTV = makeTextViewBold(numberFormat.format(totalDeduction), Color.WHITE);
+
+                                    TextView overallSalaryTextView = makeTextViewBold(numberFormat.format(netPay), Color.WHITE);
 
                                     overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
                                     overallSalaryTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
 
+                                    // Add TextViews to the table row
                                     tableRow.addView(payrollPeriod);
-                                    tableRow.addView(perDay);
-                                    tableRow.addView(daysPresentTextView);
-                                    tableRow.addView(weekSalary);
+                                    tableRow.addView(dailySalaryTV);
+                                    tableRow.addView(daysPresentTV);
+                                    tableRow.addView(basicPayTV);
+                                    tableRow.addView(commissionTV);
+                                    tableRow.addView(otTV);
+                                    tableRow.addView(totalEarningsTV);
+                                    tableRow.addView(grossPayTV);
                                     tableRow.addView(lateDeductionTextView);
-                                    tableRow.addView(deductedSalary);
-                                    tableRow.addView(commissionTextView);
-                                    tableRow.addView(totalSalaryTextView);
-                                    tableRow.addView(caDeductionTextView);
+                                    tableRow.addView(caDeductionTV);
+                                    tableRow.addView(sssTV);
+                                    tableRow.addView(hdmfTV);
+                                    tableRow.addView(phicTV);
+                                    tableRow.addView(totalDeductionTV);
                                     tableRow.addView(overallSalaryTextView);
 
                                     tblSalaryByFandT.addView(tableRow);
@@ -502,7 +520,7 @@ public class PayrollHistoryFragment extends Fragment {
 
 
                 TableRow tableRow4 = new TableRow(getContext());
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 13; i++){
                     TextView TextView5 = emptyTextView();
                     tableRow4.addView(TextView5);
                 }
@@ -646,6 +664,7 @@ public class PayrollHistoryFragment extends Fragment {
                 tblHandler.removeViews(1, tblHandler.getChildCount() - 1);
                 tblWeekly.removeViews(1, tblWeekly.getChildCount() - 1);
                 tblSalary.removeViews(1, tblSalary.getChildCount() - 1);
+                tblSalaryByFandT.removeViews(1, tblSalaryByFandT.getChildCount() - 1);
 
                 // Create header with actual dates
                 Calendar headerCal = Calendar.getInstance();
@@ -765,42 +784,57 @@ public class PayrollHistoryFragment extends Fragment {
 
                             // Calculate the basic weekly salary and deductions
                             String daysPresent = emp.getDaysPresent() != "" ? emp.getDaysPresent() : "0";
-                            double weekSal = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
-                            double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
-                            double deductedWeekSal = weekSal - lateDeduction;
                             double totalCommissionPerEmp = finalTotalComms;
 
-                            // Calculate total salary including commission and deductions
-                            double totalSalary = deductedWeekSal + totalCommissionPerEmp;
-                            double caDeduction = emp.getCaDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getCaDeduction());
-                            double totalSalaryDeducted = totalSalary - caDeduction;
+                            double lateDeduction = emp.getLateDeduction().isEmpty() ? 0.0 : Double.parseDouble(emp.getLateDeduction());
+                            double sss = (emp.getSSS() == null || emp.getSSS().isEmpty()) ? 0.0 : Double.parseDouble(emp.getSSS());
+                            double hdmf = (emp.getHDMF() == null || emp.getHDMF().isEmpty()) ? 0.0 : Double.parseDouble(emp.getHDMF());
+                            double phic = (emp.getPHIC() == null || emp.getPHIC().isEmpty()) ? 0.0 : Double.parseDouble(emp.getPHIC());
+                            double ot = (emp.getOtPay() == null || emp.getOtPay().isEmpty()) ? 0.0 : Double.parseDouble(emp.getOtPay());
 
-                            overAllTotalSalary += totalSalaryDeducted;
+                            double caDeduction = (emp.getCaDeduction() == null || emp.getCaDeduction().isEmpty()) ? 0.0 : Double.parseDouble(emp.getCaDeduction());
+                            double basicPay = getSalaryByDate(employee, emp.getDaysPresent(), sdf);
+                            double totalEarnings = totalCommissionPerEmp + ot;
+                            double grossPay = totalEarnings + basicPay;
+                            double totalDeduction = lateDeduction + sss + hdmf + phic + caDeduction;
+                            double netPay = grossPay - totalDeduction;
 
-                            TextView perDay = makeTextView(numberFormat.format(employee.getSalary()), Color.WHITE);
-                            TextView daysPresentTextView = makeTextView(daysPresent, Color.WHITE);
-                            TextView weekSalary = makeTextView(numberFormat.format(weekSal), Color.WHITE);
+                            overAllTotalSalary += netPay;
+
+                            TextView dailySalaryTV = makeTextView(numberFormat.format(employee.getSalary()), Color.WHITE);
+                            TextView daysPresentTV = makeTextView(daysPresent, Color.WHITE);
+                            TextView basicPayTV = makeTextViewBold(numberFormat.format(basicPay), Color.WHITE);
+                            TextView commissionTV = makeTextView(numberFormat.format(totalCommissionPerEmp), Color.WHITE);
+                            TextView otTV = makeTextView(numberFormat.format(ot), Color.WHITE);
+                            TextView totalEarningsTV = makeTextViewBold(numberFormat.format(totalEarnings), Color.WHITE);
+                            TextView grossPayTV = makeTextViewBold(numberFormat.format(grossPay), Color.WHITE);
                             TextView lateDeductionTextView = makeTextView(numberFormat.format(lateDeduction), Color.WHITE);
-                            TextView deductedSalary = makeTextView(numberFormat.format(deductedWeekSal), Color.WHITE);
-                            TextView commissionTextView = makeTextView(numberFormat.format(totalCommissionPerEmp), Color.WHITE);
-                            TextView totalSalaryTextView = makeTextView(numberFormat.format(totalSalary), Color.WHITE);
-                            TextView caDeductionTextView = makeTextView(numberFormat.format(caDeduction), Color.WHITE);
-                            TextView overallSalaryTextView = makeTextView(numberFormat.format(totalSalaryDeducted), Color.WHITE);
+                            TextView caDeductionTV = makeTextView(numberFormat.format(caDeduction), Color.WHITE);
+                            TextView sssTV = makeTextView(numberFormat.format(sss), Color.WHITE);
+                            TextView hdmfTV = makeTextView(numberFormat.format(hdmf), Color.WHITE);
+                            TextView phicTV = makeTextView(numberFormat.format(phic), Color.WHITE);
+                            TextView totalDeductionTV = makeTextViewBold(numberFormat.format(totalDeduction), Color.WHITE);
 
-                            // Styling for the overall salary
+                            TextView overallSalaryTextView = makeTextViewBold(numberFormat.format(netPay), Color.WHITE);
+
                             overallSalaryTextView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.orange, null));
                             overallSalaryTextView.setTypeface(ResourcesCompat.getFont(getContext(), R.font.manrope_bold));
 
-                            tableRow.addView(perDay);
-                            tableRow.addView(daysPresentTextView);
-                            tableRow.addView(weekSalary);
+                            // Add TextViews to the table row
+                            tableRow.addView(dailySalaryTV);
+                            tableRow.addView(daysPresentTV);
+                            tableRow.addView(basicPayTV);
+                            tableRow.addView(commissionTV);
+                            tableRow.addView(otTV);
+                            tableRow.addView(totalEarningsTV);
+                            tableRow.addView(grossPayTV);
                             tableRow.addView(lateDeductionTextView);
-                            tableRow.addView(deductedSalary);
-                            tableRow.addView(commissionTextView);
-                            tableRow.addView(totalSalaryTextView);
-                            tableRow.addView(caDeductionTextView);
+                            tableRow.addView(caDeductionTV);
+                            tableRow.addView(sssTV);
+                            tableRow.addView(hdmfTV);
+                            tableRow.addView(phicTV);
+                            tableRow.addView(totalDeductionTV);
                             tableRow.addView(overallSalaryTextView);
-
                             // Add the row to the final salary table
                             tblSalary.addView(tableRow);
                         }
