@@ -538,14 +538,13 @@ public class PayrollHistoryFragment extends Fragment {
         }).start();
     }
     private void filterDataByMonthYearWeek(int month, int year, int weekNumber, String empName) {
-        progressContainer1.setVisibility(View.VISIBLE);
-        btnSearch.setEnabled(false);
-
         if(empName.isEmpty() || empName == null){
             Toast.makeText(getContext(), "Please select an employee", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        progressContainer1.setVisibility(View.VISIBLE);
+        btnSearch.setEnabled(false);
         new Thread(() -> {
             Calendar calendar = Calendar.getInstance();
             calendar.set(Calendar.YEAR, year);

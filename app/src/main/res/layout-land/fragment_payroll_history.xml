@@ -227,6 +227,7 @@
             </HorizontalScrollView>
             <!-- Wrap the table in a HorizontalScrollView -->
             <HorizontalScrollView
+                android:id="@+id/hscrollWeekly"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:scrollbars="horizontal"
@@ -299,9 +300,10 @@
                 </TableLayout>
             </HorizontalScrollView>
             <TextView
+                android:id="@+id/tvFSC"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingTop="16dp"
+                android:paddingTop="20dp"
                 android:paddingBottom="8dp"
                 android:text="Salary Computation"
                 android:textColor="@color/orange"

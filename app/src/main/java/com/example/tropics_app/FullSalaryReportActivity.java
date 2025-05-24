@@ -350,8 +350,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                                                         Toast.makeText(this, "Salary details submitted!", Toast.LENGTH_SHORT).show();
                                                         progressDialog.dismiss();
                                                         dialog.dismiss();
-                                                        //loadSalaryData();
-                                                        //filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
+                                                        fetchAppointmentData();
                                                         Toast.makeText(this, "Reload for updated data", Toast.LENGTH_SHORT).show();
                                                     });
                                                 });
@@ -495,16 +494,11 @@ public class FullSalaryReportActivity extends AppCompatActivity {
         weekAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         week_num.setAdapter(weekAdapter);
 
-        // Set the default selection to the current week (if it's valid for the selected month and year)
-        if (currentWeek <= maxWeeks) {
-            week_num.setSelection(currentWeek - 1); // Week is 1-based, so subtract 1
-        } else {
-            week_num.setSelection(0); // Default to first week if the current week doesn't exist
-        }
+        week_num.setSelection(0); // Default to first week if the current week doesn't exist
+
         Log.d("SalesFragment", "Selected Month: " + month_spinner.getSelectedItem().toString());
         Log.d("SalesFragment", "Selected Year: " + year_spinner.getSelectedItem().toString());
         Log.d("SalesFragment", "Selected Week: " + week_num.getSelectedItem().toString());
-        filterDataByMonthYearWeek(month_spinner.getSelectedItem().toString(), year_spinner.getSelectedItem().toString(), week_num.getSelectedItem().toString());
     }
 
     // Correctly calculate the current week of the month based on the first day of the week
