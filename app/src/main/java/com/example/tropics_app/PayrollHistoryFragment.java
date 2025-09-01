@@ -1087,46 +1087,75 @@ public class PayrollHistoryFragment extends Fragment {
             }
         });
     }
-    private double getCommissionRateByDate(Employee employee, String appointmentDate) {
+    private double getCommissionRateByDate(Employee employee, String appointmentDateStr) {
         // Get commission history and ensure it is not null
         List<Map<String, Object>> commissionHistory = employee.getCommissionsHistory();
-        if (commissionHistory == null) {
-            return employee.getComs() != null ? employee.getComs() : 0.0; // Return the current commission rate if history is null
+        double currentCommissionRate = employee.getComs() != null ? employee.getComs() : 0.0; // Default from employee object
+
+        if (commissionHistory == null || commissionHistory.isEmpty()) {
+            Log.d("CommissionRate", "No commission history for employee: " + employee.getName() + ". Using current rate: " + currentCommissionRate);
+            return currentCommissionRate;
         }
 
-        double commissionRate = employee.getComs() != null ? employee.getComs() : 0.0; // Default to current commission rate
+        double commissionRateToUse = currentCommissionRate; // Initialize with the employee's current rate as a fallback
 
-        // Parse the appointment date
+        // Consistent date format for parsing dates from history and the appointmentDateStr
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+        Date appointmentDate;
+
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()); // Adjust date format to match your Firebase data
-            Date appointment = sdf.parse(appointmentDate);
-
-            // Iterate through commission history to find the appropriate rate based on date
-            for (Map<String, Object> history : commissionHistory) {
-                String changeDateStr = (String) history.get("dateChanged");
-                Object rateAtChangeObj = history.get("commission");
-
-                // Ensure the rate is properly retrieved as Double
-                double rateAtChange = 0.0;
-                if (rateAtChangeObj instanceof Long) {
-                    rateAtChange = ((Long) rateAtChangeObj).doubleValue();
-                } else if (rateAtChangeObj instanceof Double) {
-                    rateAtChange = (Double) rateAtChangeObj;
-                }
-
-                // Parse the change date
-                Date changeDate = sdf.parse(changeDateStr);
-
-                // If the change date is before the appointment date, use this rate
-                if (changeDate != null && changeDate.before(appointment)) {
-                    commissionRate = rateAtChange;
-                }
-            }
+            appointmentDate = sdf.parse(appointmentDateStr);
         } catch (ParseException e) {
-            e.printStackTrace();
+            Log.e("CommissionRate", "Error parsing appointment date: " + appointmentDateStr, e);
+            // If appointment date can't be parsed, it's safest to return the employee's current rate
+            return currentCommissionRate;
         }
 
-        return commissionRate;
+        Date latestChangeDateConsidered = null; // To track the most recent relevant change date
+
+        for (Map<String, Object> historyEntry : commissionHistory) {
+            String changeDateStr = (String) historyEntry.get("dateChanged");
+            Object rateAtChangeObj = historyEntry.get("commission"); // Can be Long or Double from Firestore
+
+            if (changeDateStr == null || rateAtChangeObj == null) {
+                Log.w("CommissionRate", "Skipping history entry due to missing date or rate for employee: " + employee.getName());
+                continue; // Skip if essential data is missing
+            }
+
+            double rateAtChange;
+            if (rateAtChangeObj instanceof Long) {
+                rateAtChange = ((Long) rateAtChangeObj).doubleValue();
+            } else if (rateAtChangeObj instanceof Double) {
+                rateAtChange = (Double) rateAtChangeObj;
+            } else {
+                Log.w("CommissionRate", "Skipping history entry due to invalid rate type for employee: " + employee.getName());
+                continue; // Skip if commission rate is not a number
+            }
+
+            try {
+                Date commissionChangeDate = sdf.parse(changeDateStr);
+
+                // We are looking for the rate that was active ON or BEFORE the appointmentDate.
+                // If a commissionChangeDate is after the appointmentDate, it's not relevant yet.
+                if (!commissionChangeDate.after(appointmentDate)) {
+                    // This changeDate is relevant (on or before the appointment date).
+                    // We want the one that is closest to (but not after) the appointmentDate.
+                    if (latestChangeDateConsidered == null || !commissionChangeDate.before(latestChangeDateConsidered)) {
+                        // This means commissionChangeDate is either the first relevant one found,
+                        // or it's later than or equal to the latestChangeDateConsidered (i.e., more recent).
+                        latestChangeDateConsidered = commissionChangeDate;
+                        commissionRateToUse = rateAtChange;
+                        Log.d("CommissionRate", "Considering rate " + rateAtChange + " from change date " + changeDateStr + " for appointment on " + appointmentDateStr);
+                    }
+                }
+            } catch (ParseException e) {
+                Log.e("CommissionRate", "Error parsing commission change date: " + changeDateStr + " for employee: " + employee.getName(), e);
+                // Optionally skip this entry or handle error
+            }
+        }
+
+        Log.d("CommissionRate", "Final commission rate for " + employee.getName() + " on " + appointmentDateStr + " is " + commissionRateToUse);
+        return commissionRateToUse;
     }
     private void spinnerSetup() {
         String[] months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
