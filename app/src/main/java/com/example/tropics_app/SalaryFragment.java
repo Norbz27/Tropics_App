@@ -55,6 +55,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -295,6 +296,15 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                             employee.setId(document.getId());
                             employeeList.add(employee);
                         }
+
+                        // Sort the employeeList alphabetically by name
+                        Collections.sort(employeeList, new Comparator<Employee>() {
+                            @Override
+                            public int compare(Employee e1, Employee e2) {
+                                return e1.getName().compareToIgnoreCase(e2.getName());
+                            }
+                        });
+
                         if (adapter == null) {
                             adapter = new EmployeeAdapter(this, employeeList);
                             rvSalary.setAdapter(adapter);
@@ -306,7 +316,6 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
                     }
                 });
     }
-
     private void showViewEmployeeDialog(Employee employee) {
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_viewemployee, null);
@@ -324,7 +333,7 @@ public class SalaryFragment extends Fragment implements EmployeeAdapter.OnEmploy
         empPhone.setText("Phone: " + employee.getPhone());
         empEmail.setText("Email: " + employee.getEmail());
         String therapistRole = employee.getTherapist();
-        if ("Therapist".equals(therapistRole) || employee.getSalary() == 0) {
+        if ("Therapist".equals(therapistRole)) {
             empSal.setText("Role: Therapist");
         }else {
             empSal.setText("Role: Regular \nDaily Salary Rate: ₱" + employee.getSalary());

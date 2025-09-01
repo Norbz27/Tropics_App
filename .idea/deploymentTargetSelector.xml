@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-18T09:50:54.954895500Z">
+        <DropdownSelection timestamp="2025-09-01T14:03:04.112895500Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\norbe\.android\avd\Stable_Tablet.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=XGRWJNMJ4DQ84X9H" />
             </handle>
           </Target>
         </DropdownSelection>

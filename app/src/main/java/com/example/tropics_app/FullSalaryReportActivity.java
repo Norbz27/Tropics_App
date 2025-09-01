@@ -1108,7 +1108,7 @@ public class FullSalaryReportActivity extends AppCompatActivity {
                     if (employee != null) {
                         // Check if the employee is a therapist
                         String therapistRole = employee.getTherapist();
-                        if ("Therapist".equals(therapistRole) || employee.getSalary() == 0) {
+                        if ("Therapist".equals(therapistRole)) {
                             // Retrieve the appropriate commission rate based on the current date
                             double commissionRate = getCommissionRateByDate(employee, date.toString()); // Pass the current date
                             double employeeCommission = (sales * commissionRate) / 100.0;
